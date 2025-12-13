@@ -1,0 +1,106 @@
+import { memo } from 'react';
+import { formatDate } from '../../utils/dateFormat';
+import { TASK_STATUSES, PRIORITIES, COMPLEXITIES } from '../../services/api';
+
+// Drag handle icon
+const DragIcon = () => (
+  <svg className="task-drag-handle" viewBox="0 0 24 24" fill="currentColor">
+    <circle cx="9" cy="6" r="1.5" />
+    <circle cx="15" cy="6" r="1.5" />
+    <circle cx="9" cy="12" r="1.5" />
+    <circle cx="15" cy="12" r="1.5" />
+    <circle cx="9" cy="18" r="1.5" />
+    <circle cx="15" cy="18" r="1.5" />
+  </svg>
+);
+
+function TaskItem({ task, tags, isSelected, onSelect, onToggle, dragHandleProps }) {
+  const status = task.status || 'open';
+  const statusInfo = TASK_STATUSES.find(s => s.value === status) || TASK_STATUSES[0];
+  const isCompleted = status === 'done' || !!task.finishedAt;
+  const taskTags = (task.tagIds || []).map(id => tags?.[id]).filter(Boolean);
+  const priorityInfo = PRIORITIES.find(p => p.value === task.priority);
+  const complexityInfo = COMPLEXITIES.find(c => c.value === task.complexity);
+
+  return (
+    <div
+      className={`task-item compact ${isSelected ? 'selected' : ''} ${isCompleted ? 'completed' : ''}`}
+      onClick={() => onSelect(task.id)}
+    >
+      <div {...dragHandleProps}>
+        <DragIcon />
+      </div>
+
+      <div
+        className={`task-checkbox ${isCompleted ? 'checked' : ''}`}
+        onClick={(e) => {
+          e.stopPropagation();
+          onToggle(task.id);
+        }}
+      />
+
+      <div className="task-content">
+        <div className="task-title">{task.title}</div>
+        {task.description && (
+          <div className="task-description-preview">{task.description}</div>
+        )}
+        <div className="task-meta">
+          {/* Status indicator */}
+          <span className={`status-badge ${status}`}>
+            <span className={`status-dot ${status}`} />
+            {statusInfo.label}
+          </span>
+
+          {/* Priority indicator */}
+          {priorityInfo && (
+            <span className={`priority-badge ${task.priority}`}>
+              <span style={{ color: priorityInfo.color }}>{priorityInfo.icon}</span>
+              {priorityInfo.label}
+            </span>
+          )}
+
+          {/* Complexity indicator */}
+          {complexityInfo && (
+            <span className="complexity-badge" style={{ background: complexityInfo.color, color: 'white' }}>
+              {complexityInfo.label}
+            </span>
+          )}
+
+          {/* Tags */}
+          {taskTags.length > 0 && (
+            <span className="tags-container">
+              {taskTags.slice(0, 3).map(tag => (
+                <span key={tag.id} className="tag">
+                  <span className="tag-dot" style={{ background: tag.color }} />
+                  {tag.name}
+                </span>
+              ))}
+              {taskTags.length > 3 && (
+                <span className="tag">+{taskTags.length - 3}</span>
+              )}
+            </span>
+          )}
+
+          {/* Date */}
+          <span>{formatDate(task.createdAt)}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Custom comparison for memo - only re-render when these change
+export default memo(TaskItem, (prevProps, nextProps) => {
+  return (
+    prevProps.task.id === nextProps.task.id &&
+    prevProps.task.title === nextProps.task.title &&
+    prevProps.task.description === nextProps.task.description &&
+    prevProps.task.status === nextProps.task.status &&
+    prevProps.task.finishedAt === nextProps.task.finishedAt &&
+    prevProps.task.priority === nextProps.task.priority &&
+    prevProps.task.complexity === nextProps.task.complexity &&
+    JSON.stringify(prevProps.task.tagIds) === JSON.stringify(nextProps.task.tagIds) &&
+    prevProps.isSelected === nextProps.isSelected &&
+    prevProps.tags === nextProps.tags
+  );
+});

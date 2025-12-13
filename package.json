@@ -1,0 +1,17 @@
+{
+  "name": "tasklist",
+  "version": "1.0.0",
+  "description": "High-performance task management for software features and bugs",
+  "scripts": {
+    "client": "cd client && npm run dev",
+    "server": "cd server && npm run dev",
+    "dev": "npx concurrently \"npm run server\" \"npm run client\"",
+    "install:all": "npm install && cd client && npm install && cd ../server && npm install"
+  },
+  "keywords": ["task", "todo", "features", "bugs", "project-management"],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
