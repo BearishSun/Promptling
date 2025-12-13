@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "lastModified": "2025-12-13T10:56:41.575Z",
+  "lastModified": "2025-12-13T11:18:30.106Z",
   "features": {
     "feat-CSdMs0EN": {
       "id": "feat-CSdMs0EN",
@@ -1507,7 +1507,7 @@
       "categoryId": null,
       "title": "Add the ability to add new high-level categories (not just Features/Bugs)",
       "description": "Enable users to create custom top-level categories beyond the default Features and Bugs sections, allowing for more flexible organization of work items.",
-      "status": "open",
+      "status": "in-progress",
       "tagIds": [],
       "createdAt": "2025-12-13T08:40:15.553Z",
       "finishedAt": null,
@@ -1586,8 +1586,8 @@
     "bug-34LkVU6N"
   ],
   "settings": {
-    "activeView": "features",
-    "activeFeatureId": null,
+    "activeView": "feature",
+    "activeFeatureId": "feat-O1pQSUVV",
     "theme": "dark"
   },
   "tags": {

@@ -1,10 +1,40 @@
-# TaskList
+# PromptFlow - Task Management for Claude Code
 
-A task management application for tracking software features, bugs, and tasks with drag-and-drop organization, markdown support, and file attachments.
+Lightweight task/project management app (think Jira, but simpler) designed to work with Claude Code via MCP (Model Context Protocol).
+
+## How I use it
+
+- **Creating work items** - Use the web UI to record all your ideas into work items (tasks, features, bugs).
+- **Plan** - Use `/plan <id>` for complex features/tasks. No hard-to-track .md files everywhere, plan is attached to the work item.
+- **Implementation** - `/implement <id>` reads the work item details, including plan and any attachments (e.g. images) and starts coding.
+
+## Key Features
+
+- Copy button to quickly copy work item IDs to Claude Code
+- Auto-generate work items from Claude
+- Change history tracking
+- Integrated markdown viewer
+- Attachment support (images and other documents)
+- Multi-project support
+- Sections (Features & Bugs, custom sections)
+- Break down features into sub-tasks
+- Categories for grouping items
+- Drag & drop reordering
+- Item status tracking (Open → In Progress → Done)
+- Item priority, complexity, custom tags
+- Light/Dark/System themes
+- File-based storage (no database needed)
+- Runs locally on your machine
 
 ## Quick Start (Fresh Windows Installation)
 
 Complete guide to get TaskList running on a fresh Windows install.
+
+## Why I built this
+
+- I needed a way to organize tasks on my personal projects. Thus far I just used a text editor with a bunch of lists/notes to keep track, but it was messy and not manageable.	
+- Keeping track of all Claude prompts was also becoming messy, and I would often lose good prompts. This way I can always keep them around in the work items.
+- Keeping track of all the plan files was becoming messy, some were in .claude/plans folder with non-identifiable names, others were scattered over the project folder.
 
 ### Step 1: Install Node.js
 

@@ -6,7 +6,8 @@
       "mcp__tasklist__create",
       "mcp__tasklist__update",
       "mcp__tasklist__list",
-      "mcp__tasklist__read"
+      "mcp__tasklist__read",
+      "Bash(grep:*)"
     ]
   }
 }

@@ -23,8 +23,9 @@ const LEGACY_ATTACHMENTS_DIR = path.join(DATA_DIR, 'attachments');
 // Valid statuses
 const VALID_STATUSES = ['open', 'in-progress', 'done'];
 
-// Get active project ID from request header or settings
-async function getActiveProjectId(req) {
+// Get active project ID from explicit param, request header, or settings
+async function getActiveProjectId(explicitProjectId, req) {
+  if (explicitProjectId) return explicitProjectId;
   const headerProjectId = req?.headers?.['x-project-id'];
   if (headerProjectId) return headerProjectId;
   const settings = await loadSettings();
@@ -32,22 +33,22 @@ async function getActiveProjectId(req) {
 }
 
 // Get data file path for active project
-async function getDataFilePath(req) {
-  const projectId = await getActiveProjectId(req);
+async function getDataFilePath(explicitProjectId, req) {
+  const projectId = await getActiveProjectId(explicitProjectId, req);
   if (!projectId) return LEGACY_DATA_FILE;
   return getProjectDataPath(projectId);
 }
 
 // Get attachments directory for active project
-async function getAttachmentsDir(req) {
-  const projectId = await getActiveProjectId(req);
+async function getAttachmentsDir(explicitProjectId, req) {
+  const projectId = await getActiveProjectId(explicitProjectId, req);
   if (!projectId) return LEGACY_ATTACHMENTS_DIR;
   return path.join(getProjectDir(projectId), 'attachments');
 }
 
-// Load data helper - now project-aware
-async function loadData(req) {
-  const dataFile = await getDataFilePath(req);
+// Load data helper - now project-aware (accepts explicit projectId or falls back to req/settings)
+async function loadData(projectId, req) {
+  const dataFile = await getDataFilePath(projectId, req);
   try {
     const content = await fs.readFile(dataFile, 'utf-8');
     return JSON.parse(content);
@@ -60,9 +61,9 @@ async function loadData(req) {
 }
 
 // Save data atomically - now project-aware
-async function saveData(data, req) {
+async function saveData(data, projectId, req) {
   data.lastModified = new Date().toISOString();
-  const dataFile = await getDataFilePath(req);
+  const dataFile = await getDataFilePath(projectId, req);
   const parentDir = path.dirname(dataFile);
   try {
     await fs.access(parentDir);
@@ -108,6 +109,9 @@ function getDefaultData() {
   };
 }
 
+// Common projectId property for tool schemas
+const PROJECT_ID_PROP = { type: 'string', description: 'Target project ID (optional, defaults to active project)' };
+
 // MCP Tool Definitions - 6 consolidated tools
 const TOOLS = [
   {
@@ -118,7 +122,8 @@ const TOOLS = [
       properties: {
         query: { type: 'string', description: 'Search query' },
         itemType: { type: 'string', enum: ['all', 'feature', 'bug', 'task'], description: 'Filter by type (default: all)' },
-        status: { type: 'string', enum: ['open', 'in-progress', 'done'], description: 'Filter by status' }
+        status: { type: 'string', enum: ['open', 'in-progress', 'done'], description: 'Filter by status' },
+        projectId: PROJECT_ID_PROP
       },
       required: ['query']
     }
@@ -130,7 +135,8 @@ const TOOLS = [
       type: 'object',
       properties: {
         type: { type: 'string', enum: ['feature', 'bug', 'task'], description: 'Type of item' },
-        id: { type: 'string', description: 'ID of the item' }
+        id: { type: 'string', description: 'ID of the item' },
+        projectId: PROJECT_ID_PROP
       },
       required: ['type', 'id']
     }
@@ -148,7 +154,8 @@ const TOOLS = [
         parentType: { type: 'string', enum: ['feature', 'bug'], description: 'For task/task-category: parent type' },
         parentId: { type: 'string', description: 'For task/task-category: parent ID' },
         categoryId: { type: 'string', description: 'Category to place item in' },
-        priority: { type: 'string', enum: ['low', 'medium', 'high', 'critical'], description: 'Priority (features only)' }
+        priority: { type: 'string', enum: ['low', 'medium', 'high', 'critical'], description: 'Priority (features only)' },
+        projectId: PROJECT_ID_PROP
       },
       required: ['itemType', 'title']
     }
@@ -164,7 +171,8 @@ const TOOLS = [
         updates: { type: 'object', description: 'Properties to update: {title, description, status, ...}' },
         action: { type: 'string', enum: ['delete', 'append_prompt', 'save_plan'], description: 'Special action' },
         promptEntry: { type: 'object', description: 'For append_prompt: {role, content}' },
-        planContent: { type: 'string', description: 'For save_plan: markdown plan content' }
+        planContent: { type: 'string', description: 'For save_plan: markdown plan content' },
+        projectId: PROJECT_ID_PROP
       },
       required: ['type', 'id']
     }
@@ -177,7 +185,8 @@ const TOOLS = [
       properties: {
         listType: { type: 'string', enum: ['projects', 'categories', 'attachments'], description: 'What to list' },
         type: { type: 'string', enum: ['feature', 'bug', 'task'], description: 'Item type (for attachments) or category type (feature/bug for categories). Not needed for projects.' },
-        id: { type: 'string', description: 'Item ID (required for attachments)' }
+        id: { type: 'string', description: 'Item ID (required for attachments)' },
+        projectId: PROJECT_ID_PROP
       },
       required: ['listType']
     }
@@ -193,7 +202,8 @@ const TOOLS = [
         contentType: { type: 'string', enum: ['plan', 'attachment', 'image', 'prompt_history'], description: 'What to read' },
         attachmentId: { type: 'string', description: 'For attachment/image' },
         version: { type: 'number', description: 'For plan: specific version (default: latest)' },
-        limit: { type: 'number', description: 'For prompt_history: max entries' }
+        limit: { type: 'number', description: 'For prompt_history: max entries' },
+        projectId: PROJECT_ID_PROP
       },
       required: ['type', 'id', 'contentType']
     }
@@ -202,10 +212,11 @@ const TOOLS = [
 
 // Tool Handler Functions - 6 consolidated handlers
 // Each handler now takes (args, req) to support project-scoped data
+// projectId in args takes priority over req headers and settings
 const toolHandlers = {
   // 1. SEARCH
-  async search({ query, itemType = 'all', status }, req) {
-    const data = await loadData(req);
+  async search({ query, itemType = 'all', status, projectId }, req) {
+    const data = await loadData(projectId, req);
     const results = [];
     const q = query.toLowerCase();
 
@@ -235,8 +246,8 @@ const toolHandlers = {
   },
 
   // 2. GET
-  async get({ type, id }, req) {
-    const data = await loadData(req);
+  async get({ type, id, projectId }, req) {
+    const data = await loadData(projectId, req);
     let item;
     switch (type) {
       case 'feature': item = data.features[id]; break;
@@ -272,7 +283,7 @@ const toolHandlers = {
   },
 
   // 3. CREATE
-  async create({ itemType, title, description = '', color, parentType, parentId, categoryId, priority }, req) {
+  async create({ itemType, title, description = '', color, parentType, parentId, categoryId, priority, projectId }, req) {
     // Project (doesn't need project-scoped data)
     if (itemType === 'project') {
       const projectsData = await loadProjects();
@@ -304,7 +315,7 @@ const toolHandlers = {
       return project;
     }
 
-    const data = await loadData(req);
+    const data = await loadData(projectId, req);
 
     // Feature
     if (itemType === 'feature') {
@@ -320,7 +331,7 @@ const toolHandlers = {
       } else {
         data.globalFeatureOrder.push(id);
       }
-      await saveData(data, req);
+      await saveData(data, projectId, req);
       return feature;
     }
 
@@ -338,7 +349,7 @@ const toolHandlers = {
       } else {
         data.globalBugOrder.push(id);
       }
-      await saveData(data, req);
+      await saveData(data, projectId, req);
       return bug;
     }
 
@@ -360,7 +371,7 @@ const toolHandlers = {
       } else {
         parent.taskOrder.push(id);
       }
-      await saveData(data, req);
+      await saveData(data, projectId, req);
       return task;
     }
 
@@ -372,7 +383,7 @@ const toolHandlers = {
       const category = { id, name: title, featureOrder: [] };
       data.featureCategories[id] = category;
       data.featureCategoryOrder.push(id);
-      await saveData(data, req);
+      await saveData(data, projectId, req);
       return category;
     }
 
@@ -383,7 +394,7 @@ const toolHandlers = {
       const category = { id, name: title, bugOrder: [] };
       data.bugCategories[id] = category;
       data.bugCategoryOrder.push(id);
-      await saveData(data, req);
+      await saveData(data, projectId, req);
       return category;
     }
 
@@ -397,7 +408,7 @@ const toolHandlers = {
       data.categories[id] = category;
       if (!parent.categoryOrder) parent.categoryOrder = [];
       parent.categoryOrder.push(id);
-      await saveData(data, req);
+      await saveData(data, projectId, req);
       return category;
     }
 
@@ -405,8 +416,8 @@ const toolHandlers = {
   },
 
   // 4. UPDATE (includes delete, append_prompt, save_plan)
-  async update({ type, id, updates, action, promptEntry, planContent }, req) {
-    const data = await loadData(req);
+  async update({ type, id, updates, action, promptEntry, planContent, projectId }, req) {
+    const data = await loadData(projectId, req);
 
     // Delete action
     if (action === 'delete') {
@@ -439,7 +450,7 @@ const toolHandlers = {
         }
         delete data.tasks[id];
       }
-      await saveData(data, req);
+      await saveData(data, projectId, req);
       return { deleted: true, type, id };
     }
 
@@ -458,7 +469,7 @@ const toolHandlers = {
       if (!item.promptHistory) item.promptHistory = [];
       const entry = { id: generateId('ph'), timestamp: new Date().toISOString(), role: promptEntry.role, content: promptEntry.content };
       item.promptHistory.push(entry);
-      await saveData(data, req);
+      await saveData(data, projectId, req);
       return { added: true, entryId: entry.id, totalCount: item.promptHistory.length };
     }
 
@@ -477,7 +488,7 @@ const toolHandlers = {
       const version = existingPlans.length + 1;
       const filename = `PLAN-v${version}.md`;
 
-      const attachmentsDir = await getAttachmentsDir(req);
+      const attachmentsDir = await getAttachmentsDir(projectId, req);
       const itemDir = path.join(attachmentsDir, type, id);
       await fs.mkdir(itemDir, { recursive: true });
       await fs.writeFile(path.join(itemDir, filename), planContent, 'utf-8');
@@ -491,7 +502,7 @@ const toolHandlers = {
       };
       if (!item.attachments) item.attachments = [];
       item.attachments.push(attachment);
-      await saveData(data, req);
+      await saveData(data, projectId, req);
       return { saved: true, version, filename, attachmentId: attachment.id, totalVersions: version, path: fullPath };
     }
 
@@ -515,12 +526,12 @@ const toolHandlers = {
       }
     }
     Object.assign(item, updates);
-    await saveData(data, req);
+    await saveData(data, projectId, req);
     return item;
   },
 
   // 5. LIST (categories, attachments, or projects)
-  async list({ listType, type, id }, req) {
+  async list({ listType, type, id, projectId }, req) {
     // Projects don't need project-scoped data
     if (listType === 'projects') {
       const projectsData = await loadProjects();
@@ -532,7 +543,7 @@ const toolHandlers = {
       };
     }
 
-    const data = await loadData(req);
+    const data = await loadData(projectId, req);
 
     if (listType === 'categories') {
       if (type === 'feature') {
@@ -565,8 +576,8 @@ const toolHandlers = {
   },
 
   // 6. READ (plan, attachment, image, prompt_history)
-  async read({ type, id, contentType, attachmentId, version, limit }, req) {
-    const data = await loadData(req);
+  async read({ type, id, contentType, attachmentId, version, limit, projectId }, req) {
+    const data = await loadData(projectId, req);
     let item;
     switch (type) {
       case 'feature': item = data.features[id]; break;
@@ -602,7 +613,7 @@ const toolHandlers = {
         targetPlan = plans[0];
       }
 
-      const attachmentsDir = await getAttachmentsDir(req);
+      const attachmentsDir = await getAttachmentsDir(projectId, req);
       const filePath = path.join(attachmentsDir, targetPlan.storedPath);
       const content = await fs.readFile(filePath, 'utf-8');
       return { exists: true, version: parseInt(targetPlan.filename.match(/PLAN-v(\d+)/)?.[1]), filename: targetPlan.filename, content, versions };
@@ -620,7 +631,7 @@ const toolHandlers = {
     const attachment = (item.attachments || []).find(a => a.id === attachmentId);
     if (!attachment) throw new Error(`Attachment ${attachmentId} not found`);
 
-    const attachmentsDir = await getAttachmentsDir(req);
+    const attachmentsDir = await getAttachmentsDir(projectId, req);
     const filePath = path.join(attachmentsDir, attachment.storedPath);
 
     if (contentType === 'image') {

@@ -1,14 +1,42 @@
 {
   "version": 3,
-  "lastModified": "2025-12-13T10:11:17.733Z",
-  "features": {},
+  "lastModified": "2025-12-13T11:08:07.492Z",
+  "features": {
+    "feat-uLOlOn9X": {
+      "id": "feat-uLOlOn9X",
+      "title": "Refactor Features/Bugs to generic customizable item types",
+      "description": "Refactor the hardcoded Features and Bugs sections to be generic item types that users can customize. Users should be able to register custom types (e.g., \"Epics\", \"Stories\", \"Improvements\") with their own icons and colors.",
+      "status": "open",
+      "priority": "high",
+      "createdAt": "2025-12-13T11:06:34.372Z",
+      "finishedAt": null,
+      "taskOrder": [],
+      "categoryOrder": [],
+      "categoryId": null
+    },
+    "feat-tTl0myPT": {
+      "id": "feat-tTl0myPT",
+      "title": "Refactor In Progress display to also show in-progress bugs",
+      "description": "Update the In Progress section/display to include bugs that are in-progress, not just features/tasks.",
+      "status": "open",
+      "priority": "medium",
+      "createdAt": "2025-12-13T11:08:07.492Z",
+      "finishedAt": null,
+      "taskOrder": [],
+      "categoryOrder": [],
+      "categoryId": null
+    }
+  },
   "bugs": {},
   "tasks": {},
   "categories": {},
   "tags": {},
   "featureCategories": {},
   "bugCategories": {},
-  "globalFeatureOrder": [],
+  "globalFeatureOrder": [
+    "feat-uLOlOn9X",
+    "feat-tTl0myPT"
+  ],
   "globalBugOrder": [],
   "featureCategoryOrder": [],
   "bugCategoryOrder": [],
