@@ -1,6 +1,6 @@
 {
   "version": 4,
-  "lastModified": "2025-12-13T16:07:53.059Z",
+  "lastModified": "2025-12-13T16:58:17.059Z",
   "sections": {
     "sect-features": {
       "id": "sect-features",
@@ -9,7 +9,8 @@
       "color": "#3b82f6",
       "isSystem": true,
       "itemOrder": [
-        "item-3WbtbPZH",
+        "item-uPlYW3Uc",
+        "item-wYxI7FyT",
         "item-vABtRoNq",
         "item-jn4uzVlP"
       ],
@@ -23,28 +24,17 @@
       "color": "#ef4444",
       "isSystem": true,
       "itemOrder": [
-        "item-MYWfsOeN",
+        "item-cjuJ77p2",
         "item-l0sZkaK0",
-        "item-cjuJ77p2"
+        "item-MYWfsOeN"
       ],
       "categoryOrder": [],
       "createdAt": "2025-12-13T12:02:32.069Z"
-    },
-    "sect-NOProEie": {
-      "id": "sect-NOProEie",
-      "name": "test",
-      "icon": "folder",
-      "color": "#3b82f6",
-      "isSystem": false,
-      "itemOrder": [],
-      "categoryOrder": [],
-      "createdAt": "2025-12-13T16:01:20.776Z"
     }
   },
   "sectionOrder": [
     "sect-features",
-    "sect-bugs",
-    "sect-NOProEie"
+    "sect-bugs"
   ],
   "items": {
     "item-MYWfsOeN": {
@@ -148,7 +138,7 @@
       "sectionId": "sect-bugs",
       "title": "Categories can no longer be reordered",
       "description": "",
-      "status": "open",
+      "status": "done",
       "priority": "medium",
       "complexity": null,
       "categoryId": null,
@@ -158,6 +148,40 @@
       "promptHistory": [],
       "tagIds": [],
       "createdAt": "2025-12-13T16:07:44.646Z",
+      "finishedAt": "2025-12-13T16:17:05.051Z"
+    },
+    "item-wYxI7FyT": {
+      "id": "item-wYxI7FyT",
+      "sectionId": "sect-features",
+      "title": "Ability to promote tasks to features",
+      "description": "",
+      "status": "open",
+      "priority": "medium",
+      "complexity": null,
+      "categoryId": null,
+      "taskOrder": [],
+      "categoryOrder": [],
+      "attachments": [],
+      "promptHistory": [],
+      "tagIds": [],
+      "createdAt": "2025-12-13T16:12:19.035Z",
+      "finishedAt": null
+    },
+    "item-uPlYW3Uc": {
+      "id": "item-uPlYW3Uc",
+      "sectionId": "sect-features",
+      "title": "Ability to move features/bugs between sections",
+      "description": "",
+      "status": "open",
+      "priority": "medium",
+      "complexity": null,
+      "categoryId": null,
+      "taskOrder": [],
+      "categoryOrder": [],
+      "attachments": [],
+      "promptHistory": [],
+      "tagIds": [],
+      "createdAt": "2025-12-13T16:12:32.300Z",
       "finishedAt": null
     }
   },

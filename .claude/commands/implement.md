@@ -17,26 +17,28 @@ Implement a feature, bug, or task from the PromptFlow application.
 ## MCP Tool Reference
 
 ```javascript
-// Search for item
+// Search for item (itemType: 'all' | 'item' | 'task')
 search({ query: 'item name', itemType: 'all' })
 
-// Get full item details
-get({ type: 'task', id: 'task-xxx' })
+// Get full item details (type: 'item' | 'task')
+// IDs: feat-xxx for features, bug-xxx for bugs, task-xxx for tasks
+get({ type: 'item', id: '<item-id>' })
+get({ type: 'task', id: '<task-id>' })
 
 // Read existing plan
-read({ type: 'task', id: 'task-xxx', contentType: 'plan' })
+read({ type: 'item', id: '<item-id>', contentType: 'plan' })
 
 // Read image attachment
-read({ type: 'task', id: 'task-xxx', contentType: 'image', attachmentId: 'att-xxx' })
+read({ type: 'item', id: '<item-id>', contentType: 'image', attachmentId: 'att-xxx' })
 
 // Mark in-progress
-update({ type: 'task', id: 'task-xxx', updates: { status: 'in-progress' } })
+update({ type: 'item', id: '<item-id>', updates: { status: 'in-progress' } })
 
 // Mark done
-update({ type: 'task', id: 'task-xxx', updates: { status: 'done' } })
+update({ type: 'item', id: '<item-id>', updates: { status: 'done' } })
 
 // Record implementation notes
-update({ type: 'task', id: 'task-xxx', action: 'append_prompt', promptEntry: { role: 'assistant', content: 'Implemented: ...' } })
+update({ type: 'item', id: '<item-id>', action: 'append_prompt', promptEntry: { role: 'assistant', content: 'Implemented: ...' } })
 ```
 
 ## Example

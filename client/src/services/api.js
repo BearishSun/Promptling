@@ -54,18 +54,6 @@ export const tasksApi = {
   updateItemCategory: (id, data) => api.patch(`/tasks/item-category/${id}`, data).then(res => res.data),
   deleteItemCategory: (id) => api.delete(`/tasks/item-category/${id}`).then(res => res.data),
 
-  // ============ LEGACY API (backward compat) ============
-
-  // Features (maps to items in Features section)
-  createFeature: (data) => api.post('/tasks/feature', data).then(res => res.data),
-  updateFeature: (id, data) => api.patch(`/tasks/feature/${id}`, data).then(res => res.data),
-  deleteFeature: (id) => api.delete(`/tasks/feature/${id}`).then(res => res.data),
-
-  // Bugs (maps to items in Bugs section)
-  createBug: (data) => api.post('/tasks/bug', data).then(res => res.data),
-  updateBug: (id, data) => api.patch(`/tasks/bug/${id}`, data).then(res => res.data),
-  deleteBug: (id) => api.delete(`/tasks/bug/${id}`).then(res => res.data),
-
   // Tasks
   createTask: (data) => api.post('/tasks/task', data).then(res => res.data),
   updateTask: (id, data) => api.patch(`/tasks/task/${id}`, data).then(res => res.data),
@@ -88,18 +76,6 @@ export const tasksApi = {
   createTag: (data) => api.post('/tasks/tag', data).then(res => res.data),
   updateTag: (id, data) => api.patch(`/tasks/tag/${id}`, data).then(res => res.data),
   deleteTag: (id) => api.delete(`/tasks/tag/${id}`).then(res => res.data),
-
-  // Feature Categories (legacy - maps to item categories in Features section)
-  createFeatureCategory: (data) => api.post('/tasks/feature-category', data).then(res => res.data),
-  updateFeatureCategory: (id, data) => api.patch(`/tasks/feature-category/${id}`, data).then(res => res.data),
-  deleteFeatureCategory: (id) => api.delete(`/tasks/feature-category/${id}`).then(res => res.data),
-  moveFeature: (data) => api.put('/tasks/move-feature', data).then(res => res.data),
-
-  // Bug Categories (legacy - maps to item categories in Bugs section)
-  createBugCategory: (data) => api.post('/tasks/bug-category', data).then(res => res.data),
-  updateBugCategory: (id, data) => api.patch(`/tasks/bug-category/${id}`, data).then(res => res.data),
-  deleteBugCategory: (id) => api.delete(`/tasks/bug-category/${id}`).then(res => res.data),
-  moveBug: (data) => api.put('/tasks/move-bug', data).then(res => res.data),
 
   // Import/Export
   exportData: () => api.get('/tasks/export').then(res => res.data),

@@ -49,16 +49,6 @@ export function TaskProvider({ children }) {
       if (!loadedData.tasks) loadedData.tasks = {};
       if (!loadedData.taskCategories) loadedData.taskCategories = {};
       if (!loadedData.tags) loadedData.tags = {};
-      // Backward compat - ensure legacy objects exist for components still using them
-      if (!loadedData.features) loadedData.features = {};
-      if (!loadedData.bugs) loadedData.bugs = {};
-      if (!loadedData.categories) loadedData.categories = {};
-      if (!loadedData.featureCategories) loadedData.featureCategories = {};
-      if (!loadedData.bugCategories) loadedData.bugCategories = {};
-      if (!loadedData.globalFeatureOrder) loadedData.globalFeatureOrder = [];
-      if (!loadedData.globalBugOrder) loadedData.globalBugOrder = [];
-      if (!loadedData.featureCategoryOrder) loadedData.featureCategoryOrder = [];
-      if (!loadedData.bugCategoryOrder) loadedData.bugCategoryOrder = [];
       setData(loadedData);
       // Restore UI state from settings
       if (loadedData.settings) {
@@ -344,278 +334,18 @@ export function TaskProvider({ children }) {
       );
     },
 
-    // ============ LEGACY API (backward compat) ============
-
-    // Features (maps to items in Features section)
-    createFeature: async (title = 'New Feature') => {
-      const feature = await tasksApi.createFeature({ title });
-      setData(prev => ({
-        ...prev,
-        items: { ...prev.items, [feature.id]: feature },
-        features: { ...prev.features, [feature.id]: feature },
-        sections: {
-          ...prev.sections,
-          [SYSTEM_SECTIONS.FEATURES]: {
-            ...prev.sections[SYSTEM_SECTIONS.FEATURES],
-            itemOrder: [...(prev.sections[SYSTEM_SECTIONS.FEATURES]?.itemOrder || []), feature.id]
-          }
-        },
-        globalFeatureOrder: [...(prev.globalFeatureOrder || []), feature.id]
-      }));
-      return feature;
-    },
-
-    updateFeature: (id, updates) => {
+    // Reorder item categories within a section
+    reorderItemCategories: (sectionId, newOrder) => {
       optimisticUpdate(
         prev => ({
           ...prev,
-          items: {
-            ...prev.items,
-            [id]: { ...prev.items[id], ...updates }
-          },
-          features: {
-            ...prev.features,
-            [id]: { ...prev.features[id], ...updates }
+          sections: {
+            ...prev.sections,
+            [sectionId]: { ...prev.sections[sectionId], categoryOrder: newOrder }
           }
         }),
-        () => tasksApi.updateFeature(id, updates)
+        () => tasksApi.reorder('section-categories', sectionId, newOrder)
       );
-    },
-
-    deleteFeature: async (id) => {
-      await tasksApi.deleteFeature(id);
-      setData(prev => {
-        const newItems = { ...prev.items };
-        const newFeatures = { ...prev.features };
-        const newTasks = { ...prev.tasks };
-        const newTaskCategories = { ...prev.taskCategories };
-        const newCategories = { ...prev.categories };
-        const newSections = { ...prev.sections };
-
-        const item = newItems[id];
-        if (item) {
-          for (const taskId of item.taskOrder || []) {
-            delete newTasks[taskId];
-          }
-          for (const catId of item.categoryOrder || []) {
-            delete newTaskCategories[catId];
-          }
-        }
-        // Legacy cleanup
-        Object.values(prev.categories || {})
-          .filter(cat => cat.parentType === 'feature' && cat.parentId === id)
-          .forEach(cat => {
-            for (const taskId of cat.taskOrder || []) {
-              delete newTasks[taskId];
-            }
-            delete newCategories[cat.id];
-          });
-        delete newItems[id];
-        delete newFeatures[id];
-
-        // Update section itemOrder
-        if (newSections[SYSTEM_SECTIONS.FEATURES]) {
-          newSections[SYSTEM_SECTIONS.FEATURES] = {
-            ...newSections[SYSTEM_SECTIONS.FEATURES],
-            itemOrder: newSections[SYSTEM_SECTIONS.FEATURES].itemOrder.filter(iid => iid !== id)
-          };
-        }
-
-        return {
-          ...prev,
-          items: newItems,
-          features: newFeatures,
-          tasks: newTasks,
-          taskCategories: newTaskCategories,
-          categories: newCategories,
-          sections: newSections,
-          globalFeatureOrder: (prev.globalFeatureOrder || []).filter(fid => fid !== id)
-        };
-      });
-    },
-
-    // Bugs (maps to items in Bugs section)
-    createBug: async (title = 'New Bug') => {
-      const bug = await tasksApi.createBug({ title });
-      setData(prev => ({
-        ...prev,
-        items: { ...prev.items, [bug.id]: bug },
-        bugs: { ...prev.bugs, [bug.id]: bug },
-        sections: {
-          ...prev.sections,
-          [SYSTEM_SECTIONS.BUGS]: {
-            ...prev.sections[SYSTEM_SECTIONS.BUGS],
-            itemOrder: [...(prev.sections[SYSTEM_SECTIONS.BUGS]?.itemOrder || []), bug.id]
-          }
-        },
-        globalBugOrder: [...(prev.globalBugOrder || []), bug.id]
-      }));
-      return bug;
-    },
-
-    updateBug: (id, updates) => {
-      optimisticUpdate(
-        prev => ({
-          ...prev,
-          items: {
-            ...prev.items,
-            [id]: { ...prev.items[id], ...updates }
-          },
-          bugs: {
-            ...prev.bugs,
-            [id]: { ...prev.bugs[id], ...updates }
-          }
-        }),
-        () => tasksApi.updateBug(id, updates)
-      );
-    },
-
-    deleteBug: async (id) => {
-      await tasksApi.deleteBug(id);
-      setData(prev => {
-        const newItems = { ...prev.items };
-        const newBugs = { ...prev.bugs };
-        const newTasks = { ...prev.tasks };
-        const newTaskCategories = { ...prev.taskCategories };
-        const newCategories = { ...prev.categories };
-        const newSections = { ...prev.sections };
-
-        const item = newItems[id];
-        if (item) {
-          for (const taskId of item.taskOrder || []) {
-            delete newTasks[taskId];
-          }
-          for (const catId of item.categoryOrder || []) {
-            delete newTaskCategories[catId];
-          }
-        }
-        Object.values(prev.categories || {})
-          .filter(cat => cat.parentType === 'bug' && cat.parentId === id)
-          .forEach(cat => {
-            for (const taskId of cat.taskOrder || []) {
-              delete newTasks[taskId];
-            }
-            delete newCategories[cat.id];
-          });
-        delete newItems[id];
-        delete newBugs[id];
-
-        // Update section itemOrder
-        if (newSections[SYSTEM_SECTIONS.BUGS]) {
-          newSections[SYSTEM_SECTIONS.BUGS] = {
-            ...newSections[SYSTEM_SECTIONS.BUGS],
-            itemOrder: newSections[SYSTEM_SECTIONS.BUGS].itemOrder.filter(iid => iid !== id)
-          };
-        }
-
-        return {
-          ...prev,
-          items: newItems,
-          bugs: newBugs,
-          tasks: newTasks,
-          taskCategories: newTaskCategories,
-          categories: newCategories,
-          sections: newSections,
-          globalBugOrder: (prev.globalBugOrder || []).filter(bid => bid !== id)
-        };
-      });
-    },
-
-    // Convert feature or bug to a task of another feature
-    convertToTask: async (sourceType, sourceId, targetFeatureId) => {
-      // Get the source item
-      const sourceItem = sourceType === 'feature'
-        ? data?.features?.[sourceId]
-        : data?.bugs?.[sourceId];
-
-      if (!sourceItem || !data?.features?.[targetFeatureId]) return null;
-      if (sourceType === 'feature' && sourceId === targetFeatureId) return null;
-
-      // Create the task with the source's data
-      const task = await tasksApi.createTask({
-        parentType: 'feature',
-        parentId: targetFeatureId,
-        categoryId: null,
-        title: sourceItem.title,
-        description: sourceItem.description || ''
-      });
-
-      // Delete the original
-      if (sourceType === 'feature') {
-        await tasksApi.deleteFeature(sourceId);
-      } else {
-        await tasksApi.deleteBug(sourceId);
-      }
-
-      // Update state
-      setData(prev => {
-        const updated = {
-          ...prev,
-          tasks: { ...prev.tasks, [task.id]: task },
-          features: {
-            ...prev.features,
-            [targetFeatureId]: {
-              ...prev.features[targetFeatureId],
-              taskOrder: [...(prev.features[targetFeatureId].taskOrder || []), task.id]
-            }
-          }
-        };
-
-        // Remove the source item
-        if (sourceType === 'feature') {
-          const newFeatures = { ...updated.features };
-          delete newFeatures[sourceId];
-          updated.features = newFeatures;
-          updated.globalFeatureOrder = prev.globalFeatureOrder.filter(id => id !== sourceId);
-          // Clean up tasks and categories of the deleted feature
-          const deletedFeature = prev.features[sourceId];
-          if (deletedFeature) {
-            const newTasks = { ...updated.tasks };
-            const newCategories = { ...prev.categories };
-            for (const taskId of deletedFeature.taskOrder || []) {
-              delete newTasks[taskId];
-            }
-            Object.values(prev.categories || {})
-              .filter(cat => cat.parentType === 'feature' && cat.parentId === sourceId)
-              .forEach(cat => {
-                for (const taskId of cat.taskOrder || []) {
-                  delete newTasks[taskId];
-                }
-                delete newCategories[cat.id];
-              });
-            updated.tasks = newTasks;
-            updated.categories = newCategories;
-          }
-        } else {
-          const newBugs = { ...prev.bugs };
-          delete newBugs[sourceId];
-          updated.bugs = newBugs;
-          updated.globalBugOrder = prev.globalBugOrder.filter(id => id !== sourceId);
-          // Clean up tasks and categories of the deleted bug
-          const deletedBug = prev.bugs[sourceId];
-          if (deletedBug) {
-            const newTasks = { ...updated.tasks };
-            const newCategories = { ...prev.categories };
-            for (const taskId of deletedBug.taskOrder || []) {
-              delete newTasks[taskId];
-            }
-            Object.values(prev.categories || {})
-              .filter(cat => cat.parentType === 'bug' && cat.parentId === sourceId)
-              .forEach(cat => {
-                for (const taskId of cat.taskOrder || []) {
-                  delete newTasks[taskId];
-                }
-                delete newCategories[cat.id];
-              });
-            updated.tasks = newTasks;
-            updated.categories = newCategories;
-          }
-        }
-
-        return updated;
-      });
-
-      return task;
     },
 
     // Tasks
@@ -627,28 +357,21 @@ export function TaskProvider({ children }) {
           tasks: { ...prev.tasks, [task.id]: task }
         };
 
-        if (categoryId && prev.categories[categoryId]) {
-          updated.categories = {
-            ...prev.categories,
+        // v4: parentId is the itemId
+        if (categoryId && prev.taskCategories[categoryId]) {
+          updated.taskCategories = {
+            ...prev.taskCategories,
             [categoryId]: {
-              ...prev.categories[categoryId],
-              taskOrder: [...prev.categories[categoryId].taskOrder, task.id]
+              ...prev.taskCategories[categoryId],
+              taskOrder: [...prev.taskCategories[categoryId].taskOrder, task.id]
             }
           };
-        } else if (parentType === 'feature' && prev.features[parentId]) {
-          updated.features = {
-            ...prev.features,
+        } else if (prev.items[parentId]) {
+          updated.items = {
+            ...prev.items,
             [parentId]: {
-              ...prev.features[parentId],
-              taskOrder: [...prev.features[parentId].taskOrder, task.id]
-            }
-          };
-        } else if (parentType === 'bug' && prev.bugs[parentId]) {
-          updated.bugs = {
-            ...prev.bugs,
-            [parentId]: {
-              ...prev.bugs[parentId],
-              taskOrder: [...prev.bugs[parentId].taskOrder, task.id]
+              ...prev.items[parentId],
+              taskOrder: [...prev.items[parentId].taskOrder, task.id]
             }
           };
         }
@@ -706,29 +429,21 @@ export function TaskProvider({ children }) {
         };
         delete updated.tasks[id];
 
-        // Remove from parent's task order
-        if (task.categoryId && prev.categories[task.categoryId]) {
-          updated.categories = {
-            ...prev.categories,
+        // v4: Remove from taskCategory or item's taskOrder
+        if (task.categoryId && prev.taskCategories[task.categoryId]) {
+          updated.taskCategories = {
+            ...prev.taskCategories,
             [task.categoryId]: {
-              ...prev.categories[task.categoryId],
-              taskOrder: prev.categories[task.categoryId].taskOrder.filter(tid => tid !== id)
+              ...prev.taskCategories[task.categoryId],
+              taskOrder: prev.taskCategories[task.categoryId].taskOrder.filter(tid => tid !== id)
             }
           };
-        } else if (task.parentType === 'feature' && prev.features[task.parentId]) {
-          updated.features = {
-            ...prev.features,
-            [task.parentId]: {
-              ...prev.features[task.parentId],
-              taskOrder: prev.features[task.parentId].taskOrder.filter(tid => tid !== id)
-            }
-          };
-        } else if (task.parentType === 'bug' && prev.bugs[task.parentId]) {
-          updated.bugs = {
-            ...prev.bugs,
-            [task.parentId]: {
-              ...prev.bugs[task.parentId],
-              taskOrder: prev.bugs[task.parentId].taskOrder.filter(tid => tid !== id)
+        } else if (task.itemId && prev.items[task.itemId]) {
+          updated.items = {
+            ...prev.items,
+            [task.itemId]: {
+              ...prev.items[task.itemId],
+              taskOrder: prev.items[task.itemId].taskOrder.filter(tid => tid !== id)
             }
           };
         }
@@ -737,12 +452,19 @@ export function TaskProvider({ children }) {
       });
     },
 
-    // Categories
+    // Task Categories (within items)
     createCategory: async (parentType, parentId, name = 'New Category') => {
       const category = await tasksApi.createCategory({ parentType, parentId, name });
       setData(prev => ({
         ...prev,
-        categories: { ...prev.categories, [category.id]: category }
+        taskCategories: { ...prev.taskCategories, [category.id]: category },
+        items: {
+          ...prev.items,
+          [parentId]: {
+            ...prev.items[parentId],
+            categoryOrder: [...(prev.items[parentId]?.categoryOrder || []), category.id]
+          }
+        }
       }));
       return category;
     },
@@ -751,9 +473,9 @@ export function TaskProvider({ children }) {
       optimisticUpdate(
         prev => ({
           ...prev,
-          categories: {
-            ...prev.categories,
-            [id]: { ...prev.categories[id], ...updates }
+          taskCategories: {
+            ...prev.taskCategories,
+            [id]: { ...prev.taskCategories[id], ...updates }
           }
         }),
         () => tasksApi.updateCategory(id, updates)
@@ -765,48 +487,25 @@ export function TaskProvider({ children }) {
       await loadData(); // Reload to get proper task reassignment
     },
 
-    // Reorder
-    reorderFeatures: (newOrder) => {
-      optimisticUpdate(
-        prev => ({ ...prev, globalFeatureOrder: newOrder }),
-        () => tasksApi.reorder('features', null, newOrder)
-      );
-    },
-
-    reorderBugs: (newOrder) => {
-      optimisticUpdate(
-        prev => ({ ...prev, globalBugOrder: newOrder }),
-        () => tasksApi.reorder('bugs', null, newOrder)
-      );
-    },
-
+    // Reorder tasks within a parent (item or taskCategory)
     reorderTasks: (parentId, newOrder, isCategory = false) => {
       optimisticUpdate(
         prev => {
-          if (isCategory) {
+          if (isCategory && prev.taskCategories[parentId]) {
             return {
               ...prev,
-              categories: {
-                ...prev.categories,
-                [parentId]: { ...prev.categories[parentId], taskOrder: newOrder }
+              taskCategories: {
+                ...prev.taskCategories,
+                [parentId]: { ...prev.taskCategories[parentId], taskOrder: newOrder }
               }
             };
           }
-          if (prev.features[parentId]) {
+          if (prev.items[parentId]) {
             return {
               ...prev,
-              features: {
-                ...prev.features,
-                [parentId]: { ...prev.features[parentId], taskOrder: newOrder }
-              }
-            };
-          }
-          if (prev.bugs[parentId]) {
-            return {
-              ...prev,
-              bugs: {
-                ...prev.bugs,
-                [parentId]: { ...prev.bugs[parentId], taskOrder: newOrder }
+              items: {
+                ...prev.items,
+                [parentId]: { ...prev.items[parentId], taskOrder: newOrder }
               }
             };
           }
@@ -816,139 +515,18 @@ export function TaskProvider({ children }) {
       );
     },
 
-    // Feature Categories
-    createFeatureCategory: async (name = 'New Category') => {
-      const category = await tasksApi.createFeatureCategory({ name });
-      setData(prev => ({
-        ...prev,
-        featureCategories: { ...prev.featureCategories, [category.id]: category },
-        featureCategoryOrder: [...(prev.featureCategoryOrder || []), category.id]
-      }));
-      return category;
-    },
-
-    updateFeatureCategory: (id, updates) => {
-      optimisticUpdate(
-        prev => ({
-          ...prev,
-          featureCategories: {
-            ...prev.featureCategories,
-            [id]: { ...prev.featureCategories[id], ...updates }
-          }
-        }),
-        () => tasksApi.updateFeatureCategory(id, updates)
-      );
-    },
-
-    deleteFeatureCategory: async (id) => {
-      await tasksApi.deleteFeatureCategory(id);
-      await loadData();
-    },
-
-    moveFeatureToCategory: async (featureId, targetCategoryId) => {
-      await tasksApi.moveFeature({ featureId, targetCategoryId });
-      await loadData();
-    },
-
-    reorderFeatureCategories: (newOrder) => {
-      optimisticUpdate(
-        prev => ({ ...prev, featureCategoryOrder: newOrder }),
-        () => tasksApi.reorder('feature-categories', null, newOrder)
-      );
-    },
-
-    reorderFeaturesInCategory: (categoryId, newOrder) => {
-      optimisticUpdate(
-        prev => ({
-          ...prev,
-          featureCategories: {
-            ...prev.featureCategories,
-            [categoryId]: { ...prev.featureCategories[categoryId], featureOrder: newOrder }
-          }
-        }),
-        () => tasksApi.reorder('features-in-category', categoryId, newOrder)
-      );
-    },
-
-    // Bug Categories
-    createBugCategory: async (name = 'New Category') => {
-      const category = await tasksApi.createBugCategory({ name });
-      setData(prev => ({
-        ...prev,
-        bugCategories: { ...prev.bugCategories, [category.id]: category },
-        bugCategoryOrder: [...(prev.bugCategoryOrder || []), category.id]
-      }));
-      return category;
-    },
-
-    updateBugCategory: (id, updates) => {
-      optimisticUpdate(
-        prev => ({
-          ...prev,
-          bugCategories: {
-            ...prev.bugCategories,
-            [id]: { ...prev.bugCategories[id], ...updates }
-          }
-        }),
-        () => tasksApi.updateBugCategory(id, updates)
-      );
-    },
-
-    deleteBugCategory: async (id) => {
-      await tasksApi.deleteBugCategory(id);
-      await loadData();
-    },
-
-    moveBugToCategory: async (bugId, targetCategoryId) => {
-      await tasksApi.moveBug({ bugId, targetCategoryId });
-      await loadData();
-    },
-
-    reorderBugCategories: (newOrder) => {
-      optimisticUpdate(
-        prev => ({ ...prev, bugCategoryOrder: newOrder }),
-        () => tasksApi.reorder('bug-categories', null, newOrder)
-      );
-    },
-
-    reorderBugsInCategory: (categoryId, newOrder) => {
-      optimisticUpdate(
-        prev => ({
-          ...prev,
-          bugCategories: {
-            ...prev.bugCategories,
-            [categoryId]: { ...prev.bugCategories[categoryId], bugOrder: newOrder }
-          }
-        }),
-        () => tasksApi.reorder('bugs-in-category', categoryId, newOrder)
-      );
-    },
-
-    // Reorder task categories within a feature/bug
+    // Reorder task categories within an item
     reorderCategories: (parentType, parentId, newOrder) => {
-      if (parentType === 'feature') {
-        optimisticUpdate(
-          prev => ({
-            ...prev,
-            features: {
-              ...prev.features,
-              [parentId]: { ...prev.features[parentId], categoryOrder: newOrder }
-            }
-          }),
-          () => tasksApi.reorder('categories', parentId, newOrder)
-        );
-      } else if (parentType === 'bug') {
-        optimisticUpdate(
-          prev => ({
-            ...prev,
-            bugs: {
-              ...prev.bugs,
-              [parentId]: { ...prev.bugs[parentId], categoryOrder: newOrder }
-            }
-          }),
-          () => tasksApi.reorder('categories', parentId, newOrder)
-        );
-      }
+      optimisticUpdate(
+        prev => ({
+          ...prev,
+          items: {
+            ...prev.items,
+            [parentId]: { ...prev.items[parentId], categoryOrder: newOrder }
+          }
+        }),
+        () => tasksApi.reorder('categories', parentId, newOrder)
+      );
     },
 
     // Tags
@@ -1063,15 +641,9 @@ export function TaskProvider({ children }) {
     // Attachments
     uploadAttachment: async (itemType, itemId, file) => {
       const attachment = await tasksApi.uploadAttachment(itemType, itemId, file);
-      // Update local state
+      // Update local state (v4: feature/bug/item are all in items)
       setData(prev => {
-        let collection;
-        switch (itemType) {
-          case 'task': collection = 'tasks'; break;
-          case 'feature': collection = 'features'; break;
-          case 'bug': collection = 'bugs'; break;
-          default: return prev;
-        }
+        const collection = itemType === 'task' ? 'tasks' : 'items';
         const item = prev[collection]?.[itemId];
         if (!item) return prev;
         return {
@@ -1090,15 +662,9 @@ export function TaskProvider({ children }) {
 
     deleteAttachment: async (itemType, itemId, attachmentId) => {
       await tasksApi.deleteAttachment(itemType, itemId, attachmentId);
-      // Update local state
+      // Update local state (v4: feature/bug/item are all in items)
       setData(prev => {
-        let collection;
-        switch (itemType) {
-          case 'task': collection = 'tasks'; break;
-          case 'feature': collection = 'features'; break;
-          case 'bug': collection = 'bugs'; break;
-          default: return prev;
-        }
+        const collection = itemType === 'task' ? 'tasks' : 'items';
         const item = prev[collection]?.[itemId];
         if (!item) return prev;
         return {
@@ -1250,18 +816,6 @@ export function useUIState() {
 export function useTask(taskId) {
   const { data } = useTaskData();
   return useMemo(() => data?.tasks?.[taskId] || null, [data?.tasks, taskId]);
-}
-
-// Selector hook for specific feature
-export function useFeature(featureId) {
-  const { data } = useTaskData();
-  return useMemo(() => data?.features?.[featureId] || null, [data?.features, featureId]);
-}
-
-// Selector hook for specific bug
-export function useBug(bugId) {
-  const { data } = useTaskData();
-  return useMemo(() => data?.bugs?.[bugId] || null, [data?.bugs, bugId]);
 }
 
 // V4 selector hooks

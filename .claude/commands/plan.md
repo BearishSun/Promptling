@@ -22,26 +22,27 @@ Create or iterate on an implementation plan for a feature, bug, or task from the
 ## MCP Tool Reference
 
 ```javascript
-// Search for item
+// Search for item (itemType: 'all' | 'item' | 'task')
 search({ query: 'item name', itemType: 'all' })
 
-// Get full item details
-get({ type: 'feature', id: 'feat-xxx' })
+// Get full item details (type: 'item' | 'task')
+// IDs: feat-xxx for features, bug-xxx for bugs, task-xxx for tasks
+get({ type: 'item', id: '<item-id>' })
 
 // Read existing plan
-read({ type: 'feature', id: 'feat-xxx', contentType: 'plan' })
+read({ type: 'item', id: '<item-id>', contentType: 'plan' })
 
 // Read image attachment
-read({ type: 'feature', id: 'feat-xxx', contentType: 'image', attachmentId: 'att-xxx' })
+read({ type: 'item', id: '<item-id>', contentType: 'image', attachmentId: 'att-xxx' })
 
 // Read prompt history
-read({ type: 'feature', id: 'feat-xxx', contentType: 'prompt_history' })
+read({ type: 'item', id: '<item-id>', contentType: 'prompt_history' })
 
 // Save plan (auto-versions)
-update({ type: 'feature', id: 'feat-xxx', action: 'save_plan', planContent: '# Plan...' })
+update({ type: 'item', id: '<item-id>', action: 'save_plan', planContent: '# Plan...' })
 
 // Append to prompt history
-update({ type: 'feature', id: 'feat-xxx', action: 'append_prompt', promptEntry: { role: 'assistant', content: 'Created plan v1' } })
+update({ type: 'item', id: '<item-id>', action: 'append_prompt', promptEntry: { role: 'assistant', content: 'Created plan v1' } })
 ```
 
 ## Plan Format

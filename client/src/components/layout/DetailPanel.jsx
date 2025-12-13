@@ -123,7 +123,7 @@ const getItemTypeLabel = (type, item, data) => {
 
 function DetailPanel() {
   const { data } = useTaskData();
-  const { updateTask, deleteTask, updateFeature, deleteFeature, updateBug, deleteBug, updateItem, deleteItem, createTag, addTagToTask, removeTagFromTask, uploadAttachment, deleteAttachment } = useTaskActions();
+  const { updateTask, deleteTask, updateItem, deleteItem, createTag, addTagToTask, removeTagFromTask, uploadAttachment, deleteAttachment } = useTaskActions();
   const { selectedItemType, selectedItemId, clearSelection } = useUIState();
   const [editTitle, setEditTitle] = useState('');
   const [isEditingTitle, setIsEditingTitle] = useState(false);
@@ -143,8 +143,6 @@ function DetailPanel() {
     if (!selectedItemId || !selectedItemType) return null;
     switch (selectedItemType) {
       case 'task': return data?.tasks?.[selectedItemId];
-      case 'feature': return data?.features?.[selectedItemId] || data?.items?.[selectedItemId];
-      case 'bug': return data?.bugs?.[selectedItemId] || data?.items?.[selectedItemId];
       case 'item': return data?.items?.[selectedItemId];
       default: return null;
     }
@@ -175,61 +173,34 @@ function DetailPanel() {
 
   const handleTitleSubmit = useCallback(() => {
     if (editTitle.trim() && editTitle !== item?.title) {
-      switch (selectedItemType) {
-        case 'task':
-          updateTask(selectedItemId, { title: editTitle.trim() });
-          break;
-        case 'feature':
-          updateFeature(selectedItemId, { title: editTitle.trim() });
-          break;
-        case 'bug':
-          updateBug(selectedItemId, { title: editTitle.trim() });
-          break;
-        case 'item':
-          updateItem(selectedItemId, { title: editTitle.trim() });
-          break;
+      if (selectedItemType === 'task') {
+        updateTask(selectedItemId, { title: editTitle.trim() });
+      } else if (selectedItemType === 'item') {
+        updateItem(selectedItemId, { title: editTitle.trim() });
       }
     }
     setIsEditingTitle(false);
-  }, [editTitle, item?.title, selectedItemType, selectedItemId, updateTask, updateFeature, updateBug, updateItem]);
+  }, [editTitle, item?.title, selectedItemType, selectedItemId, updateTask, updateItem]);
 
   const handleDescriptionChange = useCallback((description) => {
-    switch (selectedItemType) {
-      case 'task':
-        updateTask(selectedItemId, { description });
-        break;
-      case 'feature':
-        updateFeature(selectedItemId, { description });
-        break;
-      case 'bug':
-        updateBug(selectedItemId, { description });
-        break;
-      case 'item':
-        updateItem(selectedItemId, { description });
-        break;
+    if (selectedItemType === 'task') {
+      updateTask(selectedItemId, { description });
+    } else if (selectedItemType === 'item') {
+      updateItem(selectedItemId, { description });
     }
-  }, [selectedItemType, selectedItemId, updateTask, updateFeature, updateBug, updateItem]);
+  }, [selectedItemType, selectedItemId, updateTask, updateItem]);
 
   const handleDelete = useCallback(async () => {
     const label = getItemTypeLabel(selectedItemType, item, data);
     if (!confirm(`Delete this ${label.toLowerCase()}?`)) return;
 
-    switch (selectedItemType) {
-      case 'task':
-        await deleteTask(selectedItemId);
-        break;
-      case 'feature':
-        await deleteFeature(selectedItemId);
-        break;
-      case 'bug':
-        await deleteBug(selectedItemId);
-        break;
-      case 'item':
-        await deleteItem(selectedItemId);
-        break;
+    if (selectedItemType === 'task') {
+      await deleteTask(selectedItemId);
+    } else if (selectedItemType === 'item') {
+      await deleteItem(selectedItemId);
     }
     clearSelection();
-  }, [selectedItemType, selectedItemId, item, data, deleteTask, deleteFeature, deleteBug, deleteItem, clearSelection]);
+  }, [selectedItemType, selectedItemId, item, data, deleteTask, deleteItem, clearSelection]);
 
   const handleStatusChange = useCallback((newStatus) => {
     const updates = { status: newStatus };
@@ -240,55 +211,28 @@ function DetailPanel() {
       updates.finishedAt = null;
     }
 
-    switch (selectedItemType) {
-      case 'task':
-        updateTask(selectedItemId, updates);
-        break;
-      case 'feature':
-        updateFeature(selectedItemId, updates);
-        break;
-      case 'bug':
-        updateBug(selectedItemId, updates);
-        break;
-      case 'item':
-        updateItem(selectedItemId, updates);
-        break;
+    if (selectedItemType === 'task') {
+      updateTask(selectedItemId, updates);
+    } else if (selectedItemType === 'item') {
+      updateItem(selectedItemId, updates);
     }
-  }, [item?.finishedAt, selectedItemType, selectedItemId, updateTask, updateFeature, updateBug, updateItem]);
+  }, [item?.finishedAt, selectedItemType, selectedItemId, updateTask, updateItem]);
 
   const handlePriorityChange = useCallback((newPriority) => {
-    switch (selectedItemType) {
-      case 'task':
-        updateTask(selectedItemId, { priority: newPriority });
-        break;
-      case 'feature':
-        updateFeature(selectedItemId, { priority: newPriority });
-        break;
-      case 'bug':
-        updateBug(selectedItemId, { priority: newPriority });
-        break;
-      case 'item':
-        updateItem(selectedItemId, { priority: newPriority });
-        break;
+    if (selectedItemType === 'task') {
+      updateTask(selectedItemId, { priority: newPriority });
+    } else if (selectedItemType === 'item') {
+      updateItem(selectedItemId, { priority: newPriority });
     }
-  }, [selectedItemType, selectedItemId, updateTask, updateFeature, updateBug, updateItem]);
+  }, [selectedItemType, selectedItemId, updateTask, updateItem]);
 
   const handleComplexityChange = useCallback((newComplexity) => {
-    switch (selectedItemType) {
-      case 'task':
-        updateTask(selectedItemId, { complexity: newComplexity });
-        break;
-      case 'feature':
-        updateFeature(selectedItemId, { complexity: newComplexity });
-        break;
-      case 'bug':
-        updateBug(selectedItemId, { complexity: newComplexity });
-        break;
-      case 'item':
-        updateItem(selectedItemId, { complexity: newComplexity });
-        break;
+    if (selectedItemType === 'task') {
+      updateTask(selectedItemId, { complexity: newComplexity });
+    } else if (selectedItemType === 'item') {
+      updateItem(selectedItemId, { complexity: newComplexity });
     }
-  }, [selectedItemType, selectedItemId, updateTask, updateFeature, updateBug, updateItem]);
+  }, [selectedItemType, selectedItemId, updateTask, updateItem]);
 
   const handleAddTag = useCallback((tagId) => {
     if (selectedItemType === 'task') {

@@ -280,72 +280,10 @@ function migrateToV4(data) {
   return migrated;
 }
 
-// Helper: Create backward-compatible v3-like views from v4 data
-function getBackwardCompatibleViews(data) {
-  const features = {};
-  const bugs = {};
-
-  Object.values(data.items || {}).forEach(item => {
-    const legacyItem = {
-      ...item,
-      parentType: item.sectionId === SYSTEM_SECTIONS.FEATURES ? 'feature' : 'bug'
-    };
-    if (item.sectionId === SYSTEM_SECTIONS.FEATURES) {
-      features[item.id] = legacyItem;
-    } else if (item.sectionId === SYSTEM_SECTIONS.BUGS) {
-      bugs[item.id] = legacyItem;
-    }
-  });
-
-  const categories = {};
-  Object.values(data.taskCategories || {}).forEach(cat => {
-    const item = data.items[cat.itemId];
-    categories[cat.id] = {
-      ...cat,
-      parentType: item?.sectionId === SYSTEM_SECTIONS.FEATURES ? 'feature' : 'bug',
-      parentId: cat.itemId
-    };
-  });
-
-  const tasks = {};
-  Object.values(data.tasks || {}).forEach(task => {
-    const item = data.items[task.itemId];
-    tasks[task.id] = {
-      ...task,
-      parentType: item?.sectionId === SYSTEM_SECTIONS.FEATURES ? 'feature' : 'bug',
-      parentId: task.itemId
-    };
-  });
-
-  const featureCategories = {};
-  const bugCategories = {};
-  Object.values(data.itemCategories || {}).forEach(cat => {
-    if (cat.sectionId === SYSTEM_SECTIONS.FEATURES) {
-      featureCategories[cat.id] = { ...cat, featureOrder: cat.itemOrder || [] };
-    } else if (cat.sectionId === SYSTEM_SECTIONS.BUGS) {
-      bugCategories[cat.id] = { ...cat, bugOrder: cat.itemOrder || [] };
-    }
-  });
-
-  return {
-    features,
-    bugs,
-    tasks,
-    categories,
-    featureCategories,
-    bugCategories,
-    globalFeatureOrder: data.sections?.[SYSTEM_SECTIONS.FEATURES]?.itemOrder || [],
-    globalBugOrder: data.sections?.[SYSTEM_SECTIONS.BUGS]?.itemOrder || [],
-    featureCategoryOrder: data.sections?.[SYSTEM_SECTIONS.FEATURES]?.categoryOrder || [],
-    bugCategoryOrder: data.sections?.[SYSTEM_SECTIONS.BUGS]?.categoryOrder || [],
-    tags: data.tags || {}
-  };
-}
-
 // Common projectId property for tool schemas
 const PROJECT_ID_PROP = { type: 'string', description: 'Target project ID (optional, defaults to active project)' };
 
-// MCP Tool Definitions - 6 consolidated tools
+// MCP Tool Definitions - 6 consolidated tools (v4 unified types only)
 const TOOLS = [
   {
     name: 'search',
@@ -354,7 +292,7 @@ const TOOLS = [
       type: 'object',
       properties: {
         query: { type: 'string', description: 'Search query' },
-        itemType: { type: 'string', enum: ['all', 'feature', 'bug', 'task'], description: 'Filter by type (default: all)' },
+        itemType: { type: 'string', enum: ['all', 'item', 'task'], description: 'Filter by type (default: all)' },
         status: { type: 'string', enum: ['open', 'in-progress', 'done'], description: 'Filter by status' },
         projectId: PROJECT_ID_PROP
       },
@@ -367,7 +305,7 @@ const TOOLS = [
     inputSchema: {
       type: 'object',
       properties: {
-        type: { type: 'string', enum: ['feature', 'bug', 'task'], description: 'Type of item' },
+        type: { type: 'string', enum: ['item', 'task'], description: 'Type of item' },
         id: { type: 'string', description: 'ID of the item' },
         projectId: PROJECT_ID_PROP
       },
@@ -376,18 +314,18 @@ const TOOLS = [
   },
   {
     name: 'create',
-    description: 'Create a project, feature, bug, task, or category.',
+    description: 'Create a project, item, task, or category.',
     inputSchema: {
       type: 'object',
       properties: {
-        itemType: { type: 'string', enum: ['project', 'feature', 'bug', 'task', 'feature-category', 'bug-category', 'task-category'], description: 'What to create' },
+        itemType: { type: 'string', enum: ['project', 'item', 'task', 'item-category', 'task-category'], description: 'What to create (item/item-category require sectionId)' },
         title: { type: 'string', description: 'Title/name of the item' },
         description: { type: 'string', description: 'Markdown description' },
         color: { type: 'string', description: 'For project: hex color (e.g. #3b82f6)' },
-        parentType: { type: 'string', enum: ['feature', 'bug'], description: 'For task/task-category: parent type' },
-        parentId: { type: 'string', description: 'For task/task-category: parent ID' },
+        sectionId: { type: 'string', description: 'For item/item-category: target section ID (sect-features or sect-bugs)' },
+        parentId: { type: 'string', description: 'For task/task-category: parent item ID' },
         categoryId: { type: 'string', description: 'Category to place item in' },
-        priority: { type: 'string', enum: ['low', 'medium', 'high', 'critical'], description: 'Priority (features only)' },
+        priority: { type: 'string', enum: ['low', 'medium', 'high', 'critical'], description: 'Priority (items only)' },
         projectId: PROJECT_ID_PROP
       },
       required: ['itemType', 'title']
@@ -399,7 +337,7 @@ const TOOLS = [
     inputSchema: {
       type: 'object',
       properties: {
-        type: { type: 'string', enum: ['feature', 'bug', 'task'], description: 'Type of item' },
+        type: { type: 'string', enum: ['item', 'task'], description: 'Type of item' },
         id: { type: 'string', description: 'ID of the item' },
         updates: { type: 'object', description: 'Properties to update: {title, description, status, ...}' },
         action: { type: 'string', enum: ['delete', 'append_prompt', 'save_plan'], description: 'Special action' },
@@ -417,8 +355,9 @@ const TOOLS = [
       type: 'object',
       properties: {
         listType: { type: 'string', enum: ['projects', 'categories', 'attachments'], description: 'What to list' },
-        type: { type: 'string', enum: ['feature', 'bug', 'task'], description: 'Item type (for attachments) or category type (feature/bug for categories). Not needed for projects.' },
+        type: { type: 'string', enum: ['item', 'task'], description: 'Item type (for attachments). Not needed for projects or categories.' },
         id: { type: 'string', description: 'Item ID (required for attachments)' },
+        sectionId: { type: 'string', description: 'For categories: section ID (sect-features or sect-bugs)' },
         projectId: PROJECT_ID_PROP
       },
       required: ['listType']
@@ -430,7 +369,7 @@ const TOOLS = [
     inputSchema: {
       type: 'object',
       properties: {
-        type: { type: 'string', enum: ['feature', 'bug', 'task'], description: 'Item type' },
+        type: { type: 'string', enum: ['item', 'task'], description: 'Item type' },
         id: { type: 'string', description: 'Item ID' },
         contentType: { type: 'string', enum: ['plan', 'attachment', 'image', 'prompt_history'], description: 'What to read' },
         attachmentId: { type: 'string', description: 'For attachment/image' },
@@ -446,7 +385,7 @@ const TOOLS = [
 // Tool Handler Functions - 6 consolidated handlers
 // Each handler now takes (args, req) to support project-scoped data
 // projectId in args takes priority over req headers and settings
-// Now uses v4 data structure with backward-compatible views
+// Uses v4 unified data structure (items + tasks)
 const toolHandlers = {
   // 1. SEARCH (v4: searches items and tasks)
   async search({ query, itemType = 'all', status, projectId }, req) {
@@ -461,30 +400,22 @@ const toolHandlers = {
       return (titleMatch || descMatch) && statusMatch;
     };
 
-    // v4: Search items, categorize by sectionId
-    if (itemType === 'all' || itemType === 'feature') {
+    // Search items
+    if (itemType === 'all' || itemType === 'item') {
       Object.values(data.items)
-        .filter(item => item.sectionId === SYSTEM_SECTIONS.FEATURES && matches(item))
-        .forEach(f => results.push({
-          type: 'feature', id: f.id, title: f.title, status: f.status,
-          description: f.description?.substring(0, 200)
+        .filter(matches)
+        .forEach(item => results.push({
+          type: 'item', id: item.id, title: item.title, status: item.status,
+          sectionId: item.sectionId,
+          description: item.description?.substring(0, 200)
         }));
     }
-    if (itemType === 'all' || itemType === 'bug') {
-      Object.values(data.items)
-        .filter(item => item.sectionId === SYSTEM_SECTIONS.BUGS && matches(item))
-        .forEach(b => results.push({
-          type: 'bug', id: b.id, title: b.title, status: b.status || 'open',
-          description: b.description?.substring(0, 200)
-        }));
-    }
+    // Search tasks
     if (itemType === 'all' || itemType === 'task') {
       Object.values(data.tasks).filter(matches).forEach(t => {
-        const parentItem = data.items[t.itemId];
-        const parentType = parentItem?.sectionId === SYSTEM_SECTIONS.FEATURES ? 'feature' : 'bug';
         results.push({
           type: 'task', id: t.id, title: t.title, status: t.status,
-          parentType, parentId: t.itemId, description: t.description?.substring(0, 200)
+          parentId: t.itemId, description: t.description?.substring(0, 200)
         });
       });
     }
@@ -495,28 +426,18 @@ const toolHandlers = {
   async get({ type, id, projectId }, req) {
     const data = await loadData(projectId, req);
     let item;
-    let parentType = null;
 
-    switch (type) {
-      case 'feature':
-      case 'bug':
-        // v4: features and bugs are items
-        item = data.items[id];
-        if (item) {
-          parentType = item.sectionId === SYSTEM_SECTIONS.FEATURES ? 'feature' : 'bug';
-        }
-        break;
-      case 'task':
-        item = data.tasks[id];
-        break;
+    if (type === 'item') {
+      item = data.items[id];
+    } else if (type === 'task') {
+      item = data.tasks[id];
     }
     if (!item) throw new Error(`${type} with ID ${id} not found`);
 
     const context = { ...item, type };
 
-    // Add backward-compatible fields
-    if (type === 'feature' || type === 'bug') {
-      // Get tasks for this item
+    // Add tasks for items
+    if (type === 'item') {
       const tasks = Object.values(data.tasks)
         .filter(t => t.itemId === id)
         .map(t => ({ id: t.id, title: t.title, status: t.status, description: t.description?.substring(0, 200) }));
@@ -524,13 +445,11 @@ const toolHandlers = {
       context.taskCount = tasks.length;
     }
 
+    // Add parent info for tasks
     if (type === 'task' && item.itemId) {
       const parentItem = data.items[item.itemId];
       if (parentItem) {
-        const pType = parentItem.sectionId === SYSTEM_SECTIONS.FEATURES ? 'feature' : 'bug';
-        context.parent = { type: pType, id: parentItem.id, title: parentItem.title };
-        // Add backward-compatible fields
-        context.parentType = pType;
+        context.parent = { type: 'item', id: parentItem.id, title: parentItem.title, sectionId: parentItem.sectionId };
         context.parentId = item.itemId;
       }
     }
@@ -545,7 +464,7 @@ const toolHandlers = {
   },
 
   // 3. CREATE (v4: creates items in sections)
-  async create({ itemType, title, description = '', color, parentType, parentId, categoryId, priority, projectId }, req) {
+  async create({ itemType, title, description = '', color, sectionId, parentId, categoryId, priority, projectId }, req) {
     // Project (doesn't need project-scoped data)
     if (itemType === 'project') {
       const projectsData = await loadProjects();
@@ -580,12 +499,16 @@ const toolHandlers = {
     const data = await loadData(projectId, req);
     const now = new Date().toISOString();
 
-    // Feature (v4: creates item in Features section)
-    if (itemType === 'feature') {
-      const id = generateId('feat');
+    // Item (requires sectionId)
+    if (itemType === 'item') {
+      if (!sectionId) throw new Error('sectionId required for item (use sect-features or sect-bugs)');
+      if (!data.sections[sectionId]) throw new Error(`Section ${sectionId} not found`);
+
+      const prefix = sectionId === SYSTEM_SECTIONS.FEATURES ? 'feat' : 'bug';
+      const id = generateId(prefix);
       const item = {
         id,
-        sectionId: SYSTEM_SECTIONS.FEATURES,
+        sectionId,
         title, description,
         status: 'open',
         priority: priority || 'medium',
@@ -604,43 +527,13 @@ const toolHandlers = {
       if (categoryId && data.itemCategories?.[categoryId]) {
         data.itemCategories[categoryId].itemOrder.push(id);
       } else {
-        data.sections[SYSTEM_SECTIONS.FEATURES].itemOrder.push(id);
+        data.sections[sectionId].itemOrder.push(id);
       }
       await saveData(data, projectId, req);
-      return { ...item, parentType: 'feature' };
+      return item;
     }
 
-    // Bug (v4: creates item in Bugs section)
-    if (itemType === 'bug') {
-      const id = generateId('bug');
-      const item = {
-        id,
-        sectionId: SYSTEM_SECTIONS.BUGS,
-        title, description,
-        status: 'open',
-        priority: priority || 'medium',
-        complexity: null,
-        categoryId: categoryId || null,
-        taskOrder: [],
-        categoryOrder: [],
-        attachments: [],
-        promptHistory: [],
-        tagIds: [],
-        createdAt: now,
-        finishedAt: null
-      };
-      data.items[id] = item;
-
-      if (categoryId && data.itemCategories?.[categoryId]) {
-        data.itemCategories[categoryId].itemOrder.push(id);
-      } else {
-        data.sections[SYSTEM_SECTIONS.BUGS].itemOrder.push(id);
-      }
-      await saveData(data, projectId, req);
-      return { ...item, parentType: 'bug' };
-    }
-
-    // Task (v4: creates task under item)
+    // Task (requires parentId)
     if (itemType === 'task') {
       if (!parentId) throw new Error('parentId required for task');
       const parentItem = data.items[parentId];
@@ -667,43 +560,29 @@ const toolHandlers = {
         parentItem.taskOrder.push(id);
       }
       await saveData(data, projectId, req);
-
-      // Return with backward-compatible fields
-      const pType = parentItem.sectionId === SYSTEM_SECTIONS.FEATURES ? 'feature' : 'bug';
-      return { ...task, parentType: pType, parentId };
+      return { ...task, parentId };
     }
 
-    // Feature Category (v4: creates itemCategory in Features section)
-    if (itemType === 'feature-category') {
-      const id = generateId('fcat');
+    // Item Category (requires sectionId)
+    if (itemType === 'item-category') {
+      if (!sectionId) throw new Error('sectionId required for item-category (use sect-features or sect-bugs)');
+      if (!data.sections[sectionId]) throw new Error(`Section ${sectionId} not found`);
+
+      const prefix = sectionId === SYSTEM_SECTIONS.FEATURES ? 'fcat' : 'bcat';
+      const id = generateId(prefix);
       const category = {
         id,
-        sectionId: SYSTEM_SECTIONS.FEATURES,
+        sectionId,
         name: title,
         itemOrder: []
       };
       data.itemCategories[id] = category;
-      data.sections[SYSTEM_SECTIONS.FEATURES].categoryOrder.push(id);
+      data.sections[sectionId].categoryOrder.push(id);
       await saveData(data, projectId, req);
-      return { ...category, featureOrder: [] };
+      return category;
     }
 
-    // Bug Category (v4: creates itemCategory in Bugs section)
-    if (itemType === 'bug-category') {
-      const id = generateId('bcat');
-      const category = {
-        id,
-        sectionId: SYSTEM_SECTIONS.BUGS,
-        name: title,
-        itemOrder: []
-      };
-      data.itemCategories[id] = category;
-      data.sections[SYSTEM_SECTIONS.BUGS].categoryOrder.push(id);
-      await saveData(data, projectId, req);
-      return { ...category, bugOrder: [] };
-    }
-
-    // Task Category (v4: creates taskCategory under item)
+    // Task Category (requires parentId)
     if (itemType === 'task-category') {
       if (!parentId) throw new Error('parentId required for task-category');
       const parentItem = data.items[parentId];
@@ -720,9 +599,7 @@ const toolHandlers = {
       if (!parentItem.categoryOrder) parentItem.categoryOrder = [];
       parentItem.categoryOrder.push(id);
       await saveData(data, projectId, req);
-
-      const pType = parentItem.sectionId === SYSTEM_SECTIONS.FEATURES ? 'feature' : 'bug';
-      return { ...category, parentType: pType, parentId };
+      return { ...category, parentId };
     }
 
     throw new Error(`Invalid itemType: ${itemType}`);
@@ -734,7 +611,7 @@ const toolHandlers = {
 
     // Helper to get item from v4 data
     const getItem = () => {
-      if (type === 'feature' || type === 'bug') {
+      if (type === 'item') {
         return data.items[id];
       } else if (type === 'task') {
         return data.tasks[id];
@@ -744,7 +621,7 @@ const toolHandlers = {
 
     // Delete action
     if (action === 'delete') {
-      if (type === 'feature' || type === 'bug') {
+      if (type === 'item') {
         const item = data.items[id];
         if (!item) throw new Error(`${type} ${id} not found`);
 
@@ -817,12 +694,14 @@ const toolHandlers = {
       const version = existingPlans.length + 1;
       const filename = `PLAN-v${version}.md`;
 
+      // Use 'item' storage type for feature/bug/item types
+      const storageType = type === 'task' ? 'task' : 'item';
       const attachmentsDir = await getAttachmentsDir(projectId, req);
-      const itemDir = path.join(attachmentsDir, type, id);
+      const itemDir = path.join(attachmentsDir, storageType, id);
       await fs.mkdir(itemDir, { recursive: true });
       await fs.writeFile(path.join(itemDir, filename), planContent, 'utf-8');
 
-      const storedPath = `${type}/${id}/${filename}`;
+      const storedPath = `${storageType}/${id}/${filename}`;
       const fullPath = path.join(itemDir, filename);
       const attachment = {
         id: generateId('att'), filename, storedName: filename,
@@ -855,7 +734,7 @@ const toolHandlers = {
   },
 
   // 5. LIST (v4: categories, attachments, or projects)
-  async list({ listType, type, id, projectId }, req) {
+  async list({ listType, type, id, sectionId, projectId }, req) {
     // Projects don't need project-scoped data
     if (listType === 'projects') {
       const projectsData = await loadProjects();
@@ -870,25 +749,18 @@ const toolHandlers = {
     const data = await loadData(projectId, req);
 
     if (listType === 'categories') {
-      // v4: use itemCategories
-      if (type === 'feature') {
-        const cats = Object.values(data.itemCategories || {})
-          .filter(c => c.sectionId === SYSTEM_SECTIONS.FEATURES)
-          .map(c => ({ id: c.id, name: c.name, itemCount: c.itemOrder?.length || 0 }));
-        return { categories: cats };
-      } else if (type === 'bug') {
-        const cats = Object.values(data.itemCategories || {})
-          .filter(c => c.sectionId === SYSTEM_SECTIONS.BUGS)
-          .map(c => ({ id: c.id, name: c.name, itemCount: c.itemOrder?.length || 0 }));
-        return { categories: cats };
-      }
-      throw new Error('type must be feature or bug for categories');
+      // List item categories in a section
+      if (!sectionId) throw new Error('sectionId required for categories (use sect-features or sect-bugs)');
+      const cats = Object.values(data.itemCategories || {})
+        .filter(c => c.sectionId === sectionId)
+        .map(c => ({ id: c.id, name: c.name, sectionId: c.sectionId, itemCount: c.itemOrder?.length || 0 }));
+      return { categories: cats, count: cats.length };
     }
 
     if (listType === 'attachments') {
       if (!id) throw new Error('id required for attachments');
       let item;
-      if (type === 'feature' || type === 'bug') {
+      if (type === 'item') {
         item = data.items[id];
       } else if (type === 'task') {
         item = data.tasks[id];
@@ -910,7 +782,7 @@ const toolHandlers = {
   async read({ type, id, contentType, attachmentId, version, limit, projectId }, req) {
     const data = await loadData(projectId, req);
     let item;
-    if (type === 'feature' || type === 'bug') {
+    if (type === 'item') {
       item = data.items[id];
     } else if (type === 'task') {
       item = data.tasks[id];
