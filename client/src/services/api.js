@@ -23,6 +23,12 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// System section IDs (must match server)
+export const SYSTEM_SECTIONS = {
+  FEATURES: 'sect-features',
+  BUGS: 'sect-bugs'
+};
+
 export const tasksApi = {
   // Load all data
   getAll: () => api.get('/tasks').then(res => res.data),
@@ -30,12 +36,32 @@ export const tasksApi = {
   // Save all data
   saveAll: (data) => api.put('/tasks', data).then(res => res.data),
 
-  // Features
+  // ============ UNIFIED SECTIONS API (v4) ============
+
+  // Sections
+  createSection: (data) => api.post('/tasks/section', data).then(res => res.data),
+  updateSection: (id, data) => api.patch(`/tasks/section/${id}`, data).then(res => res.data),
+  deleteSection: (id) => api.delete(`/tasks/section/${id}`).then(res => res.data),
+
+  // Items (unified features/bugs)
+  createItem: (data) => api.post('/tasks/item', data).then(res => res.data),
+  updateItem: (id, data) => api.patch(`/tasks/item/${id}`, data).then(res => res.data),
+  deleteItem: (id) => api.delete(`/tasks/item/${id}`).then(res => res.data),
+  moveItem: (data) => api.put('/tasks/move-item', data).then(res => res.data),
+
+  // Item Categories (unified feature/bug categories)
+  createItemCategory: (data) => api.post('/tasks/item-category', data).then(res => res.data),
+  updateItemCategory: (id, data) => api.patch(`/tasks/item-category/${id}`, data).then(res => res.data),
+  deleteItemCategory: (id) => api.delete(`/tasks/item-category/${id}`).then(res => res.data),
+
+  // ============ LEGACY API (backward compat) ============
+
+  // Features (maps to items in Features section)
   createFeature: (data) => api.post('/tasks/feature', data).then(res => res.data),
   updateFeature: (id, data) => api.patch(`/tasks/feature/${id}`, data).then(res => res.data),
   deleteFeature: (id) => api.delete(`/tasks/feature/${id}`).then(res => res.data),
 
-  // Bugs
+  // Bugs (maps to items in Bugs section)
   createBug: (data) => api.post('/tasks/bug', data).then(res => res.data),
   updateBug: (id, data) => api.patch(`/tasks/bug/${id}`, data).then(res => res.data),
   deleteBug: (id) => api.delete(`/tasks/bug/${id}`).then(res => res.data),
@@ -46,7 +72,7 @@ export const tasksApi = {
   deleteTask: (id) => api.delete(`/tasks/task/${id}`).then(res => res.data),
   moveTask: (data) => api.put('/tasks/move-task', data).then(res => res.data),
 
-  // Categories
+  // Task Categories (was just "categories")
   createCategory: (data) => api.post('/tasks/category', data).then(res => res.data),
   updateCategory: (id, data) => api.patch(`/tasks/category/${id}`, data).then(res => res.data),
   deleteCategory: (id) => api.delete(`/tasks/category/${id}`).then(res => res.data),
@@ -63,13 +89,13 @@ export const tasksApi = {
   updateTag: (id, data) => api.patch(`/tasks/tag/${id}`, data).then(res => res.data),
   deleteTag: (id) => api.delete(`/tasks/tag/${id}`).then(res => res.data),
 
-  // Feature Categories
+  // Feature Categories (legacy - maps to item categories in Features section)
   createFeatureCategory: (data) => api.post('/tasks/feature-category', data).then(res => res.data),
   updateFeatureCategory: (id, data) => api.patch(`/tasks/feature-category/${id}`, data).then(res => res.data),
   deleteFeatureCategory: (id) => api.delete(`/tasks/feature-category/${id}`).then(res => res.data),
   moveFeature: (data) => api.put('/tasks/move-feature', data).then(res => res.data),
 
-  // Bug Categories
+  // Bug Categories (legacy - maps to item categories in Bugs section)
   createBugCategory: (data) => api.post('/tasks/bug-category', data).then(res => res.data),
   updateBugCategory: (id, data) => api.patch(`/tasks/bug-category/${id}`, data).then(res => res.data),
   deleteBugCategory: (id) => api.delete(`/tasks/bug-category/${id}`).then(res => res.data),

@@ -112,26 +112,271 @@ const DEFAULT_TAG_COLORS = [
   '#14b8a6', '#06b6d4', '#3b82f6', '#8b5cf6', '#ec4899'
 ];
 
-// Default data structure
+// Available section icons
+const SECTION_ICONS = ['layers', 'bug', 'flag', 'star', 'rocket', 'target', 'calendar', 'folder', 'bookmark', 'lightning', 'check-circle', 'archive'];
+
+// System section IDs (cannot be deleted)
+const SYSTEM_SECTIONS = {
+  FEATURES: 'sect-features',
+  BUGS: 'sect-bugs'
+};
+
+// Default data structure - version 4 with unified sections
 function getDefaultData() {
+  const now = new Date().toISOString();
   return {
-    version: 3,
-    lastModified: new Date().toISOString(),
-    features: {},
-    bugs: {},
+    version: 4,
+    lastModified: now,
+    // Unified sections (replaces features/bugs separation)
+    sections: {
+      [SYSTEM_SECTIONS.FEATURES]: {
+        id: SYSTEM_SECTIONS.FEATURES,
+        name: 'Features',
+        icon: 'layers',
+        color: '#3b82f6',
+        isSystem: true,
+        itemOrder: [],
+        categoryOrder: [],
+        createdAt: now
+      },
+      [SYSTEM_SECTIONS.BUGS]: {
+        id: SYSTEM_SECTIONS.BUGS,
+        name: 'Bugs',
+        icon: 'bug',
+        color: '#ef4444',
+        isSystem: true,
+        itemOrder: [],
+        categoryOrder: [],
+        createdAt: now
+      }
+    },
+    sectionOrder: [SYSTEM_SECTIONS.FEATURES, SYSTEM_SECTIONS.BUGS],
+    // Unified items (replaces features and bugs)
+    items: {},
+    // Categories for grouping items within sections
+    itemCategories: {},
+    // Tasks (sub-tasks of items)
     tasks: {},
-    categories: {},
+    // Categories for grouping tasks within items
+    taskCategories: {},
+    // Tags
     tags: {},
-    featureCategories: {},  // Categories for grouping features
-    bugCategories: {},      // Categories for grouping bugs
-    globalFeatureOrder: [],
-    globalBugOrder: [],
-    featureCategoryOrder: [],  // Order of feature categories
-    bugCategoryOrder: [],      // Order of bug categories
     settings: {
-      activeView: 'features',
-      activeFeatureId: null,
-      theme: 'system' // 'light', 'dark', 'system'
+      activeView: 'section',
+      activeSectionId: SYSTEM_SECTIONS.FEATURES,
+      activeItemId: null,
+      theme: 'system'
+    }
+  };
+}
+
+// Migration function: Convert v3 data to v4 unified sections format
+function migrateToV4(data) {
+  if (data.version >= 4) return data; // Already migrated
+
+  const now = new Date().toISOString();
+  const migrated = {
+    version: 4,
+    lastModified: now,
+    sections: {
+      [SYSTEM_SECTIONS.FEATURES]: {
+        id: SYSTEM_SECTIONS.FEATURES,
+        name: 'Features',
+        icon: 'layers',
+        color: '#3b82f6',
+        isSystem: true,
+        itemOrder: [...(data.globalFeatureOrder || [])],
+        categoryOrder: [...(data.featureCategoryOrder || [])],
+        createdAt: now
+      },
+      [SYSTEM_SECTIONS.BUGS]: {
+        id: SYSTEM_SECTIONS.BUGS,
+        name: 'Bugs',
+        icon: 'bug',
+        color: '#ef4444',
+        isSystem: true,
+        itemOrder: [...(data.globalBugOrder || [])],
+        categoryOrder: [...(data.bugCategoryOrder || [])],
+        createdAt: now
+      }
+    },
+    sectionOrder: [SYSTEM_SECTIONS.FEATURES, SYSTEM_SECTIONS.BUGS],
+    items: {},
+    itemCategories: {},
+    tasks: {},
+    taskCategories: {},
+    tags: { ...(data.tags || {}) },
+    settings: {
+      activeView: 'section',
+      activeSectionId: data.settings?.activeView === 'bugs' ? SYSTEM_SECTIONS.BUGS : SYSTEM_SECTIONS.FEATURES,
+      activeItemId: data.settings?.activeFeatureId || null,
+      theme: data.settings?.theme || 'system'
+    }
+  };
+
+  // Migrate features to items
+  Object.values(data.features || {}).forEach(feature => {
+    migrated.items[feature.id] = {
+      id: feature.id,
+      sectionId: SYSTEM_SECTIONS.FEATURES,
+      title: feature.title,
+      description: feature.description || '',
+      status: feature.status || 'open',
+      priority: feature.priority || 'medium',
+      complexity: feature.complexity || null,
+      categoryId: feature.categoryId || null,
+      taskOrder: [...(feature.taskOrder || [])],
+      categoryOrder: [...(feature.categoryOrder || [])],
+      attachments: [...(feature.attachments || [])],
+      promptHistory: [...(feature.promptHistory || [])],
+      tagIds: [...(feature.tagIds || [])],
+      createdAt: feature.createdAt || now,
+      finishedAt: feature.finishedAt || null
+    };
+  });
+
+  // Migrate bugs to items
+  Object.values(data.bugs || {}).forEach(bug => {
+    migrated.items[bug.id] = {
+      id: bug.id,
+      sectionId: SYSTEM_SECTIONS.BUGS,
+      title: bug.title,
+      description: bug.description || '',
+      status: bug.status || 'open',
+      priority: bug.priority || 'medium',
+      complexity: bug.complexity || null,
+      categoryId: bug.categoryId || null,
+      taskOrder: [...(bug.taskOrder || [])],
+      categoryOrder: [...(bug.categoryOrder || [])],
+      attachments: [...(bug.attachments || [])],
+      promptHistory: [...(bug.promptHistory || [])],
+      tagIds: [...(bug.tagIds || [])],
+      createdAt: bug.createdAt || now,
+      finishedAt: bug.finishedAt || null
+    };
+  });
+
+  // Migrate feature categories to item categories
+  Object.values(data.featureCategories || {}).forEach(cat => {
+    migrated.itemCategories[cat.id] = {
+      id: cat.id,
+      sectionId: SYSTEM_SECTIONS.FEATURES,
+      name: cat.name,
+      itemOrder: [...(cat.featureOrder || [])]
+    };
+  });
+
+  // Migrate bug categories to item categories
+  Object.values(data.bugCategories || {}).forEach(cat => {
+    migrated.itemCategories[cat.id] = {
+      id: cat.id,
+      sectionId: SYSTEM_SECTIONS.BUGS,
+      name: cat.name,
+      itemOrder: [...(cat.bugOrder || [])]
+    };
+  });
+
+  // Migrate tasks - update parentType to use itemId
+  Object.values(data.tasks || {}).forEach(task => {
+    migrated.tasks[task.id] = {
+      id: task.id,
+      itemId: task.parentId, // parentId becomes itemId
+      categoryId: task.categoryId || null,
+      title: task.title,
+      description: task.description || '',
+      status: task.status || 'open',
+      tagIds: [...(task.tagIds || [])],
+      attachments: [...(task.attachments || [])],
+      promptHistory: [...(task.promptHistory || [])],
+      createdAt: task.createdAt || now,
+      finishedAt: task.finishedAt || null
+    };
+  });
+
+  // Migrate task categories (categories within features/bugs)
+  Object.values(data.categories || {}).forEach(cat => {
+    migrated.taskCategories[cat.id] = {
+      id: cat.id,
+      itemId: cat.parentId, // parentId becomes itemId
+      name: cat.name,
+      taskOrder: [...(cat.taskOrder || [])]
+    };
+  });
+
+  console.log(`Migrated data from v${data.version || 3} to v4 (unified sections)`);
+  return migrated;
+}
+
+// Helper: Create backward-compatible v3-like views from v4 data
+// This allows existing API endpoints to continue working
+function getBackwardCompatibleViews(data) {
+  // Build features object from items in Features section
+  const features = {};
+  const bugs = {};
+
+  Object.values(data.items || {}).forEach(item => {
+    // Add parentType for backward compatibility with existing code
+    const legacyItem = {
+      ...item,
+      parentType: item.sectionId === SYSTEM_SECTIONS.FEATURES ? 'feature' : 'bug'
+    };
+
+    if (item.sectionId === SYSTEM_SECTIONS.FEATURES) {
+      features[item.id] = legacyItem;
+    } else if (item.sectionId === SYSTEM_SECTIONS.BUGS) {
+      bugs[item.id] = legacyItem;
+    }
+  });
+
+  // Build categories from taskCategories (with parentType/parentId for compat)
+  const categories = {};
+  Object.values(data.taskCategories || {}).forEach(cat => {
+    const item = data.items[cat.itemId];
+    categories[cat.id] = {
+      ...cat,
+      parentType: item?.sectionId === SYSTEM_SECTIONS.FEATURES ? 'feature' : 'bug',
+      parentId: cat.itemId
+    };
+  });
+
+  // Build tasks with parentType/parentId for compat
+  const tasks = {};
+  Object.values(data.tasks || {}).forEach(task => {
+    const item = data.items[task.itemId];
+    tasks[task.id] = {
+      ...task,
+      parentType: item?.sectionId === SYSTEM_SECTIONS.FEATURES ? 'feature' : 'bug',
+      parentId: task.itemId
+    };
+  });
+
+  // Build featureCategories and bugCategories from itemCategories
+  const featureCategories = {};
+  const bugCategories = {};
+  Object.values(data.itemCategories || {}).forEach(cat => {
+    if (cat.sectionId === SYSTEM_SECTIONS.FEATURES) {
+      featureCategories[cat.id] = { ...cat, featureOrder: cat.itemOrder || [] };
+    } else if (cat.sectionId === SYSTEM_SECTIONS.BUGS) {
+      bugCategories[cat.id] = { ...cat, bugOrder: cat.itemOrder || [] };
+    }
+  });
+
+  return {
+    features,
+    bugs,
+    tasks,
+    categories,
+    featureCategories,
+    bugCategories,
+    globalFeatureOrder: data.sections?.[SYSTEM_SECTIONS.FEATURES]?.itemOrder || [],
+    globalBugOrder: data.sections?.[SYSTEM_SECTIONS.BUGS]?.itemOrder || [],
+    featureCategoryOrder: data.sections?.[SYSTEM_SECTIONS.FEATURES]?.categoryOrder || [],
+    bugCategoryOrder: data.sections?.[SYSTEM_SECTIONS.BUGS]?.categoryOrder || [],
+    tags: data.tags || {},
+    settings: {
+      activeView: data.settings?.activeSectionId === SYSTEM_SECTIONS.BUGS ? 'bugs' : 'features',
+      activeFeatureId: data.settings?.activeItemId,
+      theme: data.settings?.theme || 'system'
     }
   };
 }
@@ -146,6 +391,7 @@ async function ensureDataDir() {
 }
 
 // Load data with default fallback - now project-aware
+// Automatically migrates old data formats to v4
 async function loadData(req) {
   await ensureDataDir();
   const dataFile = await getDataFilePath(req);
@@ -160,7 +406,16 @@ async function loadData(req) {
 
   try {
     const content = await fs.readFile(dataFile, 'utf-8');
-    return JSON.parse(content);
+    let data = JSON.parse(content);
+
+    // Check if migration is needed
+    if (!data.version || data.version < 4) {
+      data = migrateToV4(data);
+      // Save migrated data
+      await saveData(data, req);
+    }
+
+    return data;
   } catch (error) {
     if (error.code === 'ENOENT') {
       const defaultData = getDefaultData();
@@ -200,11 +455,27 @@ function generateId(prefix) {
   return `${prefix}-${id}`;
 }
 
-// GET /api/tasks - Get all data
+// GET /api/tasks - Get all data (returns backward-compatible v3-like format for client)
 router.get('/', async (req, res) => {
   try {
     const data = await loadData(req);
-    res.json(data);
+    // Return v4 data with backward-compatible views for the client
+    // Client receives both new structure and legacy views
+    const legacyViews = getBackwardCompatibleViews(data);
+    res.json({
+      // Include v4 structure
+      version: data.version,
+      lastModified: data.lastModified,
+      sections: data.sections,
+      sectionOrder: data.sectionOrder,
+      items: data.items,
+      itemCategories: data.itemCategories,
+      tasks: data.tasks,
+      taskCategories: data.taskCategories,
+      tags: data.tags,
+      // Include backward-compatible views for legacy client code
+      ...legacyViews
+    });
   } catch (error) {
     console.error('Error loading tasks:', error);
     res.status(500).json({ error: 'Failed to load tasks' });
@@ -222,133 +493,193 @@ router.put('/', async (req, res) => {
   }
 });
 
-// POST /api/tasks/feature - Create feature
+// POST /api/tasks/feature - Create feature (v4: creates item in Features section)
 router.post('/feature', async (req, res) => {
   try {
     const data = await loadData(req);
     const id = generateId('feat');
-    const feature = {
+    const now = new Date().toISOString();
+
+    // Create item in v4 structure
+    const item = {
       id,
+      sectionId: SYSTEM_SECTIONS.FEATURES,
       title: req.body.title || 'New Feature',
       description: req.body.description || '',
       status: 'open',
-      createdAt: new Date().toISOString(),
-      finishedAt: null,
+      priority: req.body.priority || 'medium',
+      complexity: null,
+      categoryId: req.body.categoryId || null,
       taskOrder: [],
-      categoryOrder: []
+      categoryOrder: [],
+      attachments: [],
+      promptHistory: [],
+      tagIds: [],
+      createdAt: now,
+      finishedAt: null
     };
-    data.features[id] = feature;
-    data.globalFeatureOrder.push(id);
+
+    data.items[id] = item;
+
+    // Add to section's itemOrder or category's itemOrder
+    if (item.categoryId && data.itemCategories[item.categoryId]) {
+      data.itemCategories[item.categoryId].itemOrder.push(id);
+    } else {
+      data.sections[SYSTEM_SECTIONS.FEATURES].itemOrder.push(id);
+    }
+
     await saveData(data, req);
-    res.json(feature);
+
+    // Return backward-compatible response
+    res.json({ ...item, parentType: 'feature' });
   } catch (error) {
     console.error('Error creating feature:', error);
     res.status(500).json({ error: 'Failed to create feature' });
   }
 });
 
-// POST /api/tasks/bug - Create bug
+// POST /api/tasks/bug - Create bug (v4: creates item in Bugs section)
 router.post('/bug', async (req, res) => {
   try {
     const data = await loadData(req);
     const id = generateId('bug');
-    const bug = {
+    const now = new Date().toISOString();
+
+    // Create item in v4 structure
+    const item = {
       id,
+      sectionId: SYSTEM_SECTIONS.BUGS,
       title: req.body.title || 'New Bug',
       description: req.body.description || '',
-      status: 'open', // Bugs now have status like features/tasks
-      createdAt: new Date().toISOString(),
-      finishedAt: null,
+      status: 'open',
+      priority: req.body.priority || 'medium',
+      complexity: null,
+      categoryId: req.body.categoryId || null,
       taskOrder: [],
-      categoryOrder: []
+      categoryOrder: [],
+      attachments: [],
+      promptHistory: [],
+      tagIds: [],
+      createdAt: now,
+      finishedAt: null
     };
-    data.bugs[id] = bug;
-    data.globalBugOrder.push(id);
+
+    data.items[id] = item;
+
+    // Add to section's itemOrder or category's itemOrder
+    if (item.categoryId && data.itemCategories[item.categoryId]) {
+      data.itemCategories[item.categoryId].itemOrder.push(id);
+    } else {
+      data.sections[SYSTEM_SECTIONS.BUGS].itemOrder.push(id);
+    }
+
     await saveData(data, req);
-    res.json(bug);
+
+    // Return backward-compatible response
+    res.json({ ...item, parentType: 'bug' });
   } catch (error) {
     console.error('Error creating bug:', error);
     res.status(500).json({ error: 'Failed to create bug' });
   }
 });
 
-// POST /api/tasks/task - Create task
+// POST /api/tasks/task - Create task (v4: creates task under item)
 router.post('/task', async (req, res) => {
   try {
     const data = await loadData(req);
     const id = generateId('task');
+    const now = new Date().toISOString();
     const { parentType, parentId, categoryId, title, description, status, tagIds } = req.body;
 
+    // In v4, parentId is the itemId
+    const itemId = parentId;
+    const item = data.items[itemId];
+
+    if (!item) {
+      return res.status(404).json({ error: 'Parent item not found' });
+    }
+
+    // Create task in v4 structure
     const task = {
       id,
-      parentType: parentType || 'feature',
-      parentId: parentId || null,
+      itemId,
       categoryId: categoryId || null,
       title: title || 'New Task',
       description: description || '',
       status: TASK_STATUSES.includes(status) ? status : 'open',
       tagIds: Array.isArray(tagIds) ? tagIds : [],
-      createdAt: new Date().toISOString(),
+      attachments: [],
+      promptHistory: [],
+      createdAt: now,
       finishedAt: null
     };
 
     data.tasks[id] = task;
 
-    // Add to parent's task order
-    if (categoryId && data.categories[categoryId]) {
-      data.categories[categoryId].taskOrder.push(id);
-    } else if (parentId) {
-      if (parentType === 'feature' && data.features[parentId]) {
-        data.features[parentId].taskOrder.push(id);
-      } else if (parentType === 'bug' && data.bugs[parentId]) {
-        data.bugs[parentId].taskOrder.push(id);
-      }
+    // Add to category's or item's task order
+    if (categoryId && data.taskCategories[categoryId]) {
+      data.taskCategories[categoryId].taskOrder.push(id);
+    } else {
+      item.taskOrder.push(id);
     }
 
     await saveData(data, req);
-    res.json(task);
+
+    // Return backward-compatible response
+    res.json({
+      ...task,
+      parentType: item.sectionId === SYSTEM_SECTIONS.FEATURES ? 'feature' : 'bug',
+      parentId: itemId
+    });
   } catch (error) {
     console.error('Error creating task:', error);
     res.status(500).json({ error: 'Failed to create task' });
   }
 });
 
-// POST /api/tasks/category - Create category
+// POST /api/tasks/category - Create task category (v4: creates taskCategory under item)
 router.post('/category', async (req, res) => {
   try {
     const data = await loadData(req);
     const id = generateId('cat');
     const { parentType, parentId, name } = req.body;
 
+    // In v4, parentId is the itemId
+    const itemId = parentId;
+    const item = data.items[itemId];
+
+    if (!item) {
+      return res.status(404).json({ error: 'Parent item not found' });
+    }
+
+    // Create taskCategory in v4 structure
     const category = {
       id,
-      parentType: parentType || 'feature',
-      parentId: parentId || null,
+      itemId,
       name: name || 'New Category',
       taskOrder: []
     };
 
-    data.categories[id] = category;
+    data.taskCategories[id] = category;
 
-    // Add to parent's categoryOrder
-    if (parentId) {
-      if (parentType === 'feature' && data.features[parentId]) {
-        if (!data.features[parentId].categoryOrder) data.features[parentId].categoryOrder = [];
-        data.features[parentId].categoryOrder.push(id);
-      } else if (parentType === 'bug' && data.bugs[parentId]) {
-        if (!data.bugs[parentId].categoryOrder) data.bugs[parentId].categoryOrder = [];
-        data.bugs[parentId].categoryOrder.push(id);
-      }
-    }
+    // Add to item's categoryOrder
+    if (!item.categoryOrder) item.categoryOrder = [];
+    item.categoryOrder.push(id);
 
     await saveData(data, req);
-    res.json(category);
+
+    // Return backward-compatible response
+    res.json({
+      ...category,
+      parentType: item.sectionId === SYSTEM_SECTIONS.FEATURES ? 'feature' : 'bug',
+      parentId: itemId
+    });
   } catch (error) {
     console.error('Error creating category:', error);
     res.status(500).json({ error: 'Failed to create category' });
   }
 });
-// PUT /api/tasks/reorder - Reorder items
+// PUT /api/tasks/reorder - Reorder items (v4: works with sections/items)
 router.put('/reorder', async (req, res) => {
   try {
     const { type, parentId, order } = req.body;
@@ -356,51 +687,64 @@ router.put('/reorder', async (req, res) => {
 
     switch (type) {
       case 'features':
-        data.globalFeatureOrder = order;
+        // v4: reorder items in Features section
+        data.sections[SYSTEM_SECTIONS.FEATURES].itemOrder = order;
         break;
       case 'bugs':
-        data.globalBugOrder = order;
+        // v4: reorder items in Bugs section
+        data.sections[SYSTEM_SECTIONS.BUGS].itemOrder = order;
+        break;
+      case 'sections':
+        // v4: reorder sections
+        data.sectionOrder = order;
         break;
       case 'tasks':
         if (parentId) {
-          // Check if it's a category
-          if (data.categories[parentId]) {
-            data.categories[parentId].taskOrder = order;
-          } else if (data.features[parentId]) {
-            data.features[parentId].taskOrder = order;
-          } else if (data.bugs[parentId]) {
-            data.bugs[parentId].taskOrder = order;
+          // Check if it's a taskCategory or item
+          if (data.taskCategories[parentId]) {
+            data.taskCategories[parentId].taskOrder = order;
+          } else if (data.items[parentId]) {
+            data.items[parentId].taskOrder = order;
           }
         }
         break;
       case 'feature-categories':
-        if (!data.featureCategoryOrder) data.featureCategoryOrder = [];
-        data.featureCategoryOrder = order;
+        // v4: reorder item categories in Features section
+        data.sections[SYSTEM_SECTIONS.FEATURES].categoryOrder = order;
         break;
       case 'bug-categories':
-        if (!data.bugCategoryOrder) data.bugCategoryOrder = [];
-        data.bugCategoryOrder = order;
+        // v4: reorder item categories in Bugs section
+        data.sections[SYSTEM_SECTIONS.BUGS].categoryOrder = order;
         break;
       case 'features-in-category':
-        if (parentId && data.featureCategories?.[parentId]) {
-          data.featureCategories[parentId].featureOrder = order;
+        // v4: reorder items in an item category
+        if (parentId && data.itemCategories[parentId]) {
+          data.itemCategories[parentId].itemOrder = order;
         }
         break;
       case 'bugs-in-category':
-        if (parentId && data.bugCategories?.[parentId]) {
-          data.bugCategories[parentId].bugOrder = order;
+        // v4: same as features-in-category
+        if (parentId && data.itemCategories[parentId]) {
+          data.itemCategories[parentId].itemOrder = order;
+        }
+        break;
+      case 'items-in-category':
+        // v4: generic reorder items in category
+        if (parentId && data.itemCategories[parentId]) {
+          data.itemCategories[parentId].itemOrder = order;
+        }
+        break;
+      case 'section-items':
+        // v4: reorder items in a section (by sectionId)
+        if (parentId && data.sections[parentId]) {
+          data.sections[parentId].itemOrder = order;
         }
         break;
       case 'categories':
-        // Reorder task categories within a feature/bug
-        if (parentId) {
-          if (data.features[parentId]) {
-            if (!data.features[parentId].categoryOrder) data.features[parentId].categoryOrder = [];
-            data.features[parentId].categoryOrder = order;
-          } else if (data.bugs[parentId]) {
-            if (!data.bugs[parentId].categoryOrder) data.bugs[parentId].categoryOrder = [];
-            data.bugs[parentId].categoryOrder = order;
-          }
+        // Reorder task categories within an item
+        if (parentId && data.items[parentId]) {
+          if (!data.items[parentId].categoryOrder) data.items[parentId].categoryOrder = [];
+          data.items[parentId].categoryOrder = order;
         }
         break;
       default:
@@ -415,20 +759,38 @@ router.put('/reorder', async (req, res) => {
   }
 });
 
-// PUT /api/tasks/settings - Update settings
+// PUT /api/tasks/settings - Update settings (v4: translates legacy settings)
 router.put('/settings', async (req, res) => {
   try {
     const data = await loadData(req);
-    data.settings = { ...data.settings, ...req.body };
+    const { activeView, activeFeatureId, theme } = req.body;
+
+    // Translate legacy settings to v4
+    if (activeView !== undefined) {
+      data.settings.activeSectionId = activeView === 'bugs' ? SYSTEM_SECTIONS.BUGS : SYSTEM_SECTIONS.FEATURES;
+    }
+    if (activeFeatureId !== undefined) {
+      data.settings.activeItemId = activeFeatureId;
+    }
+    if (theme !== undefined) {
+      data.settings.theme = theme;
+    }
+
     await saveData(data, req);
-    res.json(data.settings);
+
+    // Return backward-compatible response
+    res.json({
+      activeView: data.settings.activeSectionId === SYSTEM_SECTIONS.BUGS ? 'bugs' : 'features',
+      activeFeatureId: data.settings.activeItemId,
+      theme: data.settings.theme
+    });
   } catch (error) {
     console.error('Error updating settings:', error);
     res.status(500).json({ error: 'Failed to update settings' });
   }
 });
 
-// PUT /api/tasks/move-task - Move task between categories/parents
+// PUT /api/tasks/move-task - Move task between categories/items (v4)
 router.put('/move-task', async (req, res) => {
   try {
     const { taskId, newCategoryId, newParentType, newParentId } = req.body;
@@ -439,38 +801,36 @@ router.put('/move-task', async (req, res) => {
       return res.status(404).json({ error: 'Task not found' });
     }
 
-    // Remove from old location
-    if (task.categoryId && data.categories[task.categoryId]) {
-      data.categories[task.categoryId].taskOrder =
-        data.categories[task.categoryId].taskOrder.filter(id => id !== taskId);
-    } else if (task.parentId) {
-      if (task.parentType === 'feature' && data.features[task.parentId]) {
-        data.features[task.parentId].taskOrder =
-          data.features[task.parentId].taskOrder.filter(id => id !== taskId);
-      } else if (task.parentType === 'bug' && data.bugs[task.parentId]) {
-        data.bugs[task.parentId].taskOrder =
-          data.bugs[task.parentId].taskOrder.filter(id => id !== taskId);
-      }
+    // Remove from old location (v4: uses taskCategories and items)
+    if (task.categoryId && data.taskCategories[task.categoryId]) {
+      data.taskCategories[task.categoryId].taskOrder =
+        data.taskCategories[task.categoryId].taskOrder.filter(id => id !== taskId);
+    } else if (task.itemId && data.items[task.itemId]) {
+      data.items[task.itemId].taskOrder =
+        data.items[task.itemId].taskOrder.filter(id => id !== taskId);
     }
 
-    // Update task
+    // Update task (v4: uses itemId instead of parentId)
+    const newItemId = newParentId || task.itemId;
     task.categoryId = newCategoryId || null;
-    task.parentType = newParentType || task.parentType;
-    task.parentId = newParentId || task.parentId;
+    task.itemId = newItemId;
 
     // Add to new location
-    if (newCategoryId && data.categories[newCategoryId]) {
-      data.categories[newCategoryId].taskOrder.push(taskId);
-    } else if (newParentId) {
-      if (newParentType === 'feature' && data.features[newParentId]) {
-        data.features[newParentId].taskOrder.push(taskId);
-      } else if (newParentType === 'bug' && data.bugs[newParentId]) {
-        data.bugs[newParentId].taskOrder.push(taskId);
-      }
+    if (newCategoryId && data.taskCategories[newCategoryId]) {
+      data.taskCategories[newCategoryId].taskOrder.push(taskId);
+    } else if (newItemId && data.items[newItemId]) {
+      data.items[newItemId].taskOrder.push(taskId);
     }
 
     await saveData(data, req);
-    res.json(task);
+
+    // Return backward-compatible response
+    const item = data.items[task.itemId];
+    res.json({
+      ...task,
+      parentType: item?.sectionId === SYSTEM_SECTIONS.FEATURES ? 'feature' : 'bug',
+      parentId: task.itemId
+    });
   } catch (error) {
     console.error('Error moving task:', error);
     res.status(500).json({ error: 'Failed to move task' });
@@ -549,28 +909,30 @@ router.delete('/tag/:id', async (req, res) => {
   }
 });
 
-// ========== FEATURE/BUG CATEGORY ROUTES ==========
+// ========== FEATURE/BUG CATEGORY ROUTES (v4: uses itemCategories) ==========
 
-// POST /api/tasks/feature-category - Create feature category
+// POST /api/tasks/feature-category - Create feature category (v4: creates itemCategory in Features section)
 router.post('/feature-category', async (req, res) => {
   try {
     const data = await loadData(req);
-    if (!data.featureCategories) data.featureCategories = {};
-    if (!data.featureCategoryOrder) data.featureCategoryOrder = [];
-
     const id = generateId('fcat');
     const { name } = req.body;
 
+    // Create itemCategory in v4 structure
     const category = {
       id,
+      sectionId: SYSTEM_SECTIONS.FEATURES,
       name: name || 'New Category',
-      featureOrder: []
+      itemOrder: []
     };
 
-    data.featureCategories[id] = category;
-    data.featureCategoryOrder.push(id);
+    data.itemCategories[id] = category;
+    data.sections[SYSTEM_SECTIONS.FEATURES].categoryOrder.push(id);
+
     await saveData(data, req);
-    res.json(category);
+
+    // Return backward-compatible response
+    res.json({ ...category, featureOrder: [] });
   } catch (error) {
     console.error('Error creating feature category:', error);
     res.status(500).json({ error: 'Failed to create feature category' });
@@ -584,13 +946,16 @@ router.patch('/feature-category/:id', async (req, res) => {
     const updates = req.body;
     const data = await loadData(req);
 
-    if (!data.featureCategories?.[id]) {
+    if (!data.itemCategories?.[id]) {
       return res.status(404).json({ error: 'Feature category not found' });
     }
 
-    data.featureCategories[id] = { ...data.featureCategories[id], ...updates };
+    data.itemCategories[id] = { ...data.itemCategories[id], ...updates };
     await saveData(data, req);
-    res.json(data.featureCategories[id]);
+
+    // Return backward-compatible response
+    const cat = data.itemCategories[id];
+    res.json({ ...cat, featureOrder: cat.itemOrder || [] });
   } catch (error) {
     console.error('Error updating feature category:', error);
     res.status(500).json({ error: 'Failed to update feature category' });
@@ -603,23 +968,25 @@ router.delete('/feature-category/:id', async (req, res) => {
     const { id } = req.params;
     const data = await loadData(req);
 
-    if (!data.featureCategories?.[id]) {
+    if (!data.itemCategories?.[id]) {
       return res.status(404).json({ error: 'Feature category not found' });
     }
 
-    // Move features back to uncategorized
-    const category = data.featureCategories[id];
-    for (const featureId of category.featureOrder || []) {
-      if (data.features[featureId]) {
-        data.features[featureId].categoryId = null;
-        if (!data.globalFeatureOrder.includes(featureId)) {
-          data.globalFeatureOrder.push(featureId);
+    // Move items back to uncategorized
+    const category = data.itemCategories[id];
+    for (const itemId of category.itemOrder || []) {
+      if (data.items[itemId]) {
+        data.items[itemId].categoryId = null;
+        if (!data.sections[SYSTEM_SECTIONS.FEATURES].itemOrder.includes(itemId)) {
+          data.sections[SYSTEM_SECTIONS.FEATURES].itemOrder.push(itemId);
         }
       }
     }
 
-    delete data.featureCategories[id];
-    data.featureCategoryOrder = (data.featureCategoryOrder || []).filter(cid => cid !== id);
+    delete data.itemCategories[id];
+    data.sections[SYSTEM_SECTIONS.FEATURES].categoryOrder =
+      data.sections[SYSTEM_SECTIONS.FEATURES].categoryOrder.filter(cid => cid !== id);
+
     await saveData(data, req);
     res.json({ deleted: true });
   } catch (error) {
@@ -628,26 +995,28 @@ router.delete('/feature-category/:id', async (req, res) => {
   }
 });
 
-// POST /api/tasks/bug-category - Create bug category
+// POST /api/tasks/bug-category - Create bug category (v4: creates itemCategory in Bugs section)
 router.post('/bug-category', async (req, res) => {
   try {
     const data = await loadData(req);
-    if (!data.bugCategories) data.bugCategories = {};
-    if (!data.bugCategoryOrder) data.bugCategoryOrder = [];
-
     const id = generateId('bcat');
     const { name } = req.body;
 
+    // Create itemCategory in v4 structure
     const category = {
       id,
+      sectionId: SYSTEM_SECTIONS.BUGS,
       name: name || 'New Category',
-      bugOrder: []
+      itemOrder: []
     };
 
-    data.bugCategories[id] = category;
-    data.bugCategoryOrder.push(id);
+    data.itemCategories[id] = category;
+    data.sections[SYSTEM_SECTIONS.BUGS].categoryOrder.push(id);
+
     await saveData(data, req);
-    res.json(category);
+
+    // Return backward-compatible response
+    res.json({ ...category, bugOrder: [] });
   } catch (error) {
     console.error('Error creating bug category:', error);
     res.status(500).json({ error: 'Failed to create bug category' });
@@ -661,13 +1030,16 @@ router.patch('/bug-category/:id', async (req, res) => {
     const updates = req.body;
     const data = await loadData(req);
 
-    if (!data.bugCategories?.[id]) {
+    if (!data.itemCategories?.[id]) {
       return res.status(404).json({ error: 'Bug category not found' });
     }
 
-    data.bugCategories[id] = { ...data.bugCategories[id], ...updates };
+    data.itemCategories[id] = { ...data.itemCategories[id], ...updates };
     await saveData(data, req);
-    res.json(data.bugCategories[id]);
+
+    // Return backward-compatible response
+    const cat = data.itemCategories[id];
+    res.json({ ...cat, bugOrder: cat.itemOrder || [] });
   } catch (error) {
     console.error('Error updating bug category:', error);
     res.status(500).json({ error: 'Failed to update bug category' });
@@ -680,23 +1052,25 @@ router.delete('/bug-category/:id', async (req, res) => {
     const { id } = req.params;
     const data = await loadData(req);
 
-    if (!data.bugCategories?.[id]) {
+    if (!data.itemCategories?.[id]) {
       return res.status(404).json({ error: 'Bug category not found' });
     }
 
-    // Move bugs back to uncategorized
-    const category = data.bugCategories[id];
-    for (const bugId of category.bugOrder || []) {
-      if (data.bugs[bugId]) {
-        data.bugs[bugId].categoryId = null;
-        if (!data.globalBugOrder.includes(bugId)) {
-          data.globalBugOrder.push(bugId);
+    // Move items back to uncategorized
+    const category = data.itemCategories[id];
+    for (const itemId of category.itemOrder || []) {
+      if (data.items[itemId]) {
+        data.items[itemId].categoryId = null;
+        if (!data.sections[SYSTEM_SECTIONS.BUGS].itemOrder.includes(itemId)) {
+          data.sections[SYSTEM_SECTIONS.BUGS].itemOrder.push(itemId);
         }
       }
     }
 
-    delete data.bugCategories[id];
-    data.bugCategoryOrder = (data.bugCategoryOrder || []).filter(cid => cid !== id);
+    delete data.itemCategories[id];
+    data.sections[SYSTEM_SECTIONS.BUGS].categoryOrder =
+      data.sections[SYSTEM_SECTIONS.BUGS].categoryOrder.filter(cid => cid !== id);
+
     await saveData(data, req);
     res.json({ deleted: true });
   } catch (error) {
@@ -705,72 +1079,74 @@ router.delete('/bug-category/:id', async (req, res) => {
   }
 });
 
-// PUT /api/tasks/move-feature - Move feature to/from category
+// PUT /api/tasks/move-feature - Move feature to/from category (v4: moves item)
 router.put('/move-feature', async (req, res) => {
   try {
     const { featureId, targetCategoryId } = req.body;
     const data = await loadData(req);
 
-    const feature = data.features[featureId];
-    if (!feature) {
+    const item = data.items[featureId];
+    if (!item) {
       return res.status(404).json({ error: 'Feature not found' });
     }
 
     // Remove from old location
-    if (feature.categoryId && data.featureCategories?.[feature.categoryId]) {
-      data.featureCategories[feature.categoryId].featureOrder =
-        data.featureCategories[feature.categoryId].featureOrder.filter(id => id !== featureId);
+    if (item.categoryId && data.itemCategories?.[item.categoryId]) {
+      data.itemCategories[item.categoryId].itemOrder =
+        data.itemCategories[item.categoryId].itemOrder.filter(id => id !== featureId);
     } else {
-      data.globalFeatureOrder = data.globalFeatureOrder.filter(id => id !== featureId);
+      data.sections[SYSTEM_SECTIONS.FEATURES].itemOrder =
+        data.sections[SYSTEM_SECTIONS.FEATURES].itemOrder.filter(id => id !== featureId);
     }
 
     // Add to new location
-    if (targetCategoryId && data.featureCategories?.[targetCategoryId]) {
-      feature.categoryId = targetCategoryId;
-      data.featureCategories[targetCategoryId].featureOrder.push(featureId);
+    if (targetCategoryId && data.itemCategories?.[targetCategoryId]) {
+      item.categoryId = targetCategoryId;
+      data.itemCategories[targetCategoryId].itemOrder.push(featureId);
     } else {
-      feature.categoryId = null;
-      data.globalFeatureOrder.push(featureId);
+      item.categoryId = null;
+      data.sections[SYSTEM_SECTIONS.FEATURES].itemOrder.push(featureId);
     }
 
     await saveData(data, req);
-    res.json(feature);
+    res.json({ ...item, parentType: 'feature' });
   } catch (error) {
     console.error('Error moving feature:', error);
     res.status(500).json({ error: 'Failed to move feature' });
   }
 });
 
-// PUT /api/tasks/move-bug - Move bug to/from category
+// PUT /api/tasks/move-bug - Move bug to/from category (v4: moves item)
 router.put('/move-bug', async (req, res) => {
   try {
     const { bugId, targetCategoryId } = req.body;
     const data = await loadData(req);
 
-    const bug = data.bugs[bugId];
-    if (!bug) {
+    const item = data.items[bugId];
+    if (!item) {
       return res.status(404).json({ error: 'Bug not found' });
     }
 
     // Remove from old location
-    if (bug.categoryId && data.bugCategories?.[bug.categoryId]) {
-      data.bugCategories[bug.categoryId].bugOrder =
-        data.bugCategories[bug.categoryId].bugOrder.filter(id => id !== bugId);
+    if (item.categoryId && data.itemCategories?.[item.categoryId]) {
+      data.itemCategories[item.categoryId].itemOrder =
+        data.itemCategories[item.categoryId].itemOrder.filter(id => id !== bugId);
     } else {
-      data.globalBugOrder = data.globalBugOrder.filter(id => id !== bugId);
+      data.sections[SYSTEM_SECTIONS.BUGS].itemOrder =
+        data.sections[SYSTEM_SECTIONS.BUGS].itemOrder.filter(id => id !== bugId);
     }
 
     // Add to new location
-    if (targetCategoryId && data.bugCategories?.[targetCategoryId]) {
-      bug.categoryId = targetCategoryId;
-      data.bugCategories[targetCategoryId].bugOrder.push(bugId);
+    if (targetCategoryId && data.itemCategories?.[targetCategoryId]) {
+      item.categoryId = targetCategoryId;
+      data.itemCategories[targetCategoryId].itemOrder.push(bugId);
     } else {
-      bug.categoryId = null;
-      data.globalBugOrder.push(bugId);
+      item.categoryId = null;
+      data.sections[SYSTEM_SECTIONS.BUGS].itemOrder.push(bugId);
     }
 
     await saveData(data, req);
-    res.json(bug);
+    res.json({ ...item, parentType: 'bug' });
   } catch (error) {
     console.error('Error moving bug:', error);
     res.status(500).json({ error: 'Failed to move bug' });
@@ -1368,37 +1744,79 @@ router.get('/:type/:id/plan/versions', async (req, res) => {
 });
 
 // IMPORTANT: Generic wildcard routes must be defined LAST to avoid catching specific routes
-// PATCH /api/tasks/:type/:id - Update item (generic)
+// PATCH /api/tasks/:type/:id - Update item (generic, v4)
 router.patch('/:type/:id', async (req, res) => {
   try {
     const { type, id } = req.params;
     const updates = req.body;
     const data = await loadData(req);
 
-    let collection;
+    let item;
     switch (type) {
-      case 'feature': collection = data.features; break;
-      case 'bug': collection = data.bugs; break;
-      case 'task': collection = data.tasks; break;
-      case 'category': collection = data.categories; break;
+      case 'feature':
+      case 'bug':
+      case 'item':
+        // v4: features, bugs, and items are all stored in data.items
+        item = data.items[id];
+        break;
+      case 'task':
+        item = data.tasks[id];
+        break;
+      case 'category':
+        // v4: categories are now taskCategories
+        item = data.taskCategories[id];
+        break;
+      case 'section':
+        // v4: sections
+        item = data.sections[id];
+        if (item) {
+          // Prevent changing isSystem or id
+          delete updates.isSystem;
+          delete updates.id;
+        }
+        break;
+      case 'item-category':
+        item = data.itemCategories[id];
+        break;
       default:
         return res.status(400).json({ error: 'Invalid type' });
     }
 
-    if (!collection[id]) {
+    if (!item) {
       return res.status(404).json({ error: `${type} not found` });
     }
 
-    collection[id] = { ...collection[id], ...updates };
+    // Apply updates
+    Object.assign(item, updates);
     await saveData(data, req);
-    res.json(collection[id]);
+
+    // Return backward-compatible response
+    if (type === 'feature' || type === 'bug') {
+      res.json({ ...item, parentType: type });
+    } else if (type === 'task') {
+      const parentItem = data.items[item.itemId];
+      res.json({
+        ...item,
+        parentType: parentItem?.sectionId === SYSTEM_SECTIONS.FEATURES ? 'feature' : 'bug',
+        parentId: item.itemId
+      });
+    } else if (type === 'category') {
+      const parentItem = data.items[item.itemId];
+      res.json({
+        ...item,
+        parentType: parentItem?.sectionId === SYSTEM_SECTIONS.FEATURES ? 'feature' : 'bug',
+        parentId: item.itemId
+      });
+    } else {
+      res.json(item);
+    }
   } catch (error) {
     console.error('Error updating item:', error);
     res.status(500).json({ error: 'Failed to update item' });
   }
 });
 
-// DELETE /api/tasks/:type/:id - Delete item (generic)
+// DELETE /api/tasks/:type/:id - Delete item (generic, v4)
 router.delete('/:type/:id', async (req, res) => {
   try {
     const { type, id } = req.params;
@@ -1406,97 +1824,157 @@ router.delete('/:type/:id', async (req, res) => {
 
     switch (type) {
       case 'feature':
-        if (!data.features[id]) {
-          return res.status(404).json({ error: 'Feature not found' });
-        }
-        // Delete associated tasks
-        for (const taskId of data.features[id].taskOrder || []) {
-          delete data.tasks[taskId];
-        }
-        // Delete associated categories and their tasks
-        Object.values(data.categories)
-          .filter(cat => cat.parentType === 'feature' && cat.parentId === id)
-          .forEach(cat => {
-            for (const taskId of cat.taskOrder || []) {
-              delete data.tasks[taskId];
-            }
-            delete data.categories[cat.id];
-          });
-        delete data.features[id];
-        data.globalFeatureOrder = data.globalFeatureOrder.filter(fid => fid !== id);
-        break;
-
       case 'bug':
-        if (!data.bugs[id]) {
-          return res.status(404).json({ error: 'Bug not found' });
+      case 'item': {
+        // v4: features, bugs, and items are all stored in data.items
+        const item = data.items[id];
+        if (!item) {
+          return res.status(404).json({ error: `${type} not found` });
         }
+
+        const sectionId = item.sectionId;
+
         // Delete associated tasks
-        for (const taskId of data.bugs[id].taskOrder || []) {
+        for (const taskId of item.taskOrder || []) {
           delete data.tasks[taskId];
         }
-        // Delete associated categories and their tasks
-        Object.values(data.categories)
-          .filter(cat => cat.parentType === 'bug' && cat.parentId === id)
+
+        // Delete associated taskCategories and their tasks
+        Object.values(data.taskCategories)
+          .filter(cat => cat.itemId === id)
           .forEach(cat => {
             for (const taskId of cat.taskOrder || []) {
               delete data.tasks[taskId];
             }
-            delete data.categories[cat.id];
+            delete data.taskCategories[cat.id];
           });
-        delete data.bugs[id];
-        data.globalBugOrder = data.globalBugOrder.filter(bid => bid !== id);
-        break;
 
-      case 'task':
-        if (!data.tasks[id]) {
+        // Remove from section's itemOrder
+        if (data.sections[sectionId]) {
+          data.sections[sectionId].itemOrder =
+            data.sections[sectionId].itemOrder.filter(iid => iid !== id);
+        }
+
+        // Remove from itemCategory if categorized
+        if (item.categoryId && data.itemCategories[item.categoryId]) {
+          data.itemCategories[item.categoryId].itemOrder =
+            data.itemCategories[item.categoryId].itemOrder.filter(iid => iid !== id);
+        }
+
+        delete data.items[id];
+        break;
+      }
+
+      case 'task': {
+        const task = data.tasks[id];
+        if (!task) {
           return res.status(404).json({ error: 'Task not found' });
         }
-        const task = data.tasks[id];
-        // Remove from category or parent
-        if (task.categoryId && data.categories[task.categoryId]) {
-          data.categories[task.categoryId].taskOrder =
-            data.categories[task.categoryId].taskOrder.filter(tid => tid !== id);
-        } else if (task.parentId) {
-          if (task.parentType === 'feature' && data.features[task.parentId]) {
-            data.features[task.parentId].taskOrder =
-              data.features[task.parentId].taskOrder.filter(tid => tid !== id);
-          } else if (task.parentType === 'bug' && data.bugs[task.parentId]) {
-            data.bugs[task.parentId].taskOrder =
-              data.bugs[task.parentId].taskOrder.filter(tid => tid !== id);
-          }
+
+        // Remove from taskCategory or item
+        if (task.categoryId && data.taskCategories[task.categoryId]) {
+          data.taskCategories[task.categoryId].taskOrder =
+            data.taskCategories[task.categoryId].taskOrder.filter(tid => tid !== id);
+        } else if (task.itemId && data.items[task.itemId]) {
+          data.items[task.itemId].taskOrder =
+            data.items[task.itemId].taskOrder.filter(tid => tid !== id);
         }
+
         delete data.tasks[id];
         break;
+      }
 
-      case 'category':
-        if (!data.categories[id]) {
+      case 'category': {
+        // v4: task categories
+        const cat = data.taskCategories[id];
+        if (!cat) {
           return res.status(404).json({ error: 'Category not found' });
         }
-        // Move tasks back to parent
-        const cat = data.categories[id];
+
+        // Move tasks back to parent item
+        const parentItem = data.items[cat.itemId];
         for (const taskId of cat.taskOrder || []) {
           if (data.tasks[taskId]) {
             data.tasks[taskId].categoryId = null;
-            // Add to parent's task order
-            if (cat.parentType === 'feature' && data.features[cat.parentId]) {
-              data.features[cat.parentId].taskOrder.push(taskId);
-            } else if (cat.parentType === 'bug' && data.bugs[cat.parentId]) {
-              data.bugs[cat.parentId].taskOrder.push(taskId);
+            if (parentItem) {
+              parentItem.taskOrder.push(taskId);
             }
           }
         }
-        // Remove from parent's categoryOrder
-        if (cat.parentId) {
-          if (cat.parentType === 'feature' && data.features[cat.parentId]?.categoryOrder) {
-            data.features[cat.parentId].categoryOrder =
-              data.features[cat.parentId].categoryOrder.filter(cid => cid !== id);
-          } else if (cat.parentType === 'bug' && data.bugs[cat.parentId]?.categoryOrder) {
-            data.bugs[cat.parentId].categoryOrder =
-              data.bugs[cat.parentId].categoryOrder.filter(cid => cid !== id);
+
+        // Remove from parent item's categoryOrder
+        if (parentItem?.categoryOrder) {
+          parentItem.categoryOrder = parentItem.categoryOrder.filter(cid => cid !== id);
+        }
+
+        delete data.taskCategories[id];
+        break;
+      }
+
+      case 'section': {
+        const section = data.sections[id];
+        if (!section) {
+          return res.status(404).json({ error: 'Section not found' });
+        }
+
+        if (section.isSystem) {
+          return res.status(400).json({ error: 'Cannot delete system section' });
+        }
+
+        // Delete all items in this section and their tasks/categories
+        const itemsToDelete = Object.values(data.items).filter(item => item.sectionId === id);
+        for (const item of itemsToDelete) {
+          // Delete tasks
+          for (const taskId of item.taskOrder || []) {
+            delete data.tasks[taskId];
+          }
+          // Delete taskCategories
+          Object.values(data.taskCategories || {})
+            .filter(cat => cat.itemId === item.id)
+            .forEach(cat => {
+              for (const taskId of cat.taskOrder || []) {
+                delete data.tasks[taskId];
+              }
+              delete data.taskCategories[cat.id];
+            });
+          // Delete itemCategories
+          Object.values(data.itemCategories || {})
+            .filter(cat => cat.sectionId === id)
+            .forEach(cat => {
+              delete data.itemCategories[cat.id];
+            });
+          delete data.items[item.id];
+        }
+
+        // Remove from sectionOrder
+        data.sectionOrder = data.sectionOrder.filter(sid => sid !== id);
+
+        delete data.sections[id];
+        break;
+      }
+
+      case 'item-category': {
+        const cat = data.itemCategories[id];
+        if (!cat) {
+          return res.status(404).json({ error: 'Item category not found' });
+        }
+
+        // Move items back to section (uncategorized)
+        for (const itemId of cat.itemOrder || []) {
+          if (data.items[itemId]) {
+            data.items[itemId].categoryId = null;
           }
         }
-        delete data.categories[id];
+
+        // Remove from section's categoryOrder
+        const section = data.sections[cat.sectionId];
+        if (section?.categoryOrder) {
+          section.categoryOrder = section.categoryOrder.filter(cid => cid !== id);
+        }
+
+        delete data.itemCategories[id];
         break;
+      }
 
       default:
         return res.status(400).json({ error: 'Invalid type' });
@@ -1507,6 +1985,369 @@ router.delete('/:type/:id', async (req, res) => {
   } catch (error) {
     console.error('Error deleting item:', error);
     res.status(500).json({ error: 'Failed to delete item' });
+  }
+});
+
+// ========== NEW SECTION API ROUTES (v4) ==========
+
+// POST /api/tasks/section - Create custom section
+router.post('/section', async (req, res) => {
+  try {
+    const data = await loadData(req);
+    const id = generateId('sect');
+    const { name, icon, color } = req.body;
+
+    const section = {
+      id,
+      name: name || 'New Section',
+      icon: icon || 'folder',
+      color: color || '#6366f1',
+      isSystem: false,
+      itemOrder: [],
+      categoryOrder: [],
+      createdAt: new Date().toISOString()
+    };
+
+    data.sections[id] = section;
+    data.sectionOrder.push(id);
+
+    await saveData(data, req);
+    res.json(section);
+  } catch (error) {
+    console.error('Error creating section:', error);
+    res.status(500).json({ error: 'Failed to create section' });
+  }
+});
+
+// PATCH /api/tasks/section/:id - Update section
+router.patch('/section/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updates = req.body;
+    const data = await loadData(req);
+
+    if (!data.sections[id]) {
+      return res.status(404).json({ error: 'Section not found' });
+    }
+
+    // Prevent changing isSystem
+    delete updates.isSystem;
+    delete updates.id;
+
+    data.sections[id] = { ...data.sections[id], ...updates };
+    await saveData(data, req);
+    res.json(data.sections[id]);
+  } catch (error) {
+    console.error('Error updating section:', error);
+    res.status(500).json({ error: 'Failed to update section' });
+  }
+});
+
+// DELETE /api/tasks/section/:id - Delete section
+router.delete('/section/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const data = await loadData(req);
+
+    const section = data.sections[id];
+    if (!section) {
+      return res.status(404).json({ error: 'Section not found' });
+    }
+
+    if (section.isSystem) {
+      return res.status(400).json({ error: 'Cannot delete system section' });
+    }
+
+    // Delete all items in this section and their tasks/categories
+    const itemsToDelete = Object.values(data.items).filter(item => item.sectionId === id);
+    for (const item of itemsToDelete) {
+      // Delete tasks
+      for (const taskId of item.taskOrder || []) {
+        delete data.tasks[taskId];
+      }
+      // Delete taskCategories
+      Object.values(data.taskCategories)
+        .filter(cat => cat.itemId === item.id)
+        .forEach(cat => {
+          for (const taskId of cat.taskOrder || []) {
+            delete data.tasks[taskId];
+          }
+          delete data.taskCategories[cat.id];
+        });
+      delete data.items[item.id];
+    }
+
+    // Delete itemCategories in this section
+    Object.values(data.itemCategories)
+      .filter(cat => cat.sectionId === id)
+      .forEach(cat => delete data.itemCategories[cat.id]);
+
+    // Remove section
+    delete data.sections[id];
+    data.sectionOrder = data.sectionOrder.filter(sid => sid !== id);
+
+    await saveData(data, req);
+    res.json({ deleted: true });
+  } catch (error) {
+    console.error('Error deleting section:', error);
+    res.status(500).json({ error: 'Failed to delete section' });
+  }
+});
+
+// POST /api/tasks/item - Create item in section
+router.post('/item', async (req, res) => {
+  try {
+    const data = await loadData(req);
+    const { sectionId, title, description, categoryId, priority } = req.body;
+
+    if (!sectionId || !data.sections[sectionId]) {
+      return res.status(400).json({ error: 'Valid sectionId required' });
+    }
+
+    const id = generateId('item');
+    const now = new Date().toISOString();
+
+    const item = {
+      id,
+      sectionId,
+      title: title || 'New Item',
+      description: description || '',
+      status: 'open',
+      priority: priority || 'medium',
+      complexity: null,
+      categoryId: categoryId || null,
+      taskOrder: [],
+      categoryOrder: [],
+      attachments: [],
+      promptHistory: [],
+      tagIds: [],
+      createdAt: now,
+      finishedAt: null
+    };
+
+    data.items[id] = item;
+
+    // Add to section's itemOrder or category's itemOrder
+    if (categoryId && data.itemCategories[categoryId]) {
+      data.itemCategories[categoryId].itemOrder.push(id);
+    } else {
+      data.sections[sectionId].itemOrder.push(id);
+    }
+
+    await saveData(data, req);
+    res.json(item);
+  } catch (error) {
+    console.error('Error creating item:', error);
+    res.status(500).json({ error: 'Failed to create item' });
+  }
+});
+
+// PATCH /api/tasks/item/:id - Update item
+router.patch('/item/:id', async (req, res) => {
+  try {
+    const data = await loadData(req);
+    const { id } = req.params;
+
+    if (!data.items[id]) {
+      return res.status(404).json({ error: 'Item not found' });
+    }
+
+    const updates = req.body;
+    const allowedFields = ['title', 'description', 'status', 'priority', 'complexity', 'categoryId', 'tagIds'];
+
+    for (const field of allowedFields) {
+      if (updates[field] !== undefined) {
+        data.items[id][field] = updates[field];
+      }
+    }
+
+    if (updates.status === 'done' && !data.items[id].finishedAt) {
+      data.items[id].finishedAt = new Date().toISOString();
+    } else if (updates.status && updates.status !== 'done') {
+      data.items[id].finishedAt = null;
+    }
+
+    await saveData(data, req);
+    res.json(data.items[id]);
+  } catch (error) {
+    console.error('Error updating item:', error);
+    res.status(500).json({ error: 'Failed to update item' });
+  }
+});
+
+// DELETE /api/tasks/item/:id - Delete item
+router.delete('/item/:id', async (req, res) => {
+  try {
+    const data = await loadData(req);
+    const { id } = req.params;
+
+    if (!data.items[id]) {
+      return res.status(404).json({ error: 'Item not found' });
+    }
+
+    const item = data.items[id];
+    const sectionId = item.sectionId;
+
+    // Remove from section's itemOrder
+    if (data.sections[sectionId]) {
+      data.sections[sectionId].itemOrder = data.sections[sectionId].itemOrder.filter(iid => iid !== id);
+    }
+
+    // Remove from category if in one
+    if (item.categoryId && data.itemCategories[item.categoryId]) {
+      data.itemCategories[item.categoryId].itemOrder =
+        data.itemCategories[item.categoryId].itemOrder.filter(iid => iid !== id);
+    }
+
+    // Delete associated tasks and taskCategories
+    for (const taskId of item.taskOrder || []) {
+      delete data.tasks[taskId];
+    }
+    for (const catId of item.categoryOrder || []) {
+      delete data.taskCategories[catId];
+    }
+
+    delete data.items[id];
+    await saveData(data, req);
+    res.json({ deleted: true });
+  } catch (error) {
+    console.error('Error deleting item:', error);
+    res.status(500).json({ error: 'Failed to delete item' });
+  }
+});
+
+// PUT /api/tasks/move-item - Move item between sections or categories
+router.put('/move-item', async (req, res) => {
+  try {
+    const data = await loadData(req);
+    const { itemId, targetSectionId, targetCategoryId } = req.body;
+
+    if (!data.items[itemId]) {
+      return res.status(404).json({ error: 'Item not found' });
+    }
+
+    const item = data.items[itemId];
+    const oldSectionId = item.sectionId;
+    const oldCategoryId = item.categoryId;
+
+    // Remove from old location
+    if (oldCategoryId && data.itemCategories[oldCategoryId]) {
+      data.itemCategories[oldCategoryId].itemOrder =
+        data.itemCategories[oldCategoryId].itemOrder.filter(id => id !== itemId);
+    } else if (data.sections[oldSectionId]) {
+      data.sections[oldSectionId].itemOrder =
+        data.sections[oldSectionId].itemOrder.filter(id => id !== itemId);
+    }
+
+    // Update item's section and category
+    if (targetSectionId && data.sections[targetSectionId]) {
+      item.sectionId = targetSectionId;
+    }
+    item.categoryId = targetCategoryId || null;
+
+    // Add to new location
+    if (targetCategoryId && data.itemCategories[targetCategoryId]) {
+      data.itemCategories[targetCategoryId].itemOrder.push(itemId);
+    } else if (data.sections[item.sectionId]) {
+      data.sections[item.sectionId].itemOrder.push(itemId);
+    }
+
+    await saveData(data, req);
+    res.json(item);
+  } catch (error) {
+    console.error('Error moving item:', error);
+    res.status(500).json({ error: 'Failed to move item' });
+  }
+});
+
+// POST /api/tasks/item-category - Create item category
+router.post('/item-category', async (req, res) => {
+  try {
+    const data = await loadData(req);
+    const { sectionId, name } = req.body;
+
+    if (!sectionId || !data.sections[sectionId]) {
+      return res.status(400).json({ error: 'Valid sectionId required' });
+    }
+
+    const id = generateId('icat');
+    const now = new Date().toISOString();
+
+    const category = {
+      id,
+      sectionId,
+      name: name || 'New Category',
+      itemOrder: [],
+      createdAt: now
+    };
+
+    data.itemCategories[id] = category;
+    data.sections[sectionId].categoryOrder.push(id);
+
+    await saveData(data, req);
+    res.json(category);
+  } catch (error) {
+    console.error('Error creating item category:', error);
+    res.status(500).json({ error: 'Failed to create item category' });
+  }
+});
+
+// PATCH /api/tasks/item-category/:id - Update item category
+router.patch('/item-category/:id', async (req, res) => {
+  try {
+    const data = await loadData(req);
+    const { id } = req.params;
+
+    if (!data.itemCategories[id]) {
+      return res.status(404).json({ error: 'Item category not found' });
+    }
+
+    const updates = req.body;
+    if (updates.name !== undefined) {
+      data.itemCategories[id].name = updates.name;
+    }
+
+    await saveData(data, req);
+    res.json(data.itemCategories[id]);
+  } catch (error) {
+    console.error('Error updating item category:', error);
+    res.status(500).json({ error: 'Failed to update item category' });
+  }
+});
+
+// DELETE /api/tasks/item-category/:id - Delete item category
+router.delete('/item-category/:id', async (req, res) => {
+  try {
+    const data = await loadData(req);
+    const { id } = req.params;
+
+    if (!data.itemCategories[id]) {
+      return res.status(404).json({ error: 'Item category not found' });
+    }
+
+    const category = data.itemCategories[id];
+    const sectionId = category.sectionId;
+
+    // Move items out of category to uncategorized
+    for (const itemId of category.itemOrder) {
+      if (data.items[itemId]) {
+        data.items[itemId].categoryId = null;
+        data.sections[sectionId].itemOrder.push(itemId);
+      }
+    }
+
+    // Remove from section's categoryOrder
+    if (data.sections[sectionId]) {
+      data.sections[sectionId].categoryOrder =
+        data.sections[sectionId].categoryOrder.filter(cid => cid !== id);
+    }
+
+    delete data.itemCategories[id];
+    await saveData(data, req);
+    res.json({ deleted: true });
+  } catch (error) {
+    console.error('Error deleting item category:', error);
+    res.status(500).json({ error: 'Failed to delete item category' });
   }
 });
 

@@ -1,48 +1,174 @@
 {
-  "version": 3,
-  "lastModified": "2025-12-13T11:08:07.492Z",
-  "features": {
-    "feat-uLOlOn9X": {
-      "id": "feat-uLOlOn9X",
-      "title": "Refactor Features/Bugs to generic customizable item types",
-      "description": "Refactor the hardcoded Features and Bugs sections to be generic item types that users can customize. Users should be able to register custom types (e.g., \"Epics\", \"Stories\", \"Improvements\") with their own icons and colors.",
-      "status": "open",
-      "priority": "high",
-      "createdAt": "2025-12-13T11:06:34.372Z",
-      "finishedAt": null,
-      "taskOrder": [],
+  "version": 4,
+  "lastModified": "2025-12-13T16:07:53.059Z",
+  "sections": {
+    "sect-features": {
+      "id": "sect-features",
+      "name": "Features",
+      "icon": "layers",
+      "color": "#3b82f6",
+      "isSystem": true,
+      "itemOrder": [
+        "item-3WbtbPZH",
+        "item-vABtRoNq",
+        "item-jn4uzVlP"
+      ],
       "categoryOrder": [],
-      "categoryId": null
+      "createdAt": "2025-12-13T12:02:32.069Z"
     },
-    "feat-tTl0myPT": {
-      "id": "feat-tTl0myPT",
-      "title": "Refactor In Progress display to also show in-progress bugs",
-      "description": "Update the In Progress section/display to include bugs that are in-progress, not just features/tasks.",
-      "status": "open",
-      "priority": "medium",
-      "createdAt": "2025-12-13T11:08:07.492Z",
-      "finishedAt": null,
-      "taskOrder": [],
+    "sect-bugs": {
+      "id": "sect-bugs",
+      "name": "Bugs",
+      "icon": "bug",
+      "color": "#ef4444",
+      "isSystem": true,
+      "itemOrder": [
+        "item-MYWfsOeN",
+        "item-l0sZkaK0",
+        "item-cjuJ77p2"
+      ],
       "categoryOrder": [],
-      "categoryId": null
+      "createdAt": "2025-12-13T12:02:32.069Z"
+    },
+    "sect-NOProEie": {
+      "id": "sect-NOProEie",
+      "name": "test",
+      "icon": "folder",
+      "color": "#3b82f6",
+      "isSystem": false,
+      "itemOrder": [],
+      "categoryOrder": [],
+      "createdAt": "2025-12-13T16:01:20.776Z"
     }
   },
-  "bugs": {},
-  "tasks": {},
-  "categories": {},
-  "tags": {},
-  "featureCategories": {},
-  "bugCategories": {},
-  "globalFeatureOrder": [
-    "feat-uLOlOn9X",
-    "feat-tTl0myPT"
+  "sectionOrder": [
+    "sect-features",
+    "sect-bugs",
+    "sect-NOProEie"
   ],
-  "globalBugOrder": [],
-  "featureCategoryOrder": [],
-  "bugCategoryOrder": [],
+  "items": {
+    "item-MYWfsOeN": {
+      "id": "item-MYWfsOeN",
+      "sectionId": "sect-bugs",
+      "title": "Wrong icons for in-progress task",
+      "description": "Banshee3D project has a GpuBuffer rewrite in progress task which shows and orange and a blue circle next to it. I feel only one circle show up shown, depending on the project, but I'm not sure what's the intent. That section should probably just show in-progress items from the currently active project.",
+      "status": "done",
+      "priority": "medium",
+      "complexity": null,
+      "categoryId": null,
+      "taskOrder": [],
+      "categoryOrder": [],
+      "attachments": [],
+      "promptHistory": [
+        {
+          "id": "ph-unCIn9vi",
+          "timestamp": "2025-12-13T15:45:45.889Z",
+          "role": "assistant",
+          "content": "Fixed the duplicate circle icons in the 'In Progress' sidebar section. The issue was that NavItem was receiving both `status` (shows orange in-progress dot) and `sectionColor` (shows section color dot like blue for Features). Removed the `sectionColor` prop from the in-progress items NavItem call since the status dot already indicates the item state and showing both was confusing."
+        }
+      ],
+      "tagIds": [],
+      "createdAt": "2025-12-13T15:32:01.191Z",
+      "finishedAt": "2025-12-13T15:45:39.468Z"
+    },
+    "item-l0sZkaK0": {
+      "id": "item-l0sZkaK0",
+      "sectionId": "sect-bugs",
+      "title": "Drag and drop for features doesn't work",
+      "description": "Features can be dragged, but once released they go back to their old location. The issue doesn't happen with tasks.",
+      "status": "done",
+      "priority": "medium",
+      "complexity": null,
+      "categoryId": null,
+      "taskOrder": [],
+      "categoryOrder": [],
+      "attachments": [],
+      "promptHistory": [
+        {
+          "id": "ph-UPyQtGWo",
+          "timestamp": "2025-12-13T15:43:29.566Z",
+          "role": "assistant",
+          "content": "Fixed drag-and-drop for features/items in section view. The issue was that SectionItemsList.handleDragEnd was missing reorder logic - it only handled category moves, not reordering within the same category or uncategorized items. Added: 1) Server support for 'section-items' reorder type, 2) reorderSectionItems and reorderItemsInCategory actions in TaskProvider, 3) Complete reorder logic in handleDragEnd matching GlobalFeaturesList behavior."
+        }
+      ],
+      "tagIds": [],
+      "createdAt": "2025-12-13T15:39:31.566Z",
+      "finishedAt": "2025-12-13T15:43:23.283Z"
+    },
+    "item-vABtRoNq": {
+      "id": "item-vABtRoNq",
+      "sectionId": "sect-features",
+      "title": "No way to edit or delete sections",
+      "description": "",
+      "status": "done",
+      "priority": "medium",
+      "complexity": null,
+      "categoryId": null,
+      "taskOrder": [],
+      "categoryOrder": [],
+      "attachments": [],
+      "promptHistory": [
+        {
+          "id": "ph-POqbiMka",
+          "timestamp": "2025-12-13T15:49:30.830Z",
+          "role": "assistant",
+          "content": "Added edit and delete functionality for sections in the sidebar. Changes:\n\n1. **Sidebar.jsx**: Added edit/delete icons, state for editing section, and handlers (handleStartEditSection, handleSaveEditSection, handleEditSectionKeyDown, handleDeleteSection). Modified section rendering to show edit button (pencil icon) and delete button (trash icon) on hover. Delete button only appears for non-system sections. Inline editing with input field when edit button clicked.\n\n2. **index.css**: Added styles for .section-nav-item, .section-actions (hidden by default, shown on hover), .section-action-btn, and .section-delete-btn with red color on hover.\n\nFeatures:\n- Hover over section to see edit/delete buttons\n- Click edit button to rename inline\n- Press Enter to save, Escape to cancel\n- System sections (Features/Bugs) cannot be deleted\n- Deleting a section with items shows confirmation with item count"
+        }
+      ],
+      "tagIds": [],
+      "createdAt": "2025-12-13T15:44:48.995Z",
+      "finishedAt": "2025-12-13T15:49:20.203Z"
+    },
+    "item-jn4uzVlP": {
+      "id": "item-jn4uzVlP",
+      "sectionId": "sect-features",
+      "title": "Side panel in progress should show both bugs and features (all items)",
+      "description": "",
+      "status": "done",
+      "priority": "medium",
+      "complexity": null,
+      "categoryId": null,
+      "taskOrder": [],
+      "categoryOrder": [],
+      "attachments": [],
+      "promptHistory": [
+        {
+          "id": "ph-dqXh8IAz",
+          "timestamp": "2025-12-13T16:04:49.359Z",
+          "role": "assistant",
+          "content": "The 'In Progress' section already showed all items from all sections (Features, Bugs, custom sections) since the code filters `data.items` by status. Enhanced the display to show which section each item belongs to:\n\n1. Added a colored dot (section color) before each item title\n2. Added a section name label on the right side of each item\n3. Added CSS for `.in-progress-item` and `.in-progress-section-label`\n\nNow users can easily see which section (Features, Bugs, or custom) each in-progress item belongs to."
+        }
+      ],
+      "tagIds": [],
+      "createdAt": "2025-12-13T16:03:12.729Z",
+      "finishedAt": "2025-12-13T16:04:42.038Z"
+    },
+    "item-cjuJ77p2": {
+      "id": "item-cjuJ77p2",
+      "sectionId": "sect-bugs",
+      "title": "Categories can no longer be reordered",
+      "description": "",
+      "status": "open",
+      "priority": "medium",
+      "complexity": null,
+      "categoryId": null,
+      "taskOrder": [],
+      "categoryOrder": [],
+      "attachments": [],
+      "promptHistory": [],
+      "tagIds": [],
+      "createdAt": "2025-12-13T16:07:44.646Z",
+      "finishedAt": null
+    }
+  },
+  "itemCategories": {},
+  "tasks": {},
+  "taskCategories": {},
+  "tags": {},
   "settings": {
-    "activeView": "features",
-    "activeFeatureId": null,
+    "activeView": "section",
+    "activeSectionId": "sect-features",
+    "activeItemId": null,
     "theme": "dark"
   }
 }

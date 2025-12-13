@@ -1,5 +1,5 @@
 import { memo, useState, useCallback, useEffect, useRef } from 'react';
-import { useTaskData, useTaskActions, useUIState } from '../../context/TaskProvider';
+import { useTaskData, useTaskActions, useUIState, SYSTEM_SECTIONS } from '../../context/TaskProvider';
 import MarkdownEditor from '../detail/MarkdownEditor';
 import MarkdownViewer from '../detail/MarkdownViewer';
 import { formatDateTime } from '../../utils/dateFormat';
@@ -101,18 +101,29 @@ const TAG_COLORS = [
 ];
 
 // Get item type label
-const getItemTypeLabel = (type) => {
+const getItemTypeLabel = (type, item, data) => {
   switch (type) {
     case 'feature': return 'Feature';
     case 'bug': return 'Bug';
     case 'task': return 'Task';
+    case 'item': {
+      // For unified items, determine label from section
+      if (item?.sectionId) {
+        const section = data?.sections?.[item.sectionId];
+        if (section) {
+          // Return singular form of section name
+          return section.name?.replace(/s$/, '') || 'Item';
+        }
+      }
+      return 'Item';
+    }
     default: return 'Item';
   }
 };
 
 function DetailPanel() {
   const { data } = useTaskData();
-  const { updateTask, deleteTask, updateFeature, deleteFeature, updateBug, deleteBug, createTag, addTagToTask, removeTagFromTask, uploadAttachment, deleteAttachment } = useTaskActions();
+  const { updateTask, deleteTask, updateFeature, deleteFeature, updateBug, deleteBug, updateItem, deleteItem, createTag, addTagToTask, removeTagFromTask, uploadAttachment, deleteAttachment } = useTaskActions();
   const { selectedItemType, selectedItemId, clearSelection } = useUIState();
   const [editTitle, setEditTitle] = useState('');
   const [isEditingTitle, setIsEditingTitle] = useState(false);
@@ -132,8 +143,9 @@ function DetailPanel() {
     if (!selectedItemId || !selectedItemType) return null;
     switch (selectedItemType) {
       case 'task': return data?.tasks?.[selectedItemId];
-      case 'feature': return data?.features?.[selectedItemId];
-      case 'bug': return data?.bugs?.[selectedItemId];
+      case 'feature': return data?.features?.[selectedItemId] || data?.items?.[selectedItemId];
+      case 'bug': return data?.bugs?.[selectedItemId] || data?.items?.[selectedItemId];
+      case 'item': return data?.items?.[selectedItemId];
       default: return null;
     }
   })();
@@ -173,10 +185,13 @@ function DetailPanel() {
         case 'bug':
           updateBug(selectedItemId, { title: editTitle.trim() });
           break;
+        case 'item':
+          updateItem(selectedItemId, { title: editTitle.trim() });
+          break;
       }
     }
     setIsEditingTitle(false);
-  }, [editTitle, item?.title, selectedItemType, selectedItemId, updateTask, updateFeature, updateBug]);
+  }, [editTitle, item?.title, selectedItemType, selectedItemId, updateTask, updateFeature, updateBug, updateItem]);
 
   const handleDescriptionChange = useCallback((description) => {
     switch (selectedItemType) {
@@ -189,11 +204,14 @@ function DetailPanel() {
       case 'bug':
         updateBug(selectedItemId, { description });
         break;
+      case 'item':
+        updateItem(selectedItemId, { description });
+        break;
     }
-  }, [selectedItemType, selectedItemId, updateTask, updateFeature, updateBug]);
+  }, [selectedItemType, selectedItemId, updateTask, updateFeature, updateBug, updateItem]);
 
   const handleDelete = useCallback(async () => {
-    const label = getItemTypeLabel(selectedItemType);
+    const label = getItemTypeLabel(selectedItemType, item, data);
     if (!confirm(`Delete this ${label.toLowerCase()}?`)) return;
 
     switch (selectedItemType) {
@@ -206,9 +224,12 @@ function DetailPanel() {
       case 'bug':
         await deleteBug(selectedItemId);
         break;
+      case 'item':
+        await deleteItem(selectedItemId);
+        break;
     }
     clearSelection();
-  }, [selectedItemType, selectedItemId, deleteTask, deleteFeature, deleteBug, clearSelection]);
+  }, [selectedItemType, selectedItemId, item, data, deleteTask, deleteFeature, deleteBug, deleteItem, clearSelection]);
 
   const handleStatusChange = useCallback((newStatus) => {
     const updates = { status: newStatus };
@@ -229,8 +250,11 @@ function DetailPanel() {
       case 'bug':
         updateBug(selectedItemId, updates);
         break;
+      case 'item':
+        updateItem(selectedItemId, updates);
+        break;
     }
-  }, [item?.finishedAt, selectedItemType, selectedItemId, updateTask, updateFeature, updateBug]);
+  }, [item?.finishedAt, selectedItemType, selectedItemId, updateTask, updateFeature, updateBug, updateItem]);
 
   const handlePriorityChange = useCallback((newPriority) => {
     switch (selectedItemType) {
@@ -243,8 +267,11 @@ function DetailPanel() {
       case 'bug':
         updateBug(selectedItemId, { priority: newPriority });
         break;
+      case 'item':
+        updateItem(selectedItemId, { priority: newPriority });
+        break;
     }
-  }, [selectedItemType, selectedItemId, updateTask, updateFeature, updateBug]);
+  }, [selectedItemType, selectedItemId, updateTask, updateFeature, updateBug, updateItem]);
 
   const handleComplexityChange = useCallback((newComplexity) => {
     switch (selectedItemType) {
@@ -257,8 +284,11 @@ function DetailPanel() {
       case 'bug':
         updateBug(selectedItemId, { complexity: newComplexity });
         break;
+      case 'item':
+        updateItem(selectedItemId, { complexity: newComplexity });
+        break;
     }
-  }, [selectedItemType, selectedItemId, updateTask, updateFeature, updateBug]);
+  }, [selectedItemType, selectedItemId, updateTask, updateFeature, updateBug, updateItem]);
 
   const handleAddTag = useCallback((tagId) => {
     if (selectedItemType === 'task') {
@@ -445,11 +475,11 @@ function DetailPanel() {
   }
 
   const currentStatus = item.status || 'open';
-  const typeLabel = getItemTypeLabel(selectedItemType);
+  const typeLabel = getItemTypeLabel(selectedItemType, item, data);
   const isTask = selectedItemType === 'task';
-  const isFeatureOrBug = selectedItemType === 'feature' || selectedItemType === 'bug';
+  const isFeatureOrBug = selectedItemType === 'feature' || selectedItemType === 'bug' || selectedItemType === 'item';
 
-  // Count tasks for features/bugs
+  // Count tasks for features/bugs/items
   const taskCount = isFeatureOrBug ? (item.taskOrder?.length || 0) : 0;
 
   const handleOverlayClick = (e) => {
@@ -837,6 +867,16 @@ function DetailPanel() {
             <div className="detail-section-title">Category</div>
             <div style={{ fontSize: '14px' }}>
               {data.bugCategories[item.categoryId].name}
+            </div>
+          </div>
+        )}
+
+        {/* Item Category - for unified items */}
+        {selectedItemType === 'item' && item.categoryId && data?.itemCategories?.[item.categoryId] && (
+          <div className="detail-section">
+            <div className="detail-section-title">Category</div>
+            <div style={{ fontSize: '14px' }}>
+              {data.itemCategories[item.categoryId].name}
             </div>
           </div>
         )}

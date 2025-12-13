@@ -7,7 +7,11 @@
       "mcp__tasklist__update",
       "mcp__tasklist__list",
       "mcp__tasklist__read",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(node -c:*)",
+      "Bash(curl:*)",
+      "Bash(npx eslint:*)",
+      "Bash(npx vite build:*)"
     ]
   }
 }

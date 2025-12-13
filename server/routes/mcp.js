@@ -47,11 +47,21 @@ async function getAttachmentsDir(explicitProjectId, req) {
 }
 
 // Load data helper - now project-aware (accepts explicit projectId or falls back to req/settings)
+// Automatically migrates old data formats to v4
 async function loadData(projectId, req) {
   const dataFile = await getDataFilePath(projectId, req);
   try {
     const content = await fs.readFile(dataFile, 'utf-8');
-    return JSON.parse(content);
+    let data = JSON.parse(content);
+
+    // Check if migration is needed
+    if (!data.version || data.version < 4) {
+      data = migrateToV4(data);
+      // Save migrated data
+      await saveData(data, projectId, req);
+    }
+
+    return data;
   } catch (error) {
     if (error.code === 'ENOENT') {
       return getDefaultData();
@@ -85,27 +95,250 @@ function generateId(prefix) {
   return `${prefix}-${id}`;
 }
 
-// Default data structure
+// System section IDs (same as tasks.js)
+const SYSTEM_SECTIONS = {
+  FEATURES: 'sect-features',
+  BUGS: 'sect-bugs'
+};
+
+// Default data structure - v4 unified sections
 function getDefaultData() {
+  const now = new Date().toISOString();
   return {
-    version: 3,
-    lastModified: new Date().toISOString(),
-    features: {},
-    bugs: {},
+    version: 4,
+    lastModified: now,
+    sections: {
+      [SYSTEM_SECTIONS.FEATURES]: {
+        id: SYSTEM_SECTIONS.FEATURES,
+        name: 'Features',
+        icon: 'layers',
+        color: '#3b82f6',
+        isSystem: true,
+        itemOrder: [],
+        categoryOrder: [],
+        createdAt: now
+      },
+      [SYSTEM_SECTIONS.BUGS]: {
+        id: SYSTEM_SECTIONS.BUGS,
+        name: 'Bugs',
+        icon: 'bug',
+        color: '#ef4444',
+        isSystem: true,
+        itemOrder: [],
+        categoryOrder: [],
+        createdAt: now
+      }
+    },
+    sectionOrder: [SYSTEM_SECTIONS.FEATURES, SYSTEM_SECTIONS.BUGS],
+    items: {},
+    itemCategories: {},
     tasks: {},
-    categories: {},
+    taskCategories: {},
     tags: {},
-    featureCategories: {},
-    bugCategories: {},
-    globalFeatureOrder: [],
-    globalBugOrder: [],
-    featureCategoryOrder: [],
-    bugCategoryOrder: [],
     settings: {
-      activeView: 'features',
-      activeFeatureId: null,
+      activeView: 'section',
+      activeSectionId: SYSTEM_SECTIONS.FEATURES,
+      activeItemId: null,
       theme: 'system'
     }
+  };
+}
+
+// Migration function - v3 to v4
+function migrateToV4(data) {
+  if (data.version >= 4) return data;
+
+  const now = new Date().toISOString();
+  const migrated = {
+    version: 4,
+    lastModified: now,
+    sections: {
+      [SYSTEM_SECTIONS.FEATURES]: {
+        id: SYSTEM_SECTIONS.FEATURES,
+        name: 'Features',
+        icon: 'layers',
+        color: '#3b82f6',
+        isSystem: true,
+        itemOrder: [...(data.globalFeatureOrder || [])],
+        categoryOrder: [...(data.featureCategoryOrder || [])],
+        createdAt: now
+      },
+      [SYSTEM_SECTIONS.BUGS]: {
+        id: SYSTEM_SECTIONS.BUGS,
+        name: 'Bugs',
+        icon: 'bug',
+        color: '#ef4444',
+        isSystem: true,
+        itemOrder: [...(data.globalBugOrder || [])],
+        categoryOrder: [...(data.bugCategoryOrder || [])],
+        createdAt: now
+      }
+    },
+    sectionOrder: [SYSTEM_SECTIONS.FEATURES, SYSTEM_SECTIONS.BUGS],
+    items: {},
+    itemCategories: {},
+    tasks: {},
+    taskCategories: {},
+    tags: { ...(data.tags || {}) },
+    settings: {
+      activeView: 'section',
+      activeSectionId: data.settings?.activeView === 'bugs' ? SYSTEM_SECTIONS.BUGS : SYSTEM_SECTIONS.FEATURES,
+      activeItemId: data.settings?.activeFeatureId || null,
+      theme: data.settings?.theme || 'system'
+    }
+  };
+
+  // Migrate features
+  Object.values(data.features || {}).forEach(feature => {
+    migrated.items[feature.id] = {
+      id: feature.id,
+      sectionId: SYSTEM_SECTIONS.FEATURES,
+      title: feature.title,
+      description: feature.description || '',
+      status: feature.status || 'open',
+      priority: feature.priority || 'medium',
+      complexity: feature.complexity || null,
+      categoryId: feature.categoryId || null,
+      taskOrder: [...(feature.taskOrder || [])],
+      categoryOrder: [...(feature.categoryOrder || [])],
+      attachments: [...(feature.attachments || [])],
+      promptHistory: [...(feature.promptHistory || [])],
+      tagIds: [...(feature.tagIds || [])],
+      createdAt: feature.createdAt || now,
+      finishedAt: feature.finishedAt || null
+    };
+  });
+
+  // Migrate bugs
+  Object.values(data.bugs || {}).forEach(bug => {
+    migrated.items[bug.id] = {
+      id: bug.id,
+      sectionId: SYSTEM_SECTIONS.BUGS,
+      title: bug.title,
+      description: bug.description || '',
+      status: bug.status || 'open',
+      priority: bug.priority || 'medium',
+      complexity: bug.complexity || null,
+      categoryId: bug.categoryId || null,
+      taskOrder: [...(bug.taskOrder || [])],
+      categoryOrder: [...(bug.categoryOrder || [])],
+      attachments: [...(bug.attachments || [])],
+      promptHistory: [...(bug.promptHistory || [])],
+      tagIds: [...(bug.tagIds || [])],
+      createdAt: bug.createdAt || now,
+      finishedAt: bug.finishedAt || null
+    };
+  });
+
+  // Migrate feature categories
+  Object.values(data.featureCategories || {}).forEach(cat => {
+    migrated.itemCategories[cat.id] = {
+      id: cat.id,
+      sectionId: SYSTEM_SECTIONS.FEATURES,
+      name: cat.name,
+      itemOrder: [...(cat.featureOrder || [])]
+    };
+  });
+
+  // Migrate bug categories
+  Object.values(data.bugCategories || {}).forEach(cat => {
+    migrated.itemCategories[cat.id] = {
+      id: cat.id,
+      sectionId: SYSTEM_SECTIONS.BUGS,
+      name: cat.name,
+      itemOrder: [...(cat.bugOrder || [])]
+    };
+  });
+
+  // Migrate tasks
+  Object.values(data.tasks || {}).forEach(task => {
+    migrated.tasks[task.id] = {
+      id: task.id,
+      itemId: task.parentId,
+      categoryId: task.categoryId || null,
+      title: task.title,
+      description: task.description || '',
+      status: task.status || 'open',
+      tagIds: [...(task.tagIds || [])],
+      attachments: [...(task.attachments || [])],
+      promptHistory: [...(task.promptHistory || [])],
+      createdAt: task.createdAt || now,
+      finishedAt: task.finishedAt || null
+    };
+  });
+
+  // Migrate task categories
+  Object.values(data.categories || {}).forEach(cat => {
+    migrated.taskCategories[cat.id] = {
+      id: cat.id,
+      itemId: cat.parentId,
+      name: cat.name,
+      taskOrder: [...(cat.taskOrder || [])]
+    };
+  });
+
+  return migrated;
+}
+
+// Helper: Create backward-compatible v3-like views from v4 data
+function getBackwardCompatibleViews(data) {
+  const features = {};
+  const bugs = {};
+
+  Object.values(data.items || {}).forEach(item => {
+    const legacyItem = {
+      ...item,
+      parentType: item.sectionId === SYSTEM_SECTIONS.FEATURES ? 'feature' : 'bug'
+    };
+    if (item.sectionId === SYSTEM_SECTIONS.FEATURES) {
+      features[item.id] = legacyItem;
+    } else if (item.sectionId === SYSTEM_SECTIONS.BUGS) {
+      bugs[item.id] = legacyItem;
+    }
+  });
+
+  const categories = {};
+  Object.values(data.taskCategories || {}).forEach(cat => {
+    const item = data.items[cat.itemId];
+    categories[cat.id] = {
+      ...cat,
+      parentType: item?.sectionId === SYSTEM_SECTIONS.FEATURES ? 'feature' : 'bug',
+      parentId: cat.itemId
+    };
+  });
+
+  const tasks = {};
+  Object.values(data.tasks || {}).forEach(task => {
+    const item = data.items[task.itemId];
+    tasks[task.id] = {
+      ...task,
+      parentType: item?.sectionId === SYSTEM_SECTIONS.FEATURES ? 'feature' : 'bug',
+      parentId: task.itemId
+    };
+  });
+
+  const featureCategories = {};
+  const bugCategories = {};
+  Object.values(data.itemCategories || {}).forEach(cat => {
+    if (cat.sectionId === SYSTEM_SECTIONS.FEATURES) {
+      featureCategories[cat.id] = { ...cat, featureOrder: cat.itemOrder || [] };
+    } else if (cat.sectionId === SYSTEM_SECTIONS.BUGS) {
+      bugCategories[cat.id] = { ...cat, bugOrder: cat.itemOrder || [] };
+    }
+  });
+
+  return {
+    features,
+    bugs,
+    tasks,
+    categories,
+    featureCategories,
+    bugCategories,
+    globalFeatureOrder: data.sections?.[SYSTEM_SECTIONS.FEATURES]?.itemOrder || [],
+    globalBugOrder: data.sections?.[SYSTEM_SECTIONS.BUGS]?.itemOrder || [],
+    featureCategoryOrder: data.sections?.[SYSTEM_SECTIONS.FEATURES]?.categoryOrder || [],
+    bugCategoryOrder: data.sections?.[SYSTEM_SECTIONS.BUGS]?.categoryOrder || [],
+    tags: data.tags || {}
   };
 }
 
@@ -213,8 +446,9 @@ const TOOLS = [
 // Tool Handler Functions - 6 consolidated handlers
 // Each handler now takes (args, req) to support project-scoped data
 // projectId in args takes priority over req headers and settings
+// Now uses v4 data structure with backward-compatible views
 const toolHandlers = {
-  // 1. SEARCH
+  // 1. SEARCH (v4: searches items and tasks)
   async search({ query, itemType = 'all', status, projectId }, req) {
     const data = await loadData(projectId, req);
     const results = [];
@@ -227,49 +461,77 @@ const toolHandlers = {
       return (titleMatch || descMatch) && statusMatch;
     };
 
+    // v4: Search items, categorize by sectionId
     if (itemType === 'all' || itemType === 'feature') {
-      Object.values(data.features).filter(matches).forEach(f =>
-        results.push({ type: 'feature', id: f.id, title: f.title, status: f.status, description: f.description?.substring(0, 200) })
-      );
+      Object.values(data.items)
+        .filter(item => item.sectionId === SYSTEM_SECTIONS.FEATURES && matches(item))
+        .forEach(f => results.push({
+          type: 'feature', id: f.id, title: f.title, status: f.status,
+          description: f.description?.substring(0, 200)
+        }));
     }
     if (itemType === 'all' || itemType === 'bug') {
-      Object.values(data.bugs).filter(matches).forEach(b =>
-        results.push({ type: 'bug', id: b.id, title: b.title, status: b.status || 'open', description: b.description?.substring(0, 200) })
-      );
+      Object.values(data.items)
+        .filter(item => item.sectionId === SYSTEM_SECTIONS.BUGS && matches(item))
+        .forEach(b => results.push({
+          type: 'bug', id: b.id, title: b.title, status: b.status || 'open',
+          description: b.description?.substring(0, 200)
+        }));
     }
     if (itemType === 'all' || itemType === 'task') {
-      Object.values(data.tasks).filter(matches).forEach(t =>
-        results.push({ type: 'task', id: t.id, title: t.title, status: t.status, parentType: t.parentType, parentId: t.parentId, description: t.description?.substring(0, 200) })
-      );
+      Object.values(data.tasks).filter(matches).forEach(t => {
+        const parentItem = data.items[t.itemId];
+        const parentType = parentItem?.sectionId === SYSTEM_SECTIONS.FEATURES ? 'feature' : 'bug';
+        results.push({
+          type: 'task', id: t.id, title: t.title, status: t.status,
+          parentType, parentId: t.itemId, description: t.description?.substring(0, 200)
+        });
+      });
     }
     return { results, count: results.length };
   },
 
-  // 2. GET
+  // 2. GET (v4: uses items and tasks)
   async get({ type, id, projectId }, req) {
     const data = await loadData(projectId, req);
     let item;
+    let parentType = null;
+
     switch (type) {
-      case 'feature': item = data.features[id]; break;
-      case 'bug': item = data.bugs[id]; break;
-      case 'task': item = data.tasks[id]; break;
+      case 'feature':
+      case 'bug':
+        // v4: features and bugs are items
+        item = data.items[id];
+        if (item) {
+          parentType = item.sectionId === SYSTEM_SECTIONS.FEATURES ? 'feature' : 'bug';
+        }
+        break;
+      case 'task':
+        item = data.tasks[id];
+        break;
     }
     if (!item) throw new Error(`${type} with ID ${id} not found`);
 
     const context = { ...item, type };
 
+    // Add backward-compatible fields
     if (type === 'feature' || type === 'bug') {
+      // Get tasks for this item
       const tasks = Object.values(data.tasks)
-        .filter(t => t.parentType === type && t.parentId === id)
+        .filter(t => t.itemId === id)
         .map(t => ({ id: t.id, title: t.title, status: t.status, description: t.description?.substring(0, 200) }));
       context.tasks = tasks;
       context.taskCount = tasks.length;
     }
 
-    if (type === 'task' && item.parentId) {
-      const parent = item.parentType === 'feature' ? data.features[item.parentId] : data.bugs[item.parentId];
-      if (parent) {
-        context.parent = { type: item.parentType, id: parent.id, title: parent.title };
+    if (type === 'task' && item.itemId) {
+      const parentItem = data.items[item.itemId];
+      if (parentItem) {
+        const pType = parentItem.sectionId === SYSTEM_SECTIONS.FEATURES ? 'feature' : 'bug';
+        context.parent = { type: pType, id: parentItem.id, title: parentItem.title };
+        // Add backward-compatible fields
+        context.parentType = pType;
+        context.parentId = item.itemId;
       }
     }
 
@@ -282,7 +544,7 @@ const toolHandlers = {
     return context;
   },
 
-  // 3. CREATE
+  // 3. CREATE (v4: creates items in sections)
   async create({ itemType, title, description = '', color, parentType, parentId, categoryId, priority, projectId }, req) {
     // Project (doesn't need project-scoped data)
     if (itemType === 'project') {
@@ -316,137 +578,214 @@ const toolHandlers = {
     }
 
     const data = await loadData(projectId, req);
+    const now = new Date().toISOString();
 
-    // Feature
+    // Feature (v4: creates item in Features section)
     if (itemType === 'feature') {
       const id = generateId('feat');
-      const feature = {
-        id, title, description, status: 'open', priority: priority || 'medium',
-        createdAt: new Date().toISOString(), finishedAt: null,
-        taskOrder: [], categoryOrder: [], categoryId: categoryId || null
+      const item = {
+        id,
+        sectionId: SYSTEM_SECTIONS.FEATURES,
+        title, description,
+        status: 'open',
+        priority: priority || 'medium',
+        complexity: null,
+        categoryId: categoryId || null,
+        taskOrder: [],
+        categoryOrder: [],
+        attachments: [],
+        promptHistory: [],
+        tagIds: [],
+        createdAt: now,
+        finishedAt: null
       };
-      data.features[id] = feature;
-      if (categoryId && data.featureCategories?.[categoryId]) {
-        data.featureCategories[categoryId].featureOrder.push(id);
+      data.items[id] = item;
+
+      if (categoryId && data.itemCategories?.[categoryId]) {
+        data.itemCategories[categoryId].itemOrder.push(id);
       } else {
-        data.globalFeatureOrder.push(id);
+        data.sections[SYSTEM_SECTIONS.FEATURES].itemOrder.push(id);
       }
       await saveData(data, projectId, req);
-      return feature;
+      return { ...item, parentType: 'feature' };
     }
 
-    // Bug
+    // Bug (v4: creates item in Bugs section)
     if (itemType === 'bug') {
       const id = generateId('bug');
-      const bug = {
-        id, title, description, status: 'open',
-        createdAt: new Date().toISOString(), finishedAt: null,
-        taskOrder: [], categoryOrder: [], categoryId: categoryId || null
+      const item = {
+        id,
+        sectionId: SYSTEM_SECTIONS.BUGS,
+        title, description,
+        status: 'open',
+        priority: priority || 'medium',
+        complexity: null,
+        categoryId: categoryId || null,
+        taskOrder: [],
+        categoryOrder: [],
+        attachments: [],
+        promptHistory: [],
+        tagIds: [],
+        createdAt: now,
+        finishedAt: null
       };
-      data.bugs[id] = bug;
-      if (categoryId && data.bugCategories?.[categoryId]) {
-        data.bugCategories[categoryId].bugOrder.push(id);
+      data.items[id] = item;
+
+      if (categoryId && data.itemCategories?.[categoryId]) {
+        data.itemCategories[categoryId].itemOrder.push(id);
       } else {
-        data.globalBugOrder.push(id);
+        data.sections[SYSTEM_SECTIONS.BUGS].itemOrder.push(id);
       }
       await saveData(data, projectId, req);
-      return bug;
+      return { ...item, parentType: 'bug' };
     }
 
-    // Task
+    // Task (v4: creates task under item)
     if (itemType === 'task') {
-      if (!parentType || !parentId) throw new Error('parentType and parentId required for task');
-      const parent = parentType === 'feature' ? data.features[parentId] : data.bugs[parentId];
-      if (!parent) throw new Error(`Parent ${parentType} with ID ${parentId} not found`);
+      if (!parentId) throw new Error('parentId required for task');
+      const parentItem = data.items[parentId];
+      if (!parentItem) throw new Error(`Parent item with ID ${parentId} not found`);
 
       const id = generateId('task');
       const task = {
-        id, parentType, parentId, categoryId: categoryId || null,
-        title, description, status: 'open', tagIds: [],
-        createdAt: new Date().toISOString(), finishedAt: null
+        id,
+        itemId: parentId,
+        categoryId: categoryId || null,
+        title, description,
+        status: 'open',
+        tagIds: [],
+        attachments: [],
+        promptHistory: [],
+        createdAt: now,
+        finishedAt: null
       };
       data.tasks[id] = task;
-      if (categoryId && data.categories[categoryId]) {
-        data.categories[categoryId].taskOrder.push(id);
+
+      if (categoryId && data.taskCategories[categoryId]) {
+        data.taskCategories[categoryId].taskOrder.push(id);
       } else {
-        parent.taskOrder.push(id);
+        parentItem.taskOrder.push(id);
       }
       await saveData(data, projectId, req);
-      return task;
+
+      // Return with backward-compatible fields
+      const pType = parentItem.sectionId === SYSTEM_SECTIONS.FEATURES ? 'feature' : 'bug';
+      return { ...task, parentType: pType, parentId };
     }
 
-    // Categories
+    // Feature Category (v4: creates itemCategory in Features section)
     if (itemType === 'feature-category') {
-      if (!data.featureCategories) data.featureCategories = {};
-      if (!data.featureCategoryOrder) data.featureCategoryOrder = [];
       const id = generateId('fcat');
-      const category = { id, name: title, featureOrder: [] };
-      data.featureCategories[id] = category;
-      data.featureCategoryOrder.push(id);
+      const category = {
+        id,
+        sectionId: SYSTEM_SECTIONS.FEATURES,
+        name: title,
+        itemOrder: []
+      };
+      data.itemCategories[id] = category;
+      data.sections[SYSTEM_SECTIONS.FEATURES].categoryOrder.push(id);
       await saveData(data, projectId, req);
-      return category;
+      return { ...category, featureOrder: [] };
     }
 
+    // Bug Category (v4: creates itemCategory in Bugs section)
     if (itemType === 'bug-category') {
-      if (!data.bugCategories) data.bugCategories = {};
-      if (!data.bugCategoryOrder) data.bugCategoryOrder = [];
       const id = generateId('bcat');
-      const category = { id, name: title, bugOrder: [] };
-      data.bugCategories[id] = category;
-      data.bugCategoryOrder.push(id);
+      const category = {
+        id,
+        sectionId: SYSTEM_SECTIONS.BUGS,
+        name: title,
+        itemOrder: []
+      };
+      data.itemCategories[id] = category;
+      data.sections[SYSTEM_SECTIONS.BUGS].categoryOrder.push(id);
       await saveData(data, projectId, req);
-      return category;
+      return { ...category, bugOrder: [] };
     }
 
+    // Task Category (v4: creates taskCategory under item)
     if (itemType === 'task-category') {
-      if (!parentType || !parentId) throw new Error('parentType and parentId required for task-category');
-      const parent = parentType === 'feature' ? data.features[parentId] : data.bugs[parentId];
-      if (!parent) throw new Error(`Parent ${parentType} with ID ${parentId} not found`);
+      if (!parentId) throw new Error('parentId required for task-category');
+      const parentItem = data.items[parentId];
+      if (!parentItem) throw new Error(`Parent item with ID ${parentId} not found`);
 
       const id = generateId('cat');
-      const category = { id, parentType, parentId, name: title, taskOrder: [] };
-      data.categories[id] = category;
-      if (!parent.categoryOrder) parent.categoryOrder = [];
-      parent.categoryOrder.push(id);
+      const category = {
+        id,
+        itemId: parentId,
+        name: title,
+        taskOrder: []
+      };
+      data.taskCategories[id] = category;
+      if (!parentItem.categoryOrder) parentItem.categoryOrder = [];
+      parentItem.categoryOrder.push(id);
       await saveData(data, projectId, req);
-      return category;
+
+      const pType = parentItem.sectionId === SYSTEM_SECTIONS.FEATURES ? 'feature' : 'bug';
+      return { ...category, parentType: pType, parentId };
     }
 
     throw new Error(`Invalid itemType: ${itemType}`);
   },
 
-  // 4. UPDATE (includes delete, append_prompt, save_plan)
+  // 4. UPDATE (v4: includes delete, append_prompt, save_plan)
   async update({ type, id, updates, action, promptEntry, planContent, projectId }, req) {
     const data = await loadData(projectId, req);
 
+    // Helper to get item from v4 data
+    const getItem = () => {
+      if (type === 'feature' || type === 'bug') {
+        return data.items[id];
+      } else if (type === 'task') {
+        return data.tasks[id];
+      }
+      return null;
+    };
+
     // Delete action
     if (action === 'delete') {
-      if (type === 'feature') {
-        if (!data.features[id]) throw new Error(`Feature ${id} not found`);
-        const feature = data.features[id];
-        for (const taskId of feature.taskOrder || []) delete data.tasks[taskId];
-        delete data.features[id];
-        data.globalFeatureOrder = data.globalFeatureOrder.filter(fid => fid !== id);
-        Object.values(data.featureCategories || {}).forEach(cat => {
-          cat.featureOrder = (cat.featureOrder || []).filter(fid => fid !== id);
-        });
-      } else if (type === 'bug') {
-        if (!data.bugs[id]) throw new Error(`Bug ${id} not found`);
-        const bug = data.bugs[id];
-        for (const taskId of bug.taskOrder || []) delete data.tasks[taskId];
-        delete data.bugs[id];
-        data.globalBugOrder = data.globalBugOrder.filter(bid => bid !== id);
-        Object.values(data.bugCategories || {}).forEach(cat => {
-          cat.bugOrder = (cat.bugOrder || []).filter(bid => bid !== id);
-        });
+      if (type === 'feature' || type === 'bug') {
+        const item = data.items[id];
+        if (!item) throw new Error(`${type} ${id} not found`);
+
+        // Delete tasks
+        for (const taskId of item.taskOrder || []) {
+          delete data.tasks[taskId];
+        }
+        // Delete task categories
+        Object.values(data.taskCategories)
+          .filter(cat => cat.itemId === id)
+          .forEach(cat => {
+            for (const taskId of cat.taskOrder || []) {
+              delete data.tasks[taskId];
+            }
+            delete data.taskCategories[cat.id];
+          });
+
+        // Remove from section's itemOrder
+        const sectionId = item.sectionId;
+        if (data.sections[sectionId]) {
+          data.sections[sectionId].itemOrder =
+            data.sections[sectionId].itemOrder.filter(iid => iid !== id);
+        }
+
+        // Remove from itemCategory if categorized
+        if (item.categoryId && data.itemCategories[item.categoryId]) {
+          data.itemCategories[item.categoryId].itemOrder =
+            data.itemCategories[item.categoryId].itemOrder.filter(iid => iid !== id);
+        }
+
+        delete data.items[id];
       } else if (type === 'task') {
-        if (!data.tasks[id]) throw new Error(`Task ${id} not found`);
         const task = data.tasks[id];
-        if (task.categoryId && data.categories[task.categoryId]) {
-          data.categories[task.categoryId].taskOrder = data.categories[task.categoryId].taskOrder.filter(tid => tid !== id);
-        } else if (task.parentId) {
-          const parent = task.parentType === 'feature' ? data.features[task.parentId] : data.bugs[task.parentId];
-          if (parent) parent.taskOrder = parent.taskOrder.filter(tid => tid !== id);
+        if (!task) throw new Error(`Task ${id} not found`);
+
+        if (task.categoryId && data.taskCategories[task.categoryId]) {
+          data.taskCategories[task.categoryId].taskOrder =
+            data.taskCategories[task.categoryId].taskOrder.filter(tid => tid !== id);
+        } else if (task.itemId && data.items[task.itemId]) {
+          data.items[task.itemId].taskOrder =
+            data.items[task.itemId].taskOrder.filter(tid => tid !== id);
         }
         delete data.tasks[id];
       }
@@ -456,12 +795,7 @@ const toolHandlers = {
 
     // Append prompt action
     if (action === 'append_prompt') {
-      let item;
-      switch (type) {
-        case 'feature': item = data.features[id]; break;
-        case 'bug': item = data.bugs[id]; break;
-        case 'task': item = data.tasks[id]; break;
-      }
+      const item = getItem();
       if (!item) throw new Error(`${type} with ID ${id} not found`);
       if (!promptEntry?.role || !promptEntry?.content) {
         throw new Error('promptEntry with role and content required');
@@ -475,12 +809,7 @@ const toolHandlers = {
 
     // Save plan action
     if (action === 'save_plan') {
-      let item;
-      switch (type) {
-        case 'feature': item = data.features[id]; break;
-        case 'bug': item = data.bugs[id]; break;
-        case 'task': item = data.tasks[id]; break;
-      }
+      const item = getItem();
       if (!item) throw new Error(`${type} with ID ${id} not found`);
       if (!planContent) throw new Error('planContent required for save_plan action');
 
@@ -507,12 +836,7 @@ const toolHandlers = {
     }
 
     // Regular update
-    let item;
-    switch (type) {
-      case 'feature': item = data.features[id]; break;
-      case 'bug': item = data.bugs[id]; break;
-      case 'task': item = data.tasks[id]; break;
-    }
+    const item = getItem();
     if (!item) throw new Error(`${type} with ID ${id} not found`);
 
     if (updates?.status) {
@@ -530,7 +854,7 @@ const toolHandlers = {
     return item;
   },
 
-  // 5. LIST (categories, attachments, or projects)
+  // 5. LIST (v4: categories, attachments, or projects)
   async list({ listType, type, id, projectId }, req) {
     // Projects don't need project-scoped data
     if (listType === 'projects') {
@@ -546,10 +870,17 @@ const toolHandlers = {
     const data = await loadData(projectId, req);
 
     if (listType === 'categories') {
+      // v4: use itemCategories
       if (type === 'feature') {
-        return { categories: Object.values(data.featureCategories || {}).map(c => ({ id: c.id, name: c.name, itemCount: c.featureOrder?.length || 0 })) };
+        const cats = Object.values(data.itemCategories || {})
+          .filter(c => c.sectionId === SYSTEM_SECTIONS.FEATURES)
+          .map(c => ({ id: c.id, name: c.name, itemCount: c.itemOrder?.length || 0 }));
+        return { categories: cats };
       } else if (type === 'bug') {
-        return { categories: Object.values(data.bugCategories || {}).map(c => ({ id: c.id, name: c.name, itemCount: c.bugOrder?.length || 0 })) };
+        const cats = Object.values(data.itemCategories || {})
+          .filter(c => c.sectionId === SYSTEM_SECTIONS.BUGS)
+          .map(c => ({ id: c.id, name: c.name, itemCount: c.itemOrder?.length || 0 }));
+        return { categories: cats };
       }
       throw new Error('type must be feature or bug for categories');
     }
@@ -557,10 +888,10 @@ const toolHandlers = {
     if (listType === 'attachments') {
       if (!id) throw new Error('id required for attachments');
       let item;
-      switch (type) {
-        case 'feature': item = data.features[id]; break;
-        case 'bug': item = data.bugs[id]; break;
-        case 'task': item = data.tasks[id]; break;
+      if (type === 'feature' || type === 'bug') {
+        item = data.items[id];
+      } else if (type === 'task') {
+        item = data.tasks[id];
       }
       if (!item) throw new Error(`${type} with ID ${id} not found`);
       return {
@@ -575,14 +906,14 @@ const toolHandlers = {
     throw new Error(`Invalid listType: ${listType}`);
   },
 
-  // 6. READ (plan, attachment, image, prompt_history)
+  // 6. READ (v4: plan, attachment, image, prompt_history)
   async read({ type, id, contentType, attachmentId, version, limit, projectId }, req) {
     const data = await loadData(projectId, req);
     let item;
-    switch (type) {
-      case 'feature': item = data.features[id]; break;
-      case 'bug': item = data.bugs[id]; break;
-      case 'task': item = data.tasks[id]; break;
+    if (type === 'feature' || type === 'bug') {
+      item = data.items[id];
+    } else if (type === 'task') {
+      item = data.tasks[id];
     }
     if (!item) throw new Error(`${type} with ID ${id} not found`);
 

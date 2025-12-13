@@ -173,6 +173,54 @@ body {
   color: var(--text-muted);
 }
 
+/* Section nav item with action buttons */
+.section-nav-item {
+  position: relative;
+}
+
+.section-nav-item .section-actions {
+  display: none;
+  gap: 2px;
+  margin-left: auto;
+}
+
+.section-nav-item:hover .section-actions {
+  display: flex;
+}
+
+.section-nav-item:hover .nav-item-count {
+  display: none;
+}
+
+.section-action-btn {
+  padding: 2px !important;
+  min-width: 20px !important;
+  height: 20px !important;
+  opacity: 0.6;
+}
+
+.section-action-btn:hover {
+  opacity: 1;
+}
+
+.section-delete-btn:hover {
+  color: var(--danger);
+}
+
+/* In Progress items */
+.in-progress-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.in-progress-section-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
 /* Main Panel */
 .main-panel {
   display: flex;

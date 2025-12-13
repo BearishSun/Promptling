@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
-import tasksApi from '../services/api';
+import tasksApi, { SYSTEM_SECTIONS } from '../services/api';
 
 // Split contexts for performance - components only re-render when their specific context changes
 const TaskDataContext = createContext(null);
@@ -17,10 +17,11 @@ export function TaskProvider({ children }) {
   const [error, setError] = useState(null);
   const [theme, setTheme] = useState('system');
   const [uiState, setUIState] = useState({
-    selectedItemType: null, // 'task', 'feature', 'bug', or null
+    selectedItemType: null, // 'task', 'item', 'feature', 'bug', or null
     selectedItemId: null,
-    activeView: 'features', // 'features', 'bugs', 'feature', 'bug'
-    activeItemId: null, // ID of selected feature/bug when in 'feature'/'bug' view
+    activeView: 'section', // 'section', 'item' (or legacy: 'features', 'bugs', 'feature', 'bug')
+    activeSectionId: SYSTEM_SECTIONS.FEATURES, // Currently active section
+    activeItemId: null, // ID of selected item when in 'item' view
     searchQuery: '',
     statusFilter: null // null = all, or specific status
   });
@@ -40,19 +41,45 @@ export function TaskProvider({ children }) {
       setLoading(true);
       setError(null);
       const loadedData = await tasksApi.getAll();
-      // Ensure all objects exist
+      // Ensure all v4 objects exist
+      if (!loadedData.sections) loadedData.sections = {};
+      if (!loadedData.sectionOrder) loadedData.sectionOrder = [];
+      if (!loadedData.items) loadedData.items = {};
+      if (!loadedData.itemCategories) loadedData.itemCategories = {};
+      if (!loadedData.tasks) loadedData.tasks = {};
+      if (!loadedData.taskCategories) loadedData.taskCategories = {};
       if (!loadedData.tags) loadedData.tags = {};
+      // Backward compat - ensure legacy objects exist for components still using them
+      if (!loadedData.features) loadedData.features = {};
+      if (!loadedData.bugs) loadedData.bugs = {};
+      if (!loadedData.categories) loadedData.categories = {};
       if (!loadedData.featureCategories) loadedData.featureCategories = {};
       if (!loadedData.bugCategories) loadedData.bugCategories = {};
+      if (!loadedData.globalFeatureOrder) loadedData.globalFeatureOrder = [];
+      if (!loadedData.globalBugOrder) loadedData.globalBugOrder = [];
       if (!loadedData.featureCategoryOrder) loadedData.featureCategoryOrder = [];
       if (!loadedData.bugCategoryOrder) loadedData.bugCategoryOrder = [];
       setData(loadedData);
       // Restore UI state from settings
       if (loadedData.settings) {
+        // Map legacy activeView values to new values
+        let activeView = loadedData.settings.activeView || 'section';
+        let activeSectionId = loadedData.settings.activeSectionId || SYSTEM_SECTIONS.FEATURES;
+        // Legacy mapping
+        if (activeView === 'features') {
+          activeView = 'section';
+          activeSectionId = SYSTEM_SECTIONS.FEATURES;
+        } else if (activeView === 'bugs') {
+          activeView = 'section';
+          activeSectionId = SYSTEM_SECTIONS.BUGS;
+        } else if (activeView === 'feature' || activeView === 'bug') {
+          activeView = 'item';
+        }
         setUIState(prev => ({
           ...prev,
-          activeView: loadedData.settings.activeView || 'features',
-          activeItemId: loadedData.settings.activeFeatureId || null
+          activeView,
+          activeSectionId,
+          activeItemId: loadedData.settings.activeItemId || loadedData.settings.activeFeatureId || null
         }));
         // Restore theme
         if (loadedData.settings.theme) {
@@ -82,13 +109,258 @@ export function TaskProvider({ children }) {
 
   // Actions - memoized to prevent re-renders
   const actions = useMemo(() => ({
-    // Features
+    // ============ V4 UNIFIED SECTIONS/ITEMS API ============
+
+    // Sections
+    createSection: async (name = 'New Section', icon = 'folder', color = '#3b82f6') => {
+      const section = await tasksApi.createSection({ name, icon, color });
+      setData(prev => ({
+        ...prev,
+        sections: { ...prev.sections, [section.id]: section },
+        sectionOrder: [...prev.sectionOrder, section.id]
+      }));
+      return section;
+    },
+
+    updateSection: (id, updates) => {
+      optimisticUpdate(
+        prev => ({
+          ...prev,
+          sections: {
+            ...prev.sections,
+            [id]: { ...prev.sections[id], ...updates }
+          }
+        }),
+        () => tasksApi.updateSection(id, updates)
+      );
+    },
+
+    deleteSection: async (id) => {
+      // Cannot delete system sections
+      if (id === SYSTEM_SECTIONS.FEATURES || id === SYSTEM_SECTIONS.BUGS) {
+        throw new Error('Cannot delete system sections');
+      }
+      await tasksApi.deleteSection(id);
+      setData(prev => {
+        const newSections = { ...prev.sections };
+        const newItems = { ...prev.items };
+        const newItemCategories = { ...prev.itemCategories };
+        const newTasks = { ...prev.tasks };
+        const newTaskCategories = { ...prev.taskCategories };
+
+        // Clean up all items in this section
+        Object.values(prev.items)
+          .filter(item => item.sectionId === id)
+          .forEach(item => {
+            // Delete tasks
+            for (const taskId of item.taskOrder || []) {
+              delete newTasks[taskId];
+            }
+            // Delete task categories
+            for (const catId of item.categoryOrder || []) {
+              delete newTaskCategories[catId];
+            }
+            delete newItems[item.id];
+          });
+
+        // Clean up item categories in this section
+        Object.values(prev.itemCategories)
+          .filter(cat => cat.sectionId === id)
+          .forEach(cat => {
+            delete newItemCategories[cat.id];
+          });
+
+        delete newSections[id];
+
+        return {
+          ...prev,
+          sections: newSections,
+          sectionOrder: prev.sectionOrder.filter(sid => sid !== id),
+          items: newItems,
+          itemCategories: newItemCategories,
+          tasks: newTasks,
+          taskCategories: newTaskCategories
+        };
+      });
+    },
+
+    // Items (unified features/bugs)
+    createItem: async (sectionId, title = 'New Item', categoryId = null) => {
+      const item = await tasksApi.createItem({ sectionId, title, categoryId });
+      setData(prev => {
+        const updated = {
+          ...prev,
+          items: { ...prev.items, [item.id]: item }
+        };
+        // Update section or category order
+        if (categoryId && prev.itemCategories[categoryId]) {
+          updated.itemCategories = {
+            ...prev.itemCategories,
+            [categoryId]: {
+              ...prev.itemCategories[categoryId],
+              itemOrder: [...prev.itemCategories[categoryId].itemOrder, item.id]
+            }
+          };
+        } else if (prev.sections[sectionId]) {
+          updated.sections = {
+            ...prev.sections,
+            [sectionId]: {
+              ...prev.sections[sectionId],
+              itemOrder: [...prev.sections[sectionId].itemOrder, item.id]
+            }
+          };
+        }
+        return updated;
+      });
+      return item;
+    },
+
+    updateItem: (id, updates) => {
+      optimisticUpdate(
+        prev => ({
+          ...prev,
+          items: {
+            ...prev.items,
+            [id]: { ...prev.items[id], ...updates }
+          }
+        }),
+        () => tasksApi.updateItem(id, updates)
+      );
+    },
+
+    deleteItem: async (id) => {
+      await tasksApi.deleteItem(id);
+      setData(prev => {
+        const newItems = { ...prev.items };
+        const newTasks = { ...prev.tasks };
+        const newTaskCategories = { ...prev.taskCategories };
+        const newSections = { ...prev.sections };
+        const newItemCategories = { ...prev.itemCategories };
+
+        const item = newItems[id];
+        if (item) {
+          // Delete tasks
+          for (const taskId of item.taskOrder || []) {
+            delete newTasks[taskId];
+          }
+          // Delete task categories
+          for (const catId of item.categoryOrder || []) {
+            delete newTaskCategories[catId];
+          }
+
+          // Remove from section's itemOrder
+          if (newSections[item.sectionId]) {
+            newSections[item.sectionId] = {
+              ...newSections[item.sectionId],
+              itemOrder: newSections[item.sectionId].itemOrder.filter(iid => iid !== id)
+            };
+          }
+          // Remove from category if in one
+          if (item.categoryId && newItemCategories[item.categoryId]) {
+            newItemCategories[item.categoryId] = {
+              ...newItemCategories[item.categoryId],
+              itemOrder: newItemCategories[item.categoryId].itemOrder.filter(iid => iid !== id)
+            };
+          }
+        }
+        delete newItems[id];
+
+        return {
+          ...prev,
+          items: newItems,
+          tasks: newTasks,
+          taskCategories: newTaskCategories,
+          sections: newSections,
+          itemCategories: newItemCategories
+        };
+      });
+    },
+
+    // Item Categories
+    createItemCategory: async (sectionId, name = 'New Category') => {
+      const category = await tasksApi.createItemCategory({ sectionId, name });
+      setData(prev => ({
+        ...prev,
+        itemCategories: { ...prev.itemCategories, [category.id]: category },
+        sections: {
+          ...prev.sections,
+          [sectionId]: {
+            ...prev.sections[sectionId],
+            categoryOrder: [...prev.sections[sectionId].categoryOrder, category.id]
+          }
+        }
+      }));
+      return category;
+    },
+
+    updateItemCategory: (id, updates) => {
+      optimisticUpdate(
+        prev => ({
+          ...prev,
+          itemCategories: {
+            ...prev.itemCategories,
+            [id]: { ...prev.itemCategories[id], ...updates }
+          }
+        }),
+        () => tasksApi.updateItemCategory(id, updates)
+      );
+    },
+
+    deleteItemCategory: async (id) => {
+      await tasksApi.deleteItemCategory(id);
+      await loadData(); // Reload to get proper item reassignment
+    },
+
+    moveItemToCategory: async (itemId, targetCategoryId, targetSectionId = null) => {
+      await tasksApi.moveItem({ itemId, targetCategoryId, targetSectionId });
+      await loadData();
+    },
+
+    // Reorder items in a section (uncategorized items)
+    reorderSectionItems: (sectionId, newOrder) => {
+      optimisticUpdate(
+        prev => ({
+          ...prev,
+          sections: {
+            ...prev.sections,
+            [sectionId]: { ...prev.sections[sectionId], itemOrder: newOrder }
+          }
+        }),
+        () => tasksApi.reorder('section-items', sectionId, newOrder)
+      );
+    },
+
+    // Reorder items within an item category
+    reorderItemsInCategory: (categoryId, newOrder) => {
+      optimisticUpdate(
+        prev => ({
+          ...prev,
+          itemCategories: {
+            ...prev.itemCategories,
+            [categoryId]: { ...prev.itemCategories[categoryId], itemOrder: newOrder }
+          }
+        }),
+        () => tasksApi.reorder('items-in-category', categoryId, newOrder)
+      );
+    },
+
+    // ============ LEGACY API (backward compat) ============
+
+    // Features (maps to items in Features section)
     createFeature: async (title = 'New Feature') => {
       const feature = await tasksApi.createFeature({ title });
       setData(prev => ({
         ...prev,
+        items: { ...prev.items, [feature.id]: feature },
         features: { ...prev.features, [feature.id]: feature },
-        globalFeatureOrder: [...prev.globalFeatureOrder, feature.id]
+        sections: {
+          ...prev.sections,
+          [SYSTEM_SECTIONS.FEATURES]: {
+            ...prev.sections[SYSTEM_SECTIONS.FEATURES],
+            itemOrder: [...(prev.sections[SYSTEM_SECTIONS.FEATURES]?.itemOrder || []), feature.id]
+          }
+        },
+        globalFeatureOrder: [...(prev.globalFeatureOrder || []), feature.id]
       }));
       return feature;
     },
@@ -97,6 +369,10 @@ export function TaskProvider({ children }) {
       optimisticUpdate(
         prev => ({
           ...prev,
+          items: {
+            ...prev.items,
+            [id]: { ...prev.items[id], ...updates }
+          },
           features: {
             ...prev.features,
             [id]: { ...prev.features[id], ...updates }
@@ -109,18 +385,24 @@ export function TaskProvider({ children }) {
     deleteFeature: async (id) => {
       await tasksApi.deleteFeature(id);
       setData(prev => {
+        const newItems = { ...prev.items };
         const newFeatures = { ...prev.features };
         const newTasks = { ...prev.tasks };
+        const newTaskCategories = { ...prev.taskCategories };
         const newCategories = { ...prev.categories };
+        const newSections = { ...prev.sections };
 
-        // Clean up tasks and categories
-        const feature = newFeatures[id];
-        if (feature) {
-          for (const taskId of feature.taskOrder || []) {
+        const item = newItems[id];
+        if (item) {
+          for (const taskId of item.taskOrder || []) {
             delete newTasks[taskId];
           }
+          for (const catId of item.categoryOrder || []) {
+            delete newTaskCategories[catId];
+          }
         }
-        Object.values(prev.categories)
+        // Legacy cleanup
+        Object.values(prev.categories || {})
           .filter(cat => cat.parentType === 'feature' && cat.parentId === id)
           .forEach(cat => {
             for (const taskId of cat.taskOrder || []) {
@@ -128,25 +410,45 @@ export function TaskProvider({ children }) {
             }
             delete newCategories[cat.id];
           });
+        delete newItems[id];
         delete newFeatures[id];
+
+        // Update section itemOrder
+        if (newSections[SYSTEM_SECTIONS.FEATURES]) {
+          newSections[SYSTEM_SECTIONS.FEATURES] = {
+            ...newSections[SYSTEM_SECTIONS.FEATURES],
+            itemOrder: newSections[SYSTEM_SECTIONS.FEATURES].itemOrder.filter(iid => iid !== id)
+          };
+        }
 
         return {
           ...prev,
+          items: newItems,
           features: newFeatures,
           tasks: newTasks,
+          taskCategories: newTaskCategories,
           categories: newCategories,
-          globalFeatureOrder: prev.globalFeatureOrder.filter(fid => fid !== id)
+          sections: newSections,
+          globalFeatureOrder: (prev.globalFeatureOrder || []).filter(fid => fid !== id)
         };
       });
     },
 
-    // Bugs
+    // Bugs (maps to items in Bugs section)
     createBug: async (title = 'New Bug') => {
       const bug = await tasksApi.createBug({ title });
       setData(prev => ({
         ...prev,
+        items: { ...prev.items, [bug.id]: bug },
         bugs: { ...prev.bugs, [bug.id]: bug },
-        globalBugOrder: [...prev.globalBugOrder, bug.id]
+        sections: {
+          ...prev.sections,
+          [SYSTEM_SECTIONS.BUGS]: {
+            ...prev.sections[SYSTEM_SECTIONS.BUGS],
+            itemOrder: [...(prev.sections[SYSTEM_SECTIONS.BUGS]?.itemOrder || []), bug.id]
+          }
+        },
+        globalBugOrder: [...(prev.globalBugOrder || []), bug.id]
       }));
       return bug;
     },
@@ -155,6 +457,10 @@ export function TaskProvider({ children }) {
       optimisticUpdate(
         prev => ({
           ...prev,
+          items: {
+            ...prev.items,
+            [id]: { ...prev.items[id], ...updates }
+          },
           bugs: {
             ...prev.bugs,
             [id]: { ...prev.bugs[id], ...updates }
@@ -167,17 +473,23 @@ export function TaskProvider({ children }) {
     deleteBug: async (id) => {
       await tasksApi.deleteBug(id);
       setData(prev => {
+        const newItems = { ...prev.items };
         const newBugs = { ...prev.bugs };
         const newTasks = { ...prev.tasks };
+        const newTaskCategories = { ...prev.taskCategories };
         const newCategories = { ...prev.categories };
+        const newSections = { ...prev.sections };
 
-        const bug = newBugs[id];
-        if (bug) {
-          for (const taskId of bug.taskOrder || []) {
+        const item = newItems[id];
+        if (item) {
+          for (const taskId of item.taskOrder || []) {
             delete newTasks[taskId];
           }
+          for (const catId of item.categoryOrder || []) {
+            delete newTaskCategories[catId];
+          }
         }
-        Object.values(prev.categories)
+        Object.values(prev.categories || {})
           .filter(cat => cat.parentType === 'bug' && cat.parentId === id)
           .forEach(cat => {
             for (const taskId of cat.taskOrder || []) {
@@ -185,14 +497,26 @@ export function TaskProvider({ children }) {
             }
             delete newCategories[cat.id];
           });
+        delete newItems[id];
         delete newBugs[id];
+
+        // Update section itemOrder
+        if (newSections[SYSTEM_SECTIONS.BUGS]) {
+          newSections[SYSTEM_SECTIONS.BUGS] = {
+            ...newSections[SYSTEM_SECTIONS.BUGS],
+            itemOrder: newSections[SYSTEM_SECTIONS.BUGS].itemOrder.filter(iid => iid !== id)
+          };
+        }
 
         return {
           ...prev,
+          items: newItems,
           bugs: newBugs,
           tasks: newTasks,
+          taskCategories: newTaskCategories,
           categories: newCategories,
-          globalBugOrder: prev.globalBugOrder.filter(bid => bid !== id)
+          sections: newSections,
+          globalBugOrder: (prev.globalBugOrder || []).filter(bid => bid !== id)
         };
       });
     },
@@ -796,18 +1120,68 @@ export function TaskProvider({ children }) {
 
   // UI Actions
   const uiActions = useMemo(() => ({
-    setActiveView: (view, itemId = null) => {
+    // V4 section-based navigation
+    setActiveSection: (sectionId) => {
       setUIState(prev => ({
         ...prev,
-        activeView: view,
+        activeView: 'section',
+        activeSectionId: sectionId,
+        activeItemId: null,
+        selectedItemType: null,
+        selectedItemId: null
+      }));
+      tasksApi.updateSettings({
+        activeView: 'section',
+        activeSectionId: sectionId,
+        activeItemId: null
+      }).catch(console.error);
+    },
+
+    setActiveItem: (itemId) => {
+      const item = data?.items?.[itemId];
+      setUIState(prev => ({
+        ...prev,
+        activeView: 'item',
+        activeSectionId: item?.sectionId || prev.activeSectionId,
         activeItemId: itemId,
         selectedItemType: null,
         selectedItemId: null
       }));
-      // Save to settings
       tasksApi.updateSettings({
-        activeView: view,
-        activeFeatureId: itemId
+        activeView: 'item',
+        activeSectionId: item?.sectionId,
+        activeItemId: itemId
+      }).catch(console.error);
+    },
+
+    // Legacy setActiveView - maps to section-based navigation
+    setActiveView: (view, itemId = null) => {
+      let newView = view;
+      let newSectionId = uiState.activeSectionId;
+
+      // Map legacy views to sections
+      if (view === 'features') {
+        newView = 'section';
+        newSectionId = SYSTEM_SECTIONS.FEATURES;
+      } else if (view === 'bugs') {
+        newView = 'section';
+        newSectionId = SYSTEM_SECTIONS.BUGS;
+      } else if (view === 'feature' || view === 'bug') {
+        newView = 'item';
+      }
+
+      setUIState(prev => ({
+        ...prev,
+        activeView: newView,
+        activeSectionId: newSectionId,
+        activeItemId: itemId,
+        selectedItemType: null,
+        selectedItemId: null
+      }));
+      tasksApi.updateSettings({
+        activeView: newView,
+        activeSectionId: newSectionId,
+        activeItemId: itemId
       }).catch(console.error);
     },
 
@@ -837,7 +1211,7 @@ export function TaskProvider({ children }) {
       applyTheme(newTheme);
       tasksApi.updateSettings({ theme: newTheme }).catch(console.error);
     }
-  }), []);
+  }), [data?.items, uiState.activeSectionId]);
 
   // Backwards compatible selectedTaskId
   const selectedTaskId = uiState.selectedItemType === 'task' ? uiState.selectedItemId : null;
@@ -889,5 +1263,57 @@ export function useBug(bugId) {
   const { data } = useTaskData();
   return useMemo(() => data?.bugs?.[bugId] || null, [data?.bugs, bugId]);
 }
+
+// V4 selector hooks
+
+// Selector hook for specific section
+export function useSection(sectionId) {
+  const { data } = useTaskData();
+  return useMemo(() => data?.sections?.[sectionId] || null, [data?.sections, sectionId]);
+}
+
+// Selector hook for specific item (unified feature/bug)
+export function useItem(itemId) {
+  const { data } = useTaskData();
+  return useMemo(() => data?.items?.[itemId] || null, [data?.items, itemId]);
+}
+
+// Selector hook for all sections in order
+export function useSections() {
+  const { data } = useTaskData();
+  return useMemo(() => {
+    if (!data?.sections || !data?.sectionOrder) return [];
+    return data.sectionOrder
+      .map(id => data.sections[id])
+      .filter(Boolean);
+  }, [data?.sections, data?.sectionOrder]);
+}
+
+// Selector hook for items in a section
+export function useSectionItems(sectionId) {
+  const { data } = useTaskData();
+  return useMemo(() => {
+    if (!data?.sections?.[sectionId] || !data?.items) return [];
+    const section = data.sections[sectionId];
+    return (section.itemOrder || [])
+      .map(id => data.items[id])
+      .filter(Boolean);
+  }, [data?.sections, data?.items, sectionId]);
+}
+
+// Selector hook for item categories in a section
+export function useSectionCategories(sectionId) {
+  const { data } = useTaskData();
+  return useMemo(() => {
+    if (!data?.sections?.[sectionId] || !data?.itemCategories) return [];
+    const section = data.sections[sectionId];
+    return (section.categoryOrder || [])
+      .map(id => data.itemCategories[id])
+      .filter(Boolean);
+  }, [data?.sections, data?.itemCategories, sectionId]);
+}
+
+// Re-export SYSTEM_SECTIONS for convenience
+export { SYSTEM_SECTIONS };
 
 export default TaskProvider;
