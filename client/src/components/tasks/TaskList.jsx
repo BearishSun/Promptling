@@ -99,20 +99,18 @@ function TaskList({ parentType, parentId }) {
     })
   );
 
-  // Get the parent (feature or bug)
+  // Get the parent (feature or bug) from unified items
   const parent = useMemo(() => {
-    if (parentType === 'feature') return data?.features?.[parentId];
-    if (parentType === 'bug') return data?.bugs?.[parentId];
-    return null;
-  }, [data, parentType, parentId]);
+    return data?.items?.[parentId];
+  }, [data?.items, parentId]);
 
   // Get categories for this parent, ordered by categoryOrder if available
   const categories = useMemo(() => {
-    if (!data?.categories || !parent) return [];
+    if (!data?.taskCategories || !parent) return [];
 
     const categoryOrder = parent.categoryOrder || [];
-    const allCategories = Object.values(data.categories)
-      .filter(cat => cat.parentType === parentType && cat.parentId === parentId);
+    const allCategories = Object.values(data.taskCategories)
+      .filter(cat => cat.parentId === parentId);
 
     // Sort by categoryOrder, putting unordered categories at the end
     return allCategories.sort((a, b) => {
@@ -123,7 +121,7 @@ function TaskList({ parentType, parentId }) {
       if (bIndex === -1) return -1;
       return aIndex - bIndex;
     });
-  }, [data?.categories, parent, parentType, parentId]);
+  }, [data?.taskCategories, parent, parentId]);
 
   // Get uncategorized tasks (tasks directly under parent, not in any category)
   const uncategorizedTasks = useMemo(() => {
@@ -162,7 +160,7 @@ function TaskList({ parentType, parentId }) {
 
     // Determine which order array to update
     if (activeTask.categoryId) {
-      const category = data?.categories?.[activeTask.categoryId];
+      const category = data?.taskCategories?.[activeTask.categoryId];
       if (category) {
         const oldIndex = category.taskOrder.indexOf(active.id);
         const newIndex = category.taskOrder.indexOf(over.id);

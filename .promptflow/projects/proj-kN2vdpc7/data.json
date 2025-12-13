@@ -1,6 +1,6 @@
 {
   "version": 4,
-  "lastModified": "2025-12-13T16:58:17.059Z",
+  "lastModified": "2025-12-13T17:14:20.255Z",
   "sections": {
     "sect-features": {
       "id": "sect-features",
@@ -11,8 +11,10 @@
       "itemOrder": [
         "item-uPlYW3Uc",
         "item-wYxI7FyT",
+        "feat-AsFKJHjA",
         "item-vABtRoNq",
-        "item-jn4uzVlP"
+        "item-jn4uzVlP",
+        "feat-xCrs6ImE"
       ],
       "categoryOrder": [],
       "createdAt": "2025-12-13T12:02:32.069Z"
@@ -183,10 +185,147 @@
       "tagIds": [],
       "createdAt": "2025-12-13T16:12:32.300Z",
       "finishedAt": null
+    },
+    "feat-AsFKJHjA": {
+      "id": "feat-AsFKJHjA",
+      "sectionId": "sect-features",
+      "title": "Modify task view so it opens to the right of the Features/Bugs view",
+      "description": "When a feature or bug is expanded, the task view should open to the right of the Features/Bugs view instead of the current behavior. This creates a side-by-side layout where users can see both the list of features/bugs and the detailed task view simultaneously.",
+      "status": "open",
+      "priority": "medium",
+      "complexity": null,
+      "categoryId": null,
+      "taskOrder": [
+        "task-u4bXmhAG",
+        "task-yJDem3dr",
+        "task-NSSY9wyy",
+        "task-P5o1JDVs",
+        "task-FjqiCeDW",
+        "task-s99Cy0aY"
+      ],
+      "categoryOrder": [],
+      "attachments": [
+        {
+          "id": "att-K2izS1E1",
+          "filename": "PLAN-v1.md",
+          "storedName": "PLAN-v1.md",
+          "storedPath": "item/feat-AsFKJHjA/PLAN-v1.md",
+          "mimeType": "text/markdown",
+          "size": 3789,
+          "uploadedAt": "2025-12-13T17:11:16.699Z"
+        }
+      ],
+      "promptHistory": [
+        {
+          "id": "ph-2XBZj2fG",
+          "timestamp": "2025-12-13T17:11:34.255Z",
+          "role": "assistant",
+          "content": "Created plan v1 and 6 sub-tasks for side-by-side task view implementation"
+        }
+      ],
+      "tagIds": [],
+      "createdAt": "2025-12-13T17:02:38.912Z",
+      "finishedAt": null
+    },
+    "feat-xCrs6ImE": {
+      "id": "feat-xCrs6ImE",
+      "sectionId": "sect-features",
+      "title": "Add names to complexity categories rather than values 1-5",
+      "description": "Replace the numeric complexity values (1-5) with descriptive names that better communicate the level of effort. For example: Trivial, Simple, Medium, Complex, Hard. This makes complexity more intuitive and meaningful to users.",
+      "status": "open",
+      "priority": "medium",
+      "complexity": null,
+      "categoryId": null,
+      "taskOrder": [],
+      "categoryOrder": [],
+      "attachments": [],
+      "promptHistory": [],
+      "tagIds": [],
+      "createdAt": "2025-12-13T17:03:39.900Z",
+      "finishedAt": null
     }
   },
   "itemCategories": {},
-  "tasks": {},
+  "tasks": {
+    "task-u4bXmhAG": {
+      "id": "task-u4bXmhAG",
+      "itemId": "feat-AsFKJHjA",
+      "categoryId": null,
+      "title": "Phase 1: Add CSS layout infrastructure",
+      "description": "- Add `--task-panel-width: 500px` CSS variable\n- Add `.app-layout.with-task-panel` with 3-column grid\n- Add `.task-panel` styles (border, background, flex column)\n- Add responsive fallback for narrow screens (<1200px) - overlay mode\n\nFile: `client/src/index.css`",
+      "status": "open",
+      "tagIds": [],
+      "attachments": [],
+      "promptHistory": [],
+      "createdAt": "2025-12-13T17:11:28.159Z",
+      "finishedAt": null
+    },
+    "task-yJDem3dr": {
+      "id": "task-yJDem3dr",
+      "itemId": "feat-AsFKJHjA",
+      "categoryId": null,
+      "title": "Phase 2: Create TaskPanel component",
+      "description": "- Create `client/src/components/layout/TaskPanel.jsx`\n- Include header with item title and close button\n- Include search input and add menu (task/category)\n- Render existing TaskList component\n- Wire up close button to `closeTaskPanel` action",
+      "status": "open",
+      "tagIds": [],
+      "attachments": [],
+      "promptHistory": [],
+      "createdAt": "2025-12-13T17:11:28.234Z",
+      "finishedAt": null
+    },
+    "task-NSSY9wyy": {
+      "id": "task-NSSY9wyy",
+      "itemId": "feat-AsFKJHjA",
+      "categoryId": null,
+      "title": "Phase 3: Update state management",
+      "description": "- Add `closeTaskPanel` action to TaskProvider\n- Modify `setActiveItem` to NOT change `activeView` to 'item'\n- Keep `activeItemId` as the trigger for task panel visibility\n- Update `setActiveSection` to close task panel\n\nFile: `client/src/context/TaskProvider.jsx`",
+      "status": "open",
+      "tagIds": [],
+      "attachments": [],
+      "promptHistory": [],
+      "createdAt": "2025-12-13T17:11:28.322Z",
+      "finishedAt": null
+    },
+    "task-P5o1JDVs": {
+      "id": "task-P5o1JDVs",
+      "itemId": "feat-AsFKJHjA",
+      "categoryId": null,
+      "title": "Phase 4: Update App layout",
+      "description": "- Import TaskPanel in App.jsx\n- Add conditional class `with-task-panel` when `activeItemId` is set\n- Render `<TaskPanel />` conditionally after MainPanel\n\nFile: `client/src/App.jsx`",
+      "status": "open",
+      "tagIds": [],
+      "attachments": [],
+      "promptHistory": [],
+      "createdAt": "2025-12-13T17:11:28.399Z",
+      "finishedAt": null
+    },
+    "task-FjqiCeDW": {
+      "id": "task-FjqiCeDW",
+      "itemId": "feat-AsFKJHjA",
+      "categoryId": null,
+      "title": "Phase 5: Simplify MainPanel",
+      "description": "- Remove `activeView === 'item'` conditional rendering\n- Remove back button (no longer needed)\n- Remove task-related add menu items\n- Always render SectionItemsList for section view\n\nFile: `client/src/components/layout/MainPanel.jsx`",
+      "status": "open",
+      "tagIds": [],
+      "attachments": [],
+      "promptHistory": [],
+      "createdAt": "2025-12-13T17:11:28.474Z",
+      "finishedAt": null
+    },
+    "task-s99Cy0aY": {
+      "id": "task-s99Cy0aY",
+      "itemId": "feat-AsFKJHjA",
+      "categoryId": null,
+      "title": "Phase 6: Polish and test",
+      "description": "- Add visual highlight to active item in section list\n- Test responsive behavior\n- Ensure DetailPanel still works correctly over the new layout\n- Verify: expand feature shows task panel, section list stays visible, close button works, section switch closes panel",
+      "status": "open",
+      "tagIds": [],
+      "attachments": [],
+      "promptHistory": [],
+      "createdAt": "2025-12-13T17:11:28.551Z",
+      "finishedAt": null
+    }
+  },
   "taskCategories": {},
   "tags": {},
   "settings": {
