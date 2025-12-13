@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "lastModified": "2025-12-13T07:05:56.455Z",
+  "lastModified": "2025-12-13T08:40:15.553Z",
   "features": {
     "feat-CSdMs0EN": {
       "id": "feat-CSdMs0EN",
@@ -563,6 +563,23 @@
       ],
       "priority": "high",
       "complexity": 3
+    },
+    "feat-O1pQSUVV": {
+      "id": "feat-O1pQSUVV",
+      "title": "TaskList",
+      "description": "",
+      "status": "open",
+      "createdAt": "2025-12-13T08:31:59.663Z",
+      "finishedAt": null,
+      "taskOrder": [
+        "task-xU3JlNiG",
+        "task-2jZkCTd9",
+        "task-NA07Z6ti",
+        "task-W4BFjWbH",
+        "task-Ru8RXbWm"
+      ],
+      "categoryOrder": [],
+      "categoryId": "fcat-9GWRmJDc"
     }
   },
   "bugs": {
@@ -1405,6 +1422,66 @@
       "tagIds": [],
       "createdAt": "2025-12-13T07:05:13.890Z",
       "finishedAt": null
+    },
+    "task-xU3JlNiG": {
+      "id": "task-xU3JlNiG",
+      "parentType": "feature",
+      "parentId": "feat-O1pQSUVV",
+      "categoryId": null,
+      "title": "Better name",
+      "description": "",
+      "status": "open",
+      "tagIds": [],
+      "createdAt": "2025-12-13T08:32:09.201Z",
+      "finishedAt": null
+    },
+    "task-2jZkCTd9": {
+      "id": "task-2jZkCTd9",
+      "parentType": "feature",
+      "parentId": "feat-O1pQSUVV",
+      "categoryId": null,
+      "title": "Show in progress bugs in the left panel",
+      "description": "",
+      "status": "open",
+      "tagIds": [],
+      "createdAt": "2025-12-13T08:32:15.936Z",
+      "finishedAt": null
+    },
+    "task-NA07Z6ti": {
+      "id": "task-NA07Z6ti",
+      "parentType": "feature",
+      "parentId": "feat-O1pQSUVV",
+      "categoryId": null,
+      "title": "Show plan in the details panel",
+      "description": "",
+      "status": "open",
+      "tagIds": [],
+      "createdAt": "2025-12-13T08:33:05.492Z",
+      "finishedAt": null
+    },
+    "task-W4BFjWbH": {
+      "id": "task-W4BFjWbH",
+      "parentType": "feature",
+      "parentId": "feat-O1pQSUVV",
+      "categoryId": null,
+      "title": "Add the ability to manage multiple projects",
+      "description": "Allow users to organize their work across multiple separate projects, each with their own features, bugs, and tasks.",
+      "status": "open",
+      "tagIds": [],
+      "createdAt": "2025-12-13T08:40:15.500Z",
+      "finishedAt": null
+    },
+    "task-Ru8RXbWm": {
+      "id": "task-Ru8RXbWm",
+      "parentType": "feature",
+      "parentId": "feat-O1pQSUVV",
+      "categoryId": null,
+      "title": "Add the ability to add new high-level categories (not just Features/Bugs)",
+      "description": "Enable users to create custom top-level categories beyond the default Features and Bugs sections, allowing for more flexible organization of work items.",
+      "status": "open",
+      "tagIds": [],
+      "createdAt": "2025-12-13T08:40:15.553Z",
+      "finishedAt": null
     }
   },
   "categories": {},
@@ -1422,8 +1499,8 @@
     "bug-34LkVU6N"
   ],
   "settings": {
-    "activeView": "features",
-    "activeFeatureId": null,
+    "activeView": "feature",
+    "activeFeatureId": "feat-O1pQSUVV",
     "theme": "dark"
   },
   "tags": {
@@ -1441,7 +1518,7 @@
   "featureCategories": {
     "fcat-9GWRmJDc": {
       "id": "fcat-9GWRmJDc",
-      "name": "Before public repo",
+      "name": "0.4 alpha",
       "featureOrder": [
         "feat-krCBsi6x",
         "feat-nDdUAXyg",
@@ -1456,7 +1533,8 @@
         "feat-r83VIlhj",
         "feat-CSdMs0EN",
         "feat-5uksqtP9",
-        "feat-AQdft78m"
+        "feat-AQdft78m",
+        "feat-O1pQSUVV"
       ],
       "expanded": true
     },
@@ -1470,7 +1548,7 @@
     },
     "fcat-eSyWLCLV": {
       "id": "fcat-eSyWLCLV",
-      "name": "Before release",
+      "name": "0.4",
       "featureOrder": [
         "feat-T4nhBrDY",
         "feat-cECEdGYD",
@@ -1489,7 +1567,7 @@
     },
     "fcat-822kVsJq": {
       "id": "fcat-822kVsJq",
-      "name": "Short-term after release",
+      "name": "Short-term",
       "featureOrder": [
         "feat-6SAiV6QH",
         "feat-1rTZPKIc",
@@ -1502,7 +1580,7 @@
     },
     "fcat-87Hiseen": {
       "id": "fcat-87Hiseen",
-      "name": "Long-term after release",
+      "name": "Long-term",
       "featureOrder": [
         "feat-65nli8oM",
         "feat-1upc4YhK",

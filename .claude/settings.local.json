@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__tasklist__search_items",
+      "mcp__tasklist__create_task"
+    ]
+  }
+}

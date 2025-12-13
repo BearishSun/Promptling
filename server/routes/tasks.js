@@ -194,6 +194,7 @@ router.post('/bug', async (req, res) => {
       id,
       title: req.body.title || 'New Bug',
       description: req.body.description || '',
+      status: 'open', // Bugs now have status like features/tasks
       createdAt: new Date().toISOString(),
       finishedAt: null,
       taskOrder: [],
@@ -997,6 +998,304 @@ router.delete('/attachment/:itemType/:itemId/:attachmentId', async (req, res) =>
   } catch (error) {
     console.error('Error deleting attachment:', error);
     res.status(500).json({ error: 'Failed to delete attachment' });
+  }
+});
+
+// ========== SEARCH ENDPOINT ==========
+
+// GET /api/tasks/search - Search items
+router.get('/search', async (req, res) => {
+  try {
+    const { q, type = 'all', status } = req.query;
+    const data = await loadData();
+    const results = [];
+
+    const matchesQuery = (item) => {
+      if (!q) return true;
+      const query = q.toLowerCase();
+      return (
+        item.title?.toLowerCase().includes(query) ||
+        item.description?.toLowerCase().includes(query)
+      );
+    };
+
+    const matchesStatus = (item) => {
+      if (!status) return true;
+      return item.status === status;
+    };
+
+    if (type === 'all' || type === 'feature') {
+      Object.values(data.features)
+        .filter(f => matchesQuery(f) && matchesStatus(f))
+        .forEach(f => results.push({ type: 'feature', id: f.id, title: f.title, status: f.status }));
+    }
+
+    if (type === 'all' || type === 'bug') {
+      Object.values(data.bugs)
+        .filter(b => matchesQuery(b) && matchesStatus(b))
+        .forEach(b => results.push({ type: 'bug', id: b.id, title: b.title, status: b.status || 'open' }));
+    }
+
+    if (type === 'all' || type === 'task') {
+      Object.values(data.tasks)
+        .filter(t => matchesQuery(t) && matchesStatus(t))
+        .forEach(t => results.push({ type: 'task', id: t.id, title: t.title, status: t.status, parentType: t.parentType, parentId: t.parentId }));
+    }
+
+    res.json({ results, count: results.length });
+  } catch (error) {
+    console.error('Error searching:', error);
+    res.status(500).json({ error: 'Failed to search' });
+  }
+});
+
+// ========== PROMPT HISTORY ENDPOINTS ==========
+
+// GET /api/tasks/:type/:id/prompt-history - Get prompt history
+router.get('/:type/:id/prompt-history', async (req, res) => {
+  try {
+    const { type, id } = req.params;
+    const { limit } = req.query;
+    const data = await loadData();
+
+    let item;
+    switch (type) {
+      case 'feature': item = data.features[id]; break;
+      case 'bug': item = data.bugs[id]; break;
+      case 'task': item = data.tasks[id]; break;
+      default: return res.status(400).json({ error: 'Invalid type' });
+    }
+
+    if (!item) {
+      return res.status(404).json({ error: `${type} not found` });
+    }
+
+    let history = item.promptHistory || [];
+    if (limit && parseInt(limit) > 0) {
+      history = history.slice(-parseInt(limit));
+    }
+
+    res.json({ history, count: history.length, totalCount: item.promptHistory?.length || 0 });
+  } catch (error) {
+    console.error('Error getting prompt history:', error);
+    res.status(500).json({ error: 'Failed to get prompt history' });
+  }
+});
+
+// POST /api/tasks/:type/:id/prompt-history - Append to prompt history
+router.post('/:type/:id/prompt-history', async (req, res) => {
+  try {
+    const { type, id } = req.params;
+    const { role, content } = req.body;
+    const data = await loadData();
+
+    let item;
+    switch (type) {
+      case 'feature': item = data.features[id]; break;
+      case 'bug': item = data.bugs[id]; break;
+      case 'task': item = data.tasks[id]; break;
+      default: return res.status(400).json({ error: 'Invalid type' });
+    }
+
+    if (!item) {
+      return res.status(404).json({ error: `${type} not found` });
+    }
+
+    if (!item.promptHistory) item.promptHistory = [];
+
+    const entry = {
+      id: generateId('ph'),
+      timestamp: new Date().toISOString(),
+      role: role || 'user',
+      content: content || ''
+    };
+
+    item.promptHistory.push(entry);
+    await saveData(data);
+
+    res.json({ added: true, entry, totalCount: item.promptHistory.length });
+  } catch (error) {
+    console.error('Error appending prompt history:', error);
+    res.status(500).json({ error: 'Failed to append prompt history' });
+  }
+});
+
+// DELETE /api/tasks/:type/:id/prompt-history - Clear prompt history
+router.delete('/:type/:id/prompt-history', async (req, res) => {
+  try {
+    const { type, id } = req.params;
+    const data = await loadData();
+
+    let item;
+    switch (type) {
+      case 'feature': item = data.features[id]; break;
+      case 'bug': item = data.bugs[id]; break;
+      case 'task': item = data.tasks[id]; break;
+      default: return res.status(400).json({ error: 'Invalid type' });
+    }
+
+    if (!item) {
+      return res.status(404).json({ error: `${type} not found` });
+    }
+
+    const previousCount = item.promptHistory?.length || 0;
+    item.promptHistory = [];
+    await saveData(data);
+
+    res.json({ cleared: true, previousCount });
+  } catch (error) {
+    console.error('Error clearing prompt history:', error);
+    res.status(500).json({ error: 'Failed to clear prompt history' });
+  }
+});
+
+// ========== PLAN MANAGEMENT ENDPOINTS ==========
+
+// GET /api/tasks/:type/:id/plan - Get plan
+router.get('/:type/:id/plan', async (req, res) => {
+  try {
+    const { type, id } = req.params;
+    const { version } = req.query;
+    const data = await loadData();
+
+    let item;
+    switch (type) {
+      case 'feature': item = data.features[id]; break;
+      case 'bug': item = data.bugs[id]; break;
+      case 'task': item = data.tasks[id]; break;
+      default: return res.status(400).json({ error: 'Invalid type' });
+    }
+
+    if (!item) {
+      return res.status(404).json({ error: `${type} not found` });
+    }
+
+    const plans = (item.attachments || [])
+      .filter(a => a.filename?.startsWith('PLAN-v'))
+      .sort((a, b) => {
+        const vA = parseInt(a.filename.match(/PLAN-v(\d+)/)?.[1] || 0);
+        const vB = parseInt(b.filename.match(/PLAN-v(\d+)/)?.[1] || 0);
+        return vB - vA; // Descending
+      });
+
+    if (plans.length === 0) {
+      return res.json({ exists: false, message: 'No plan exists for this item' });
+    }
+
+    let targetPlan;
+    if (version) {
+      targetPlan = plans.find(p => p.filename === `PLAN-v${version}.md`);
+      if (!targetPlan) {
+        return res.status(404).json({ error: `Plan version ${version} not found` });
+      }
+    } else {
+      targetPlan = plans[0]; // Latest
+    }
+
+    const filePath = path.join(ATTACHMENTS_DIR, targetPlan.storedPath);
+    const content = await fs.readFile(filePath, 'utf-8');
+
+    res.json({
+      exists: true,
+      version: parseInt(targetPlan.filename.match(/PLAN-v(\d+)/)?.[1]),
+      filename: targetPlan.filename,
+      content,
+      totalVersions: plans.length
+    });
+  } catch (error) {
+    console.error('Error getting plan:', error);
+    res.status(500).json({ error: 'Failed to get plan' });
+  }
+});
+
+// PUT /api/tasks/:type/:id/plan - Create/update plan
+router.put('/:type/:id/plan', async (req, res) => {
+  try {
+    const { type, id } = req.params;
+    const { content } = req.body;
+    const data = await loadData();
+
+    let item;
+    switch (type) {
+      case 'feature': item = data.features[id]; break;
+      case 'bug': item = data.bugs[id]; break;
+      case 'task': item = data.tasks[id]; break;
+      default: return res.status(400).json({ error: 'Invalid type' });
+    }
+
+    if (!item) {
+      return res.status(404).json({ error: `${type} not found` });
+    }
+
+    if (!content) {
+      return res.status(400).json({ error: 'content is required' });
+    }
+
+    // Check for existing plans
+    const existingPlans = (item.attachments || []).filter(a => a.filename?.startsWith('PLAN-v'));
+    const version = existingPlans.length + 1;
+    const filename = `PLAN-v${version}.md`;
+
+    // Create directory and file
+    const itemDir = path.join(ATTACHMENTS_DIR, type, id);
+    await fs.mkdir(itemDir, { recursive: true });
+    await fs.writeFile(path.join(itemDir, filename), content, 'utf-8');
+
+    // Create attachment metadata
+    const attachment = {
+      id: generateId('att'),
+      filename,
+      storedName: filename,
+      storedPath: `${type}/${id}/${filename}`,
+      mimeType: 'text/markdown',
+      size: Buffer.byteLength(content, 'utf-8'),
+      uploadedAt: new Date().toISOString()
+    };
+
+    if (!item.attachments) item.attachments = [];
+    item.attachments.push(attachment);
+
+    await saveData(data);
+    res.json({ created: true, version, filename, attachmentId: attachment.id });
+  } catch (error) {
+    console.error('Error creating plan:', error);
+    res.status(500).json({ error: 'Failed to create plan' });
+  }
+});
+
+// GET /api/tasks/:type/:id/plan/versions - List plan versions
+router.get('/:type/:id/plan/versions', async (req, res) => {
+  try {
+    const { type, id } = req.params;
+    const data = await loadData();
+
+    let item;
+    switch (type) {
+      case 'feature': item = data.features[id]; break;
+      case 'bug': item = data.bugs[id]; break;
+      case 'task': item = data.tasks[id]; break;
+      default: return res.status(400).json({ error: 'Invalid type' });
+    }
+
+    if (!item) {
+      return res.status(404).json({ error: `${type} not found` });
+    }
+
+    const plans = (item.attachments || [])
+      .filter(a => a.filename?.startsWith('PLAN-v'))
+      .map(a => ({
+        version: parseInt(a.filename.match(/PLAN-v(\d+)/)?.[1]),
+        filename: a.filename,
+        attachmentId: a.id,
+        uploadedAt: a.uploadedAt,
+        size: a.size
+      }))
+      .sort((a, b) => b.version - a.version);
+
+    res.json({ versions: plans, count: plans.length });
+  } catch (error) {
+    console.error('Error listing plan versions:', error);
+    res.status(500).json({ error: 'Failed to list plan versions' });
   }
 });
 

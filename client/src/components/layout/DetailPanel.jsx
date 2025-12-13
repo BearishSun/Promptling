@@ -62,6 +62,27 @@ const CopyIcon = () => (
   </svg>
 );
 
+const HistoryIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <circle cx="12" cy="12" r="10" />
+    <polyline points="12,6 12,12 16,14" />
+  </svg>
+);
+
+const ChevronIcon = ({ expanded }) => (
+  <svg
+    width="12"
+    height="12"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    style={{ transform: expanded ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}
+  >
+    <polyline points="9,18 15,12 9,6" />
+  </svg>
+);
+
 // Default tag colors
 const TAG_COLORS = [
   '#ef4444', '#f97316', '#f59e0b', '#84cc16', '#22c55e',
@@ -88,6 +109,9 @@ function DetailPanel() {
   const [newTagName, setNewTagName] = useState('');
   const [newTagColor, setNewTagColor] = useState(TAG_COLORS[0]);
   const [isUploading, setIsUploading] = useState(false);
+  const [showPromptHistory, setShowPromptHistory] = useState(false);
+  const [promptHistory, setPromptHistory] = useState([]);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const fileInputRef = useRef(null);
 
   // Get the selected item based on type
@@ -300,6 +324,40 @@ function DetailPanel() {
     const storedPath = attachment.storedPath || attachment.storedName;
     return tasksApi.getAttachmentUrl(storedPath);
   }, []);
+
+  // Fetch prompt history when toggled open
+  const handleTogglePromptHistory = useCallback(async () => {
+    if (!showPromptHistory) {
+      setIsLoadingHistory(true);
+      try {
+        const response = await tasksApi.getPromptHistory(selectedItemType, selectedItemId);
+        setPromptHistory(response.history || []);
+      } catch (error) {
+        console.error('Failed to fetch prompt history:', error);
+        setPromptHistory([]);
+      } finally {
+        setIsLoadingHistory(false);
+      }
+    }
+    setShowPromptHistory(!showPromptHistory);
+  }, [showPromptHistory, selectedItemType, selectedItemId]);
+
+  const handleClearPromptHistory = useCallback(async () => {
+    if (!confirm('Clear all prompt history for this item?')) return;
+    try {
+      await tasksApi.clearPromptHistory(selectedItemType, selectedItemId);
+      setPromptHistory([]);
+    } catch (error) {
+      console.error('Failed to clear prompt history:', error);
+      alert('Failed to clear prompt history');
+    }
+  }, [selectedItemType, selectedItemId]);
+
+  // Reset prompt history state when item changes
+  useEffect(() => {
+    setShowPromptHistory(false);
+    setPromptHistory([]);
+  }, [selectedItemId]);
 
   if (!item) {
     return null;
@@ -685,6 +743,91 @@ function DetailPanel() {
               </span>
             </div>
           </div>
+        </div>
+
+        {/* Prompt History (Claude Code Integration) */}
+        <div className="detail-section">
+          <button
+            className="prompt-history-toggle"
+            onClick={handleTogglePromptHistory}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              background: 'none',
+              border: 'none',
+              padding: '0',
+              cursor: 'pointer',
+              color: 'var(--text-secondary)',
+              fontSize: '12px',
+              fontWeight: '600',
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px',
+              width: '100%',
+            }}
+          >
+            <ChevronIcon expanded={showPromptHistory} />
+            <HistoryIcon />
+            Claude Prompt History
+            {isLoadingHistory && <span style={{ marginLeft: 'auto', fontSize: '11px' }}>Loading...</span>}
+          </button>
+
+          {showPromptHistory && (
+            <div className="prompt-history-content" style={{ marginTop: '12px' }}>
+              {promptHistory.length === 0 ? (
+                <p style={{ color: 'var(--text-muted)', fontSize: '13px', margin: 0 }}>
+                  No prompt history yet. Use Claude Code with this item to see conversation history here.
+                </p>
+              ) : (
+                <>
+                  <div className="prompt-history-list" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {promptHistory.map((entry) => (
+                      <div
+                        key={entry.id}
+                        className="prompt-history-entry"
+                        style={{
+                          padding: '10px 12px',
+                          borderRadius: '6px',
+                          background: entry.role === 'user' ? 'var(--bg-tertiary)' : 'var(--bg-secondary)',
+                          borderLeft: `3px solid ${entry.role === 'user' ? 'var(--accent-color)' : '#22c55e'}`,
+                        }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                          <span style={{
+                            fontSize: '11px',
+                            fontWeight: '600',
+                            color: entry.role === 'user' ? 'var(--accent-color)' : '#22c55e',
+                            textTransform: 'uppercase',
+                          }}>
+                            {entry.role === 'user' ? 'User' : 'Claude'}
+                          </span>
+                          <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                            {formatDateTime(entry.timestamp)}
+                          </span>
+                        </div>
+                        <p style={{
+                          margin: 0,
+                          fontSize: '13px',
+                          color: 'var(--text-primary)',
+                          whiteSpace: 'pre-wrap',
+                          lineHeight: '1.5',
+                        }}>
+                          {entry.content}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                  <button
+                    className="btn btn-ghost btn-sm"
+                    onClick={handleClearPromptHistory}
+                    style={{ marginTop: '12px', color: 'var(--text-muted)' }}
+                  >
+                    <TrashIcon /> Clear History
+                  </button>
+                </>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </aside>

@@ -81,7 +81,11 @@ export const tasksApi = {
     api.delete(`/tasks/attachment/${itemType}/${itemId}/${attachmentId}`).then(res => res.data),
 
   // Health check
-  health: () => api.get('/health').then(res => res.data)
+  health: () => api.get('/health').then(res => res.data),
+
+  // Prompt History
+  getPromptHistory: (type, id) => api.get(`/tasks/${type}/${id}/prompt-history`).then(res => res.data),
+  clearPromptHistory: (type, id) => api.delete(`/tasks/${type}/${id}/prompt-history`).then(res => res.data)
 };
 
 // Status options for tasks
