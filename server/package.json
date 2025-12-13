@@ -1,7 +1,7 @@
 {
-  "name": "tasklist-server",
+  "name": "promptflow-server",
   "version": "1.0.0",
-  "description": "TaskList API server",
+  "description": "PromptFlow API server",
   "main": "index.js",
   "scripts": {
     "dev": "nodemon index.js",

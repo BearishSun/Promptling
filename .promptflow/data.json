@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "lastModified": "2025-12-13T09:00:55.017Z",
+  "lastModified": "2025-12-13T09:07:26.180Z",
   "features": {
     "feat-CSdMs0EN": {
       "id": "feat-CSdMs0EN",
@@ -1429,12 +1429,20 @@
       "parentType": "feature",
       "parentId": "feat-O1pQSUVV",
       "categoryId": null,
-      "title": "Better name",
+      "title": "Better name for this application",
       "description": "",
-      "status": "open",
+      "status": "done",
       "tagIds": [],
       "createdAt": "2025-12-13T08:32:09.201Z",
-      "finishedAt": null
+      "finishedAt": "2025-12-13T09:07:26.127Z",
+      "promptHistory": [
+        {
+          "id": "ph-X8rVOg2E",
+          "timestamp": "2025-12-13T09:07:26.180Z",
+          "role": "assistant",
+          "content": "Renamed the application from TaskList to PromptFlow:\n\n1. Updated package names:\n   - Root: tasklist → promptflow\n   - Client: tasklist-client → promptflow-client\n   - Server: tasklist-server → promptflow-server\n\n2. Updated UI:\n   - Browser title: TaskList → PromptFlow\n   - Sidebar header: TaskList → PromptFlow\n\n3. Data directory:\n   - Renamed .tasklist/ → .promptflow/\n   - Updated server routes to use new path\n\n4. Added favicon:\n   - Created promptflow.svg icon (blue circle with chat bubble and flow arrow)\n   - Updated index.html to reference new icon"
+        }
+      ]
     },
     "task-2jZkCTd9": {
       "id": "task-2jZkCTd9",

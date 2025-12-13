@@ -1,7 +1,7 @@
 {
-  "name": "tasklist",
+  "name": "promptflow",
   "version": "1.0.0",
-  "description": "High-performance task management for software features and bugs",
+  "description": "AI-powered task management for software features and bugs",
   "scripts": {
     "client": "cd client && npm run dev",
     "server": "cd server && npm run dev",

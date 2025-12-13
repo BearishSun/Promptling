@@ -130,7 +130,7 @@ function Sidebar() {
   return (
     <aside className="sidebar">
       <div className="sidebar-header">
-        <h1>TaskList</h1>
+        <h1>PromptFlow</h1>
       </div>
 
       <div className="sidebar-content">

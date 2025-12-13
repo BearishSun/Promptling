@@ -7,7 +7,7 @@ const multer = require('multer');
 const router = express.Router();
 // Store data in the project root (parent of server directory)
 const PROJECT_ROOT = path.resolve(__dirname, '..', '..');
-const DATA_DIR = path.join(PROJECT_ROOT, '.tasklist');
+const DATA_DIR = path.join(PROJECT_ROOT, '.promptflow');
 const DATA_FILE = path.join(DATA_DIR, 'data.json');
 const ATTACHMENTS_DIR = path.join(DATA_DIR, 'attachments');
 

@@ -8,7 +8,8 @@
       "mcp__tasklist__get_prompt_history",
       "mcp__tasklist__list_attachments",
       "mcp__tasklist__create_plan",
-      "mcp__tasklist__append_prompt_history"
+      "mcp__tasklist__append_prompt_history",
+      "mcp__tasklist__mark_in_progress"
     ]
   }
 }
