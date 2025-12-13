@@ -12,7 +12,8 @@
       "Bash(curl:*)",
       "Bash(npx eslint:*)",
       "Bash(npx vite build:*)",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "WebSearch"
     ]
   }
 }

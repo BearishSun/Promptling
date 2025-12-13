@@ -1,7 +1,7 @@
 {
-  "name": "promptflow-server",
+  "name": "promptling-server",
   "version": "1.0.0",
-  "description": "PromptFlow API server",
+  "description": "Promptling API server",
   "main": "index.js",
   "scripts": {
     "dev": "nodemon index.js",

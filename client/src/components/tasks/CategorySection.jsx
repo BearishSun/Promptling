@@ -95,8 +95,7 @@ function CategorySection({
     onUpdateCategory(category.id, { expanded: !expanded });
   }, [category.id, expanded, onUpdateCategory]);
 
-  const taskCount = tasks.length;
-  const completedCount = tasks.filter(t => t.finishedAt).length;
+  const remainingCount = tasks.filter(t => t.status !== 'done').length;
 
   const handleNameSubmit = useCallback(() => {
     if (editName.trim() && editName !== category.name) {
@@ -154,9 +153,7 @@ function CategorySection({
             {category.name}
           </span>
         )}
-        <span className="category-count">
-          {completedCount}/{taskCount}
-        </span>
+        <span className="category-count">{remainingCount}</span>
         {onAddTask && (
           <button
             className="btn btn-ghost btn-sm category-add"

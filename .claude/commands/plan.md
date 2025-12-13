@@ -1,4 +1,4 @@
-Create or iterate on an implementation plan for a feature, bug, or task from the PromptFlow application.
+Create or iterate on an implementation plan for a feature, bug, or task from the Promptling application.
 
 ## Usage
 /plan <item name or partial title> [additional context or changes]
@@ -6,7 +6,7 @@ Create or iterate on an implementation plan for a feature, bug, or task from the
 ## Important
 - This command is for RESEARCH and PLANNING only - do NOT write or edit any code
 - Do NOT use EnterPlanMode - that is a different feature
-- Save the plan to PromptFlow using the MCP `update` tool with `action: 'save_plan'`
+- Save the plan to Promptling using the MCP `update` tool with `action: 'save_plan'`
 
 ## Instructions
 

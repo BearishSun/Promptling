@@ -532,13 +532,14 @@ function DetailPanel() {
                 key={complexity.value}
                 className={`complexity-option ${item.complexity === complexity.value ? 'selected' : ''}`}
                 onClick={() => handleComplexityChange(complexity.value)}
-                title={complexity.description}
+                title={complexity.label}
                 style={{
                   '--complexity-color': complexity.color,
                   borderColor: item.complexity === complexity.value ? complexity.color : undefined,
                   background: item.complexity === complexity.value ? complexity.color : undefined
                 }}
               >
+                <span className="complexity-icon" style={{ color: item.complexity === complexity.value ? 'white' : complexity.color }}>{complexity.icon}</span>
                 {complexity.label}
               </button>
             ))}

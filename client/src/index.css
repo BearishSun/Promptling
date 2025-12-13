@@ -1106,29 +1106,30 @@ body {
 /* Complexity Select */
 .complexity-select {
   display: flex;
-  gap: 4px;
+  gap: 6px;
   flex-wrap: wrap;
 }
 
 .complexity-option {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
+  padding: 6px 12px;
+  border-radius: 6px;
   border: 2px solid var(--border-color);
   background: var(--bg-primary);
   cursor: pointer;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
   transition: all 0.15s;
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 4px;
   color: var(--text-secondary);
 }
 
 .complexity-option:hover {
   border-color: var(--complexity-color, var(--accent));
   color: var(--complexity-color, var(--accent));
+  background: var(--bg-hover);
 }
 
 .complexity-option.selected {
@@ -1156,13 +1157,16 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 3px;
   font-size: 10px;
-  font-weight: 700;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: var(--bg-hover);
-  color: var(--text-secondary);
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.complexity-icon {
+  font-size: 1.1em;
+  line-height: 1;
 }
 
 /* Attachments */

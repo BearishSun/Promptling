@@ -1,5 +1,5 @@
 {
-  "name": "promptflow-client",
+  "name": "promptling-client",
   "private": true,
   "version": "0.0.0",
   "type": "module",

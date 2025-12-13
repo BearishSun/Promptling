@@ -1,4 +1,4 @@
-# PromptFlow - Task Management for Claude Code
+# Promptling - Task Management for Claude Code
 
 Lightweight task/project management app (think Jira, but simpler) designed to work with Claude Code via MCP (Model Context Protocol).
 
@@ -26,15 +26,73 @@ Lightweight task/project management app (think Jira, but simpler) designed to wo
 - File-based storage (no database needed)
 - Runs locally on your machine
 
-## Quick Start (Fresh Windows Installation)
+## Quick Start
 
-Complete guide to get TaskList running on a fresh Windows install.
+### Prerequisites
+- [Node.js](https://nodejs.org/) v18 or later
+
+### One-Click Launch
+1. **Windows:** Double-click `start-promptling.bat`
+2. **macOS/Linux:** Run `./start-promptling.sh` (may need `chmod +x start-promptling.sh` first)
+
+The launcher will automatically:
+- Install dependencies (first run only)
+- Build the client (first run only)
+- Start the server and open your browser to http://localhost:3001
+
+### Manual Setup
+If you prefer manual setup or the launcher doesn't work:
+
+```bash
+# Install dependencies
+npm install
+
+# Build the client
+cd client && npm run build && cd ..
+
+# Start the server
+cd server && node index.js
+```
+
+Then open http://localhost:3001 in your browser.
+
+### Add MCP Tools to Claude Code
+
+Add the Promptling MCP server so Claude can interact with your tasks:
+
+```bash
+claude mcp add --transport http promptling http://localhost:3001/api/mcp
+```
+
+Restart Claude Code. You'll now have access to tools like `search`, `get`, `create`, `update`, `list`, and `read` for managing items.
+
+### Install Custom Commands
+
+Copy the custom commands to your Claude config:
+
+```bash
+# Windows
+xcopy /E /I /path/to/promptling/.claude/commands %USERPROFILE%\.claude\commands
+
+# macOS/Linux
+cp -r /path/to/promptling/.claude/commands ~/.claude/commands
+```
+
+**Available commands:**
+- `/plan <item>` - Create/update an implementation plan
+- `/implement <item>` - Implement a feature/bug from its plan
+
+---
 
 ## Why I built this
 
 - I needed a way to organize tasks on my personal projects. Thus far I just used a text editor with a bunch of lists/notes to keep track, but it was messy and not manageable.	
 - Keeping track of all Claude prompts was also becoming messy, and I would often lose good prompts. This way I can always keep them around in the work items.
 - Keeping track of all the plan files was becoming messy, some were in .claude/plans folder with non-identifiable names, others were scattered over the project folder.
+
+## Detailed Setup Guide
+
+Step-by-step instructions for setting up Promptling from scratch.
 
 ### Step 1: Install Node.js
 

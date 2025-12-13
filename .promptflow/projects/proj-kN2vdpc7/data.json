@@ -1,6 +1,6 @@
 {
   "version": 4,
-  "lastModified": "2025-12-13T17:14:20.255Z",
+  "lastModified": "2025-12-13T18:25:18.928Z",
   "sections": {
     "sect-features": {
       "id": "sect-features",
@@ -14,7 +14,8 @@
         "feat-AsFKJHjA",
         "item-vABtRoNq",
         "item-jn4uzVlP",
-        "feat-xCrs6ImE"
+        "feat-xCrs6ImE",
+        "item-K10wOsgM"
       ],
       "categoryOrder": [],
       "createdAt": "2025-12-13T12:02:32.069Z"
@@ -176,7 +177,7 @@
       "description": "",
       "status": "open",
       "priority": "medium",
-      "complexity": null,
+      "complexity": 2,
       "categoryId": null,
       "taskOrder": [],
       "categoryOrder": [],
@@ -232,6 +233,42 @@
       "sectionId": "sect-features",
       "title": "Add names to complexity categories rather than values 1-5",
       "description": "Replace the numeric complexity values (1-5) with descriptive names that better communicate the level of effort. For example: Trivial, Simple, Medium, Complex, Hard. This makes complexity more intuitive and meaningful to users.",
+      "status": "done",
+      "priority": "medium",
+      "complexity": null,
+      "categoryId": null,
+      "taskOrder": [],
+      "categoryOrder": [],
+      "attachments": [],
+      "promptHistory": [
+        {
+          "id": "ph-BrhmFeGJ",
+          "timestamp": "2025-12-13T17:30:37.016Z",
+          "role": "assistant",
+          "content": "Implemented: Changed complexity labels from numeric (1-5) to descriptive names (Trivial, Simple, Medium, Complex, Hard) in api.js and updated DetailPanel.jsx tooltip"
+        },
+        {
+          "id": "ph-eSy1L0bb",
+          "timestamp": "2025-12-13T17:32:52.380Z",
+          "role": "assistant",
+          "content": "Updated: Changed Complex→Hard, Hard→Epic. Restyled complexity buttons and badges from circles to pills for text labels."
+        },
+        {
+          "id": "ph-dBMyi4Pb",
+          "timestamp": "2025-12-13T17:34:28.556Z",
+          "role": "assistant",
+          "content": "Added color-coded icons (○ ◔ ◑ ◕ ●) to complexity options and badges in DetailPanel, MainPanel, and TaskItem"
+        }
+      ],
+      "tagIds": [],
+      "createdAt": "2025-12-13T17:03:39.900Z",
+      "finishedAt": "2025-12-13T17:30:32.149Z"
+    },
+    "item-K10wOsgM": {
+      "id": "item-K10wOsgM",
+      "sectionId": "sect-features",
+      "title": "Add a config json file for setting data file location",
+      "description": "Allow the user to specify a config file in the root app folder, and configure the location of the app data files (projects, items, tasks, attachments, etc.)",
       "status": "open",
       "priority": "medium",
       "complexity": null,
@@ -241,7 +278,7 @@
       "attachments": [],
       "promptHistory": [],
       "tagIds": [],
-      "createdAt": "2025-12-13T17:03:39.900Z",
+      "createdAt": "2025-12-13T18:24:30.067Z",
       "finishedAt": null
     }
   },

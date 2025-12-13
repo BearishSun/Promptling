@@ -78,6 +78,7 @@ function TaskItem({ task, tags, isSelected, onSelect, onToggle, dragHandleProps 
           {/* Complexity indicator */}
           {complexityInfo && (
             <span className="complexity-badge" style={{ background: complexityInfo.color, color: 'white' }}>
+              <span className="complexity-icon">{complexityInfo.icon}</span>
               {complexityInfo.label}
             </span>
           )}

@@ -130,11 +130,11 @@ export const PRIORITIES = [
 
 // Complexity options (1-5 scale, green to red)
 export const COMPLEXITIES = [
-  { value: 1, label: '1', description: 'Trivial', color: '#22c55e' },
-  { value: 2, label: '2', description: 'Simple', color: '#84cc16' },
-  { value: 3, label: '3', description: 'Medium', color: '#f59e0b' },
-  { value: 4, label: '4', description: 'Complex', color: '#f97316' },
-  { value: 5, label: '5', description: 'Hard', color: '#ef4444' }
+  { value: 1, label: 'Trivial', color: '#22c55e', icon: '○' },
+  { value: 2, label: 'Simple', color: '#84cc16', icon: '◔' },
+  { value: 3, label: 'Medium', color: '#f59e0b', icon: '◑' },
+  { value: 4, label: 'Hard', color: '#f97316', icon: '◕' },
+  { value: 5, label: 'Epic', color: '#ef4444', icon: '●' }
 ];
 
 export default tasksApi;

@@ -190,12 +190,12 @@ function Sidebar() {
   const allItems = Object.values(data.items || {});
   const inProgressItems = allItems.filter(item => item.status === 'in-progress');
 
-  // Get item count for a section
+  // Get item count for a section (excluding completed items)
   const getSectionItemCount = (sectionId) => {
     const section = data.sections?.[sectionId];
     if (!section) return 0;
-    // Count items in section (both in categories and uncategorized)
-    const itemsInSection = allItems.filter(item => item.sectionId === sectionId);
+    // Count non-completed items in section
+    const itemsInSection = allItems.filter(item => item.sectionId === sectionId && item.status !== 'done');
     return itemsInSection.length;
   };
 

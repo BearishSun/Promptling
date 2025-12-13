@@ -275,7 +275,7 @@ function TaskList({ parentType, parentId }) {
             {categories.length > 0 && (
               <div className="category-header">
                 <span className="category-name">Uncategorized</span>
-                <span className="category-count">{filteredUncategorized.length}</span>
+                <span className="category-count">{filteredUncategorized.filter(t => t.status !== 'done').length}</span>
               </div>
             )}
             <SortableContext

@@ -409,6 +409,7 @@ function SortableItem({ item, completedCount, taskCount, onOpenDetails, onViewTa
           )}
           {complexityInfo && (
             <span className="complexity-badge" style={{ background: complexityInfo.color, color: 'white' }}>
+              <span className="complexity-icon">{complexityInfo.icon}</span>
               {complexityInfo.label}
             </span>
           )}
@@ -681,7 +682,7 @@ function SectionItemsList({ sectionId }) {
               {categories.length > 0 && (
                 <div className="category-header">
                   <span className="category-name">Uncategorized</span>
-                  <span className="category-count">{uncategorizedItems.length}</span>
+                  <span className="category-count">{uncategorizedItems.filter(i => i.status !== 'done').length}</span>
                 </div>
               )}
               <DroppableUncategorizedItems
@@ -789,7 +790,7 @@ function DroppableItemCategory({ category, items, data, onSelect, onEdit, onUpda
             {category.name}
           </span>
         )}
-        <span className="category-count">{items.length}</span>
+        <span className="category-count">{items.filter(i => i.status !== 'done').length}</span>
         {onAddItem && (
           <button
             className="btn btn-ghost btn-sm category-add"

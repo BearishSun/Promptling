@@ -1,4 +1,4 @@
-Implement a feature, bug, or task from the PromptFlow application.
+Implement a feature, bug, or task from the Promptling application.
 
 ## Usage
 /implement <item name or partial title>
