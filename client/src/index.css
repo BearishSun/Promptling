@@ -486,13 +486,44 @@ body {
   opacity: 1;
 }
 
-.item-edit-btn {
+.item-edit-btn,
+.item-copy-btn {
   opacity: 0;
   transition: opacity 0.1s;
 }
 
-.task-item:hover .item-edit-btn {
+.task-item:hover .item-edit-btn,
+.task-item:hover .item-copy-btn {
   opacity: 1;
+}
+
+/* Toast Notification */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--border-color);
+  z-index: 10000;
+  animation: toast-in 0.2s ease-out;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
 }
 
 /* Detail Panel Overlay */
@@ -1179,6 +1210,276 @@ body {
   display: flex;
   align-items: center;
   gap: 6px;
+}
+
+.attachment-clickable {
+  cursor: pointer;
+  border: none;
+  transition: background 0.15s;
+}
+
+.attachment-clickable:hover {
+  background: var(--bg-selected);
+  color: var(--accent);
+}
+
+.attachment-filename-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+}
+
+/* Plans List */
+.plans-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.plan-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+  width: 100%;
+  text-align: left;
+}
+
+.plan-item:hover {
+  background: var(--bg-hover);
+  border-color: var(--accent);
+}
+
+.plan-item svg {
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.plan-name {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.plan-meta {
+  font-size: 11px;
+  color: var(--text-muted);
+  background: var(--bg-hover);
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+.plan-version-select {
+  padding: 4px 8px;
+  font-size: 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.plan-version-select:hover {
+  border-color: var(--accent);
+}
+
+/* Markdown Viewer Modal */
+.markdown-viewer-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 24px;
+}
+
+.markdown-viewer {
+  background: var(--bg-primary);
+  border-radius: 12px;
+  width: 100%;
+  max-width: 900px;
+  max-height: calc(100vh - 48px);
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--border-color);
+}
+
+.markdown-viewer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-color);
+  gap: 16px;
+}
+
+.markdown-viewer-title-area {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+}
+
+.markdown-viewer-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.markdown-viewer-close {
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.markdown-viewer-close:hover {
+  background: var(--bg-hover);
+}
+
+.markdown-viewer-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px 32px;
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--text-primary);
+}
+
+/* Markdown content styles */
+.markdown-viewer-content h1 {
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0 0 16px 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.markdown-viewer-content h2 {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 24px 0 12px 0;
+  color: var(--text-primary);
+}
+
+.markdown-viewer-content h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 20px 0 8px 0;
+  color: var(--text-primary);
+}
+
+.markdown-viewer-content p {
+  margin: 0 0 12px 0;
+}
+
+.markdown-viewer-content ul,
+.markdown-viewer-content ol {
+  margin: 0 0 12px 0;
+  padding-left: 24px;
+}
+
+.markdown-viewer-content li {
+  margin-bottom: 6px;
+}
+
+.markdown-viewer-content li > ul,
+.markdown-viewer-content li > ol {
+  margin-top: 6px;
+  margin-bottom: 0;
+}
+
+.markdown-viewer-content code {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  background: var(--bg-secondary);
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: var(--accent);
+}
+
+.markdown-viewer-content pre {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 16px;
+  overflow-x: auto;
+  margin: 0 0 16px 0;
+}
+
+.markdown-viewer-content pre code {
+  background: none;
+  padding: 0;
+  color: var(--text-primary);
+}
+
+.markdown-viewer-content blockquote {
+  border-left: 3px solid var(--accent);
+  margin: 0 0 16px 0;
+  padding: 8px 16px;
+  background: var(--bg-secondary);
+  border-radius: 0 8px 8px 0;
+  color: var(--text-secondary);
+}
+
+.markdown-viewer-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0 0 16px 0;
+}
+
+.markdown-viewer-content th,
+.markdown-viewer-content td {
+  border: 1px solid var(--border-color);
+  padding: 10px 12px;
+  text-align: left;
+}
+
+.markdown-viewer-content th {
+  background: var(--bg-secondary);
+  font-weight: 600;
+}
+
+.markdown-viewer-content hr {
+  border: none;
+  border-top: 1px solid var(--border-color);
+  margin: 24px 0;
+}
+
+.markdown-viewer-content a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.markdown-viewer-content a:hover {
+  text-decoration: underline;
+}
+
+.markdown-viewer-content input[type="checkbox"] {
+  margin-right: 8px;
 }
 
 .attachment-hint {

@@ -85,7 +85,14 @@ export const tasksApi = {
 
   // Prompt History
   getPromptHistory: (type, id) => api.get(`/tasks/${type}/${id}/prompt-history`).then(res => res.data),
-  clearPromptHistory: (type, id) => api.delete(`/tasks/${type}/${id}/prompt-history`).then(res => res.data)
+  clearPromptHistory: (type, id) => api.delete(`/tasks/${type}/${id}/prompt-history`).then(res => res.data),
+
+  // Plans
+  getPlan: (type, id, version) => {
+    const url = version ? `/tasks/${type}/${id}/plan?version=${version}` : `/tasks/${type}/${id}/plan`;
+    return api.get(url).then(res => res.data);
+  },
+  getPlanVersions: (type, id) => api.get(`/tasks/${type}/${id}/plan/versions`).then(res => res.data)
 };
 
 // Status options for tasks

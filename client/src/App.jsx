@@ -1,4 +1,5 @@
 import { TaskProvider, useTaskData, useUIState } from './context/TaskProvider';
+import { ToastProvider } from './context/ToastContext';
 import Sidebar from './components/layout/Sidebar';
 import MainPanel from './components/layout/MainPanel';
 import DetailPanel from './components/layout/DetailPanel';
@@ -41,9 +42,11 @@ function AppContent() {
 
 function App() {
   return (
-    <TaskProvider>
-      <AppContent />
-    </TaskProvider>
+    <ToastProvider>
+      <TaskProvider>
+        <AppContent />
+      </TaskProvider>
+    </ToastProvider>
   );
 }
 

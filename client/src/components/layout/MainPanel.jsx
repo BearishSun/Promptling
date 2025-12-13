@@ -17,6 +17,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useTaskData, useTaskActions, useUIState } from '../../context/TaskProvider';
+import { useToast } from '../../context/ToastContext';
 import TaskList from '../tasks/TaskList';
 import { PRIORITIES, COMPLEXITIES } from '../../services/api';
 
@@ -91,6 +92,13 @@ const EditIcon = () => (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
     <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
     <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
+  </svg>
+);
+
+const CopyIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+    <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
   </svg>
 );
 
@@ -387,6 +395,7 @@ const ArrowRightIcon = () => (
 
 // Sortable Feature Item
 function SortableFeatureItem({ feature, completedCount, taskCount, onOpenDetails, onViewTasks, convertMode }) {
+  const { showToast } = useToast();
   const {
     attributes,
     listeners,
@@ -415,6 +424,13 @@ function SortableFeatureItem({ feature, completedCount, taskCount, onOpenDetails
     e.stopPropagation();
     onViewTasks(feature.id);
   };
+
+  const handleCopyId = useCallback((e) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(feature.id).then(() => {
+      showToast(`Copied: ${feature.id}`);
+    });
+  }, [feature.id, showToast]);
 
   const priorityInfo = PRIORITIES.find(p => p.value === feature.priority);
   const complexityInfo = COMPLEXITIES.find(c => c.value === feature.complexity);
@@ -446,6 +462,9 @@ function SortableFeatureItem({ feature, completedCount, taskCount, onOpenDetails
           <span>{completedCount} done</span>
         </div>
       </div>
+      <button className="btn btn-icon btn-ghost btn-sm item-copy-btn" onClick={handleCopyId} title="Copy feature ID">
+        <CopyIcon />
+      </button>
       <button className="btn btn-icon btn-ghost btn-sm item-edit-btn" onClick={handleViewTasksClick} title="View tasks">
         <ArrowRightIcon />
       </button>
@@ -947,6 +966,7 @@ function GlobalFeaturesList() {
 
 // Sortable Bug Item
 function SortableBugItem({ bug, completedCount, taskCount, onOpenDetails, onViewTasks }) {
+  const { showToast } = useToast();
   const {
     attributes,
     listeners,
@@ -977,6 +997,13 @@ function SortableBugItem({ bug, completedCount, taskCount, onOpenDetails, onView
     onViewTasks(bug.id);
   };
 
+  const handleCopyId = useCallback((e) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(bug.id).then(() => {
+      showToast(`Copied: ${bug.id}`);
+    });
+  }, [bug.id, showToast]);
+
   return (
     <div ref={setNodeRef} style={style} className={`task-item compact ${status === 'done' ? 'completed' : ''}`} onClick={handleClick}>
       <div {...attributes} {...listeners}>
@@ -1004,6 +1031,9 @@ function SortableBugItem({ bug, completedCount, taskCount, onOpenDetails, onView
           <span>{completedCount} done</span>
         </div>
       </div>
+      <button className="btn btn-icon btn-ghost btn-sm item-copy-btn" onClick={handleCopyId} title="Copy bug ID">
+        <CopyIcon />
+      </button>
       <button className="btn btn-icon btn-ghost btn-sm item-edit-btn" onClick={handleViewTasksClick} title="View tasks">
         <ArrowRightIcon />
       </button>

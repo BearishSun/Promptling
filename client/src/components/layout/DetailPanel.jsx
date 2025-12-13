@@ -1,6 +1,7 @@
 import { memo, useState, useCallback, useEffect, useRef } from 'react';
 import { useTaskData, useTaskActions, useUIState } from '../../context/TaskProvider';
 import MarkdownEditor from '../detail/MarkdownEditor';
+import MarkdownViewer from '../detail/MarkdownViewer';
 import { formatDateTime } from '../../utils/dateFormat';
 import tasksApi, { TASK_STATUSES, PRIORITIES, COMPLEXITIES } from '../../services/api';
 
@@ -83,6 +84,16 @@ const ChevronIcon = ({ expanded }) => (
   </svg>
 );
 
+const PlanIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+    <polyline points="14,2 14,8 20,8" />
+    <line x1="16" y1="13" x2="8" y2="13" />
+    <line x1="16" y1="17" x2="8" y2="17" />
+    <line x1="10" y1="9" x2="8" y2="9" />
+  </svg>
+);
+
 // Default tag colors
 const TAG_COLORS = [
   '#ef4444', '#f97316', '#f59e0b', '#84cc16', '#22c55e',
@@ -112,6 +123,8 @@ function DetailPanel() {
   const [showPromptHistory, setShowPromptHistory] = useState(false);
   const [promptHistory, setPromptHistory] = useState([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const [planVersions, setPlanVersions] = useState([]);
+  const [markdownViewer, setMarkdownViewer] = useState(null); // { title, content, versions?, selectedVersion? }
   const fileInputRef = useRef(null);
 
   // Get the selected item based on type
@@ -359,6 +372,74 @@ function DetailPanel() {
     setPromptHistory([]);
   }, [selectedItemId]);
 
+  // Fetch plan versions when item changes
+  useEffect(() => {
+    const fetchPlanVersions = async () => {
+      if (!selectedItemType || !selectedItemId) {
+        setPlanVersions([]);
+        return;
+      }
+      try {
+        const response = await tasksApi.getPlanVersions(selectedItemType, selectedItemId);
+        setPlanVersions(response.versions || []);
+      } catch (error) {
+        // No plan exists - that's fine
+        setPlanVersions([]);
+      }
+    };
+    fetchPlanVersions();
+  }, [selectedItemType, selectedItemId]);
+
+  // Handle opening a plan
+  const handleOpenPlan = useCallback(async (version) => {
+    try {
+      const response = await tasksApi.getPlan(selectedItemType, selectedItemId, version);
+      setMarkdownViewer({
+        title: `Implementation Plan${version ? ` (v${version})` : ''}`,
+        content: response.content,
+        versions: planVersions,
+        selectedVersion: version || planVersions[planVersions.length - 1]?.version,
+        type: 'plan'
+      });
+    } catch (error) {
+      console.error('Failed to fetch plan:', error);
+    }
+  }, [selectedItemType, selectedItemId, planVersions]);
+
+  // Handle opening a markdown attachment
+  const handleOpenMarkdownAttachment = useCallback(async (attachment) => {
+    try {
+      const storedPath = attachment.storedPath || attachment.storedName;
+      const response = await fetch(tasksApi.getAttachmentUrl(storedPath));
+      const content = await response.text();
+      setMarkdownViewer({
+        title: attachment.filename,
+        content,
+        type: 'attachment'
+      });
+    } catch (error) {
+      console.error('Failed to fetch attachment:', error);
+    }
+  }, []);
+
+  // Handle changing plan version in viewer
+  const handlePlanVersionChange = useCallback(async (version) => {
+    try {
+      const response = await tasksApi.getPlan(selectedItemType, selectedItemId, version);
+      setMarkdownViewer(prev => ({
+        ...prev,
+        content: response.content,
+        selectedVersion: version
+      }));
+    } catch (error) {
+      console.error('Failed to fetch plan version:', error);
+    }
+  }, [selectedItemType, selectedItemId]);
+
+  const isMarkdownFile = useCallback((filename) => {
+    return filename?.toLowerCase().endsWith('.md') || filename?.toLowerCase().endsWith('.markdown');
+  }, []);
+
   if (!item) {
     return null;
   }
@@ -596,6 +677,28 @@ function DetailPanel() {
           />
         </div>
 
+        {/* Plans */}
+        {planVersions.length > 0 && (
+          <div className="detail-section">
+            <div className="detail-section-title">Implementation Plan</div>
+            <div className="plans-list">
+              {planVersions.map((planVersion, index) => (
+                <button
+                  key={planVersion.version}
+                  className="plan-item"
+                  onClick={() => handleOpenPlan(planVersion.version)}
+                >
+                  <PlanIcon />
+                  <span className="plan-name">
+                    {index === planVersions.length - 1 ? 'Current Plan' : `Plan v${planVersion.version}`}
+                  </span>
+                  <span className="plan-meta">v{planVersion.version}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Attachments */}
         <div className="detail-section">
           <div className="detail-section-title">Attachments</div>
@@ -618,20 +721,36 @@ function DetailPanel() {
                         className="attachment-thumbnail"
                       />
                     </a>
+                  ) : isMarkdownFile(attachment.filename) ? (
+                    <button
+                      className="attachment-file-icon attachment-clickable"
+                      onClick={() => handleOpenMarkdownAttachment(attachment)}
+                    >
+                      <PlanIcon />
+                    </button>
                   ) : (
                     <div className="attachment-file-icon">
                       <FileIcon />
                     </div>
                   )}
                   <div className="attachment-info">
-                    <a
-                      href={getAttachmentUrl(attachment)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="attachment-filename"
-                    >
-                      {attachment.filename}
-                    </a>
+                    {isMarkdownFile(attachment.filename) ? (
+                      <button
+                        className="attachment-filename attachment-filename-btn"
+                        onClick={() => handleOpenMarkdownAttachment(attachment)}
+                      >
+                        {attachment.filename}
+                      </button>
+                    ) : (
+                      <a
+                        href={getAttachmentUrl(attachment)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="attachment-filename"
+                      >
+                        {attachment.filename}
+                      </a>
+                    )}
                     <span className="attachment-size">{formatFileSize(attachment.size)}</span>
                   </div>
                   <div className="attachment-actions">
@@ -831,6 +950,28 @@ function DetailPanel() {
         </div>
       </div>
     </aside>
+
+    {/* Markdown Viewer Modal */}
+    {markdownViewer && (
+      <MarkdownViewer
+        title={markdownViewer.title}
+        content={markdownViewer.content}
+        onClose={() => setMarkdownViewer(null)}
+        versionSelector={markdownViewer.type === 'plan' && markdownViewer.versions?.length > 1 ? (
+          <select
+            className="plan-version-select"
+            value={markdownViewer.selectedVersion}
+            onChange={(e) => handlePlanVersionChange(Number(e.target.value))}
+          >
+            {markdownViewer.versions.map((v, i) => (
+              <option key={v.version} value={v.version}>
+                {i === markdownViewer.versions.length - 1 ? `v${v.version} (Current)` : `v${v.version}`}
+              </option>
+            ))}
+          </select>
+        ) : null}
+      />
+    )}
     </div>
   );
 }

@@ -1,6 +1,7 @@
-import { memo } from 'react';
+import { memo, useCallback } from 'react';
 import { formatDate } from '../../utils/dateFormat';
 import { TASK_STATUSES, PRIORITIES, COMPLEXITIES } from '../../services/api';
+import { useToast } from '../../context/ToastContext';
 
 // Drag handle icon
 const DragIcon = () => (
@@ -14,13 +15,28 @@ const DragIcon = () => (
   </svg>
 );
 
+const CopyIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+    <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
+  </svg>
+);
+
 function TaskItem({ task, tags, isSelected, onSelect, onToggle, dragHandleProps }) {
+  const { showToast } = useToast();
   const status = task.status || 'open';
   const statusInfo = TASK_STATUSES.find(s => s.value === status) || TASK_STATUSES[0];
   const isCompleted = status === 'done' || !!task.finishedAt;
   const taskTags = (task.tagIds || []).map(id => tags?.[id]).filter(Boolean);
   const priorityInfo = PRIORITIES.find(p => p.value === task.priority);
   const complexityInfo = COMPLEXITIES.find(c => c.value === task.complexity);
+
+  const handleCopyId = useCallback((e) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(task.id).then(() => {
+      showToast(`Copied: ${task.id}`);
+    });
+  }, [task.id, showToast]);
 
   return (
     <div
@@ -85,6 +101,13 @@ function TaskItem({ task, tags, isSelected, onSelect, onToggle, dragHandleProps 
           <span>{formatDate(task.createdAt)}</span>
         </div>
       </div>
+      <button
+        className="btn btn-icon btn-ghost btn-sm item-copy-btn"
+        onClick={handleCopyId}
+        title="Copy task ID"
+      >
+        <CopyIcon />
+      </button>
     </div>
   );
 }

@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "lastModified": "2025-12-13T08:40:15.553Z",
+  "lastModified": "2025-12-13T09:00:55.017Z",
   "features": {
     "feat-CSdMs0EN": {
       "id": "feat-CSdMs0EN",
@@ -576,7 +576,8 @@
         "task-2jZkCTd9",
         "task-NA07Z6ti",
         "task-W4BFjWbH",
-        "task-Ru8RXbWm"
+        "task-Ru8RXbWm",
+        "task-Gu18X5z4"
       ],
       "categoryOrder": [],
       "categoryId": "fcat-9GWRmJDc"
@@ -1454,10 +1455,10 @@
       "categoryId": null,
       "title": "Show plan in the details panel",
       "description": "",
-      "status": "open",
+      "status": "done",
       "tagIds": [],
       "createdAt": "2025-12-13T08:33:05.492Z",
-      "finishedAt": null
+      "finishedAt": "2025-12-13T09:00:03.944Z"
     },
     "task-W4BFjWbH": {
       "id": "task-W4BFjWbH",
@@ -1469,7 +1470,26 @@
       "status": "open",
       "tagIds": [],
       "createdAt": "2025-12-13T08:40:15.500Z",
-      "finishedAt": null
+      "finishedAt": null,
+      "attachments": [
+        {
+          "id": "att-x9A8WrX7",
+          "filename": "PLAN-v1.md",
+          "storedName": "PLAN-v1.md",
+          "storedPath": "task/task-W4BFjWbH/PLAN-v1.md",
+          "mimeType": "text/markdown",
+          "size": 6076,
+          "uploadedAt": "2025-12-13T08:51:02.299Z"
+        }
+      ],
+      "promptHistory": [
+        {
+          "id": "ph-hky1ULis",
+          "timestamp": "2025-12-13T08:52:33.691Z",
+          "role": "assistant",
+          "content": "Created implementation plan v1 for multi-project support. The plan covers:\n\n- **Phase 1**: Data model & storage refactoring (project-scoped data files)\n- **Phase 2**: Server API changes (project CRUD + scoped routes)\n- **Phase 3**: Client context refactoring (ProjectProvider + hooks)\n- **Phase 4**: UI implementation (project selector, modals)\n- **Phase 5**: Polish & migration (auto-migrate existing data)\n\nKey technical decisions:\n- Each project gets its own directory under `.tasklist/projects/{projectId}/`\n- New `projects.json` for project metadata, `settings.json` for global preferences\n- Context hierarchy: ToastProvider > ProjectProvider > TaskProvider\n- Automatic migration of existing data to \"Default\" project on first load"
+        }
+      ]
     },
     "task-Ru8RXbWm": {
       "id": "task-Ru8RXbWm",
@@ -1481,6 +1501,18 @@
       "status": "open",
       "tagIds": [],
       "createdAt": "2025-12-13T08:40:15.553Z",
+      "finishedAt": null
+    },
+    "task-Gu18X5z4": {
+      "id": "task-Gu18X5z4",
+      "parentType": "feature",
+      "parentId": "feat-O1pQSUVV",
+      "categoryId": null,
+      "title": "Open the task list to the right of the feature/bug list, rather than its own page",
+      "description": "",
+      "status": "open",
+      "tagIds": [],
+      "createdAt": "2025-12-13T09:00:37.747Z",
       "finishedAt": null
     }
   },
