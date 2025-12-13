@@ -3,6 +3,7 @@ const cors = require('cors');
 const path = require('path');
 const tasksRouter = require('./routes/tasks');
 const mcpRouter = require('./routes/mcp');
+const projectsRouter = require('./routes/projects');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -12,6 +13,7 @@ app.use(cors());
 app.use(express.json());
 
 // Routes
+app.use('/api/projects', projectsRouter);
 app.use('/api/tasks', tasksRouter);
 app.use('/api/mcp', mcpRouter);
 

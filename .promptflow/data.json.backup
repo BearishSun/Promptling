@@ -1,0 +1,1726 @@
+{
+  "version": 1,
+  "lastModified": "2025-12-13T09:49:59.258Z",
+  "features": {
+    "feat-CSdMs0EN": {
+      "id": "feat-CSdMs0EN",
+      "title": "Basic ECS system",
+      "description": "",
+      "status": "open",
+      "createdAt": "2025-12-12T12:33:31.965Z",
+      "finishedAt": null,
+      "taskOrder": [
+        "task-nToKKdxN",
+        "task-hQ5rx69p"
+      ],
+      "categoryId": "fcat-9GWRmJDc",
+      "complexity": 4,
+      "priority": "medium"
+    },
+    "feat-pdVA3eb0": {
+      "id": "feat-pdVA3eb0",
+      "title": "Merge core and engine layers",
+      "description": " Rename Foundation -> Engine\n  - Also the source groups in VS need a rename\n Also merge Application and CoreApplication\n And core/engine prerequisites?",
+      "status": "open",
+      "createdAt": "2025-12-12T12:34:01.534Z",
+      "finishedAt": null,
+      "taskOrder": [],
+      "categoryId": "fcat-9GWRmJDc",
+      "priority": "medium",
+      "complexity": 1
+    },
+    "feat-1vDBMJNC": {
+      "id": "feat-1vDBMJNC",
+      "title": "Fix long build step copying all the assembly dlls",
+      "description": "",
+      "status": "done",
+      "createdAt": "2025-12-12T12:34:01.643Z",
+      "finishedAt": "2025-12-12T15:54:10.736Z",
+      "taskOrder": [],
+      "categoryId": "fcat-Om7UqQMd"
+    },
+    "feat-4XpfpWaK": {
+      "id": "feat-4XpfpWaK",
+      "title": "Ensure built dependencies are provided on the server",
+      "description": "",
+      "status": "open",
+      "createdAt": "2025-12-12T12:34:01.780Z",
+      "finishedAt": null,
+      "taskOrder": [],
+      "categoryId": "fcat-9GWRmJDc",
+      "complexity": 2,
+      "priority": "medium"
+    },
+    "feat-XOYFOXuN": {
+      "id": "feat-XOYFOXuN",
+      "title": "Make all plugins static libraries",
+      "description": "",
+      "status": "open",
+      "createdAt": "2025-12-12T12:34:02.132Z",
+      "finishedAt": null,
+      "taskOrder": [],
+      "categoryId": "fcat-9GWRmJDc",
+      "complexity": 2,
+      "priority": "medium"
+    },
+    "feat-eWseFwXU": {
+      "id": "feat-eWseFwXU",
+      "title": "Get all Null libraries working",
+      "description": "",
+      "status": "open",
+      "createdAt": "2025-12-12T12:34:02.240Z",
+      "finishedAt": null,
+      "taskOrder": [],
+      "categoryId": "fcat-9GWRmJDc",
+      "complexity": 3,
+      "priority": "medium"
+    },
+    "feat-FIto6LPz": {
+      "id": "feat-FIto6LPz",
+      "title": "Separate Tests from Examples",
+      "description": "",
+      "status": "open",
+      "createdAt": "2025-12-12T12:34:02.922Z",
+      "finishedAt": null,
+      "taskOrder": [],
+      "categoryId": "fcat-9GWRmJDc",
+      "complexity": 3,
+      "priority": "medium"
+    },
+    "feat-r83VIlhj": {
+      "id": "feat-r83VIlhj",
+      "title": "Update documentation",
+      "description": "- 00_build.md\n - Links need to be updated (Downloads page out of date in particular)\n - Follow the build steps so it actually works",
+      "status": "open",
+      "createdAt": "2025-12-12T12:34:03.152Z",
+      "finishedAt": null,
+      "taskOrder": [
+        "task-cd1gEXBT"
+      ],
+      "categoryId": "fcat-9GWRmJDc",
+      "complexity": 2,
+      "priority": "medium"
+    },
+    "feat-5uksqtP9": {
+      "id": "feat-5uksqtP9",
+      "title": "Code style",
+      "description": "",
+      "status": "open",
+      "createdAt": "2025-12-12T15:41:57.276Z",
+      "finishedAt": null,
+      "taskOrder": [
+        "task-nxeKRM51",
+        "task-m89j6REh",
+        "task-pCdWzu2A",
+        "task-8dXabzOE",
+        "task-8wbMQTjg",
+        "task-ivTXICBk",
+        "task-g7Wmitq8",
+        "task-RjV2aBgz",
+        "task-fsqEs3sk",
+        "task-cwEq4TJl",
+        "task-V1HMyMjV",
+        "task-kShYOlFU"
+      ],
+      "categoryOrder": [],
+      "categoryId": "fcat-9GWRmJDc",
+      "complexity": 1,
+      "priority": "medium"
+    },
+    "feat-krCBsi6x": {
+      "id": "feat-krCBsi6x",
+      "title": "GpuBuffer rewrite",
+      "description": "",
+      "status": "in-progress",
+      "createdAt": "2025-12-12T16:30:54.857Z",
+      "finishedAt": null,
+      "taskOrder": [
+        "task-RuqNVaPi",
+        "task-pfQaSoCY",
+        "task-0V0vAiMw",
+        "task-3wCgIw1F",
+        "task-HDiCJyKj",
+        "task-GrJf2HS1",
+        "task-NZ81gTK4",
+        "task-wS3rEMyu",
+        "task-5Rlm15zX",
+        "task-jdclxyv7",
+        "task-yUsnO6Yv",
+        "task-4XdkHZxU",
+        "task-S0QtCyqQ"
+      ],
+      "categoryOrder": [],
+      "categoryId": "fcat-9GWRmJDc",
+      "priority": "critical",
+      "complexity": 3
+    },
+    "feat-5PeucF5e": {
+      "id": "feat-5PeucF5e",
+      "title": "Gpu backend refactor",
+      "description": "",
+      "status": "open",
+      "createdAt": "2025-12-12T16:58:49.153Z",
+      "finishedAt": null,
+      "taskOrder": [
+        "task-hxd8DAAw",
+        "task-dMB72L3M",
+        "task-InIwkeJs",
+        "task-H3EqIfsP"
+      ],
+      "categoryOrder": [],
+      "priority": "high",
+      "complexity": 4,
+      "categoryId": "fcat-9GWRmJDc"
+    },
+    "feat-T4nhBrDY": {
+      "id": "feat-T4nhBrDY",
+      "title": "Continue work on prefabs",
+      "description": "Make sure to re-enable delta among other things.",
+      "status": "open",
+      "createdAt": "2025-12-12T18:00:00.498Z",
+      "finishedAt": null,
+      "taskOrder": [],
+      "categoryOrder": [],
+      "categoryId": "fcat-eSyWLCLV"
+    },
+    "feat-cECEdGYD": {
+      "id": "feat-cECEdGYD",
+      "title": "Improve move/rotate/scale transform handles",
+      "description": "",
+      "status": "open",
+      "createdAt": "2025-12-12T18:00:15.362Z",
+      "finishedAt": null,
+      "taskOrder": [],
+      "categoryOrder": [],
+      "categoryId": "fcat-eSyWLCLV"
+    },
+    "feat-aaTgbfp2": {
+      "id": "feat-aaTgbfp2",
+      "title": "Fix or hide errors happening during Mono hot-reload",
+      "description": "",
+      "status": "open",
+      "createdAt": "2025-12-12T18:00:29.683Z",
+      "finishedAt": null,
+      "taskOrder": [],
+      "categoryOrder": [],
+      "categoryId": "fcat-eSyWLCLV"
+    },
+    "feat-uF1mIafC": {
+      "id": "feat-uF1mIafC",
+      "title": "Clean up render commands",
+      "description": " - Take a look at a RenderDoc capture, there seems to be a ton of unnecessary stuff done\n - Examples seem much cleaner though, so compare",
+      "status": "open",
+      "createdAt": "2025-12-12T18:00:38.564Z",
+      "finishedAt": null,
+      "taskOrder": [],
+      "categoryOrder": [],
+      "categoryId": "fcat-eSyWLCLV"
+    },
+    "feat-jxXjvLhj": {
+      "id": "feat-jxXjvLhj",
+      "title": "Editor polish",
+      "description": "",
+      "status": "open",
+      "createdAt": "2025-12-12T20:41:40.032Z",
+      "finishedAt": null,
+      "taskOrder": [
+        "task-JuKftofb",
+        "task-AYZcLr3z"
+      ],
+      "categoryOrder": [],
+      "categoryId": "fcat-eSyWLCLV"
+    },
+    "feat-DGFVcsb2": {
+      "id": "feat-DGFVcsb2",
+      "title": "Finish HDPI support",
+      "description": "",
+      "status": "open",
+      "createdAt": "2025-12-12T20:42:12.681Z",
+      "finishedAt": null,
+      "taskOrder": [
+        "task-tliXPFRw",
+        "task-L8eTQK00"
+      ],
+      "categoryOrder": [],
+      "categoryId": "fcat-eSyWLCLV"
+    },
+    "feat-2pu09Mg8": {
+      "id": "feat-2pu09Mg8",
+      "title": "Ensure debug data is provided for Mono",
+      "description": "This just means I need to enabled embedded debug symbols in C# project settings, but there might not be a CMake option for it just yet",
+      "status": "open",
+      "createdAt": "2025-12-12T20:42:47.620Z",
+      "finishedAt": null,
+      "taskOrder": [],
+      "categoryOrder": [],
+      "categoryId": "fcat-eSyWLCLV"
+    },
+    "feat-IbKj8Lma": {
+      "id": "feat-IbKj8Lma",
+      "title": "Physical camera controls",
+      "description": "",
+      "status": "open",
+      "createdAt": "2025-12-12T20:43:00.380Z",
+      "finishedAt": null,
+      "taskOrder": [],
+      "categoryOrder": [],
+      "categoryId": "fcat-eSyWLCLV"
+    },
+    "feat-Kos6kJAS": {
+      "id": "feat-Kos6kJAS",
+      "title": "Material interface",
+      "description": "",
+      "status": "open",
+      "createdAt": "2025-12-12T20:43:08.580Z",
+      "finishedAt": null,
+      "taskOrder": [],
+      "categoryOrder": [],
+      "categoryId": "fcat-eSyWLCLV"
+    },
+    "feat-s27SSAdf": {
+      "id": "feat-s27SSAdf",
+      "title": "Lights and camera interface refactor",
+      "description": " - Make sure to update the 05_lights and 00_camera manuals after",
+      "status": "open",
+      "createdAt": "2025-12-12T20:43:18.812Z",
+      "finishedAt": null,
+      "taskOrder": [],
+      "categoryOrder": [],
+      "categoryId": "fcat-eSyWLCLV"
+    },
+    "feat-O4QtSFrm": {
+      "id": "feat-O4QtSFrm",
+      "title": "Color refactor",
+      "description": "",
+      "status": "open",
+      "createdAt": "2025-12-12T20:43:29.728Z",
+      "finishedAt": null,
+      "taskOrder": [],
+      "categoryOrder": [],
+      "categoryId": "fcat-eSyWLCLV"
+    },
+    "feat-AVaaiIhs": {
+      "id": "feat-AVaaiIhs",
+      "title": "Editor compoennts shouldn't show up in the Scene Hierarchy",
+      "description": "",
+      "status": "open",
+      "createdAt": "2025-12-12T20:43:36.961Z",
+      "finishedAt": null,
+      "taskOrder": [],
+      "categoryOrder": [],
+      "categoryId": "fcat-eSyWLCLV"
+    },
+    "feat-1rTZPKIc": {
+      "id": "feat-1rTZPKIc",
+      "title": "Finish GUI culling support",
+      "description": "",
+      "status": "open",
+      "createdAt": "2025-12-12T20:44:03.907Z",
+      "finishedAt": null,
+      "taskOrder": [
+        "task-pgKXsvya",
+        "task-6EcHxarN"
+      ],
+      "categoryOrder": [],
+      "categoryId": "fcat-822kVsJq"
+    },
+    "feat-yGEB34Pa": {
+      "id": "feat-yGEB34Pa",
+      "title": "Adding elements to the end of GUILayoutX or GUILayoutY should not dirty all the layout elements",
+      "description": "",
+      "status": "open",
+      "createdAt": "2025-12-12T20:44:42.651Z",
+      "finishedAt": null,
+      "taskOrder": [],
+      "categoryOrder": [],
+      "categoryId": "fcat-822kVsJq"
+    },
+    "feat-DvbXJKOe": {
+      "id": "feat-DvbXJKOe",
+      "title": "Fix font rendering",
+      "description": " - Support for reading GPOS table for kerning\n - Render font to VectorShape\n - Don't specify DPI for font import, instead provide it during font glyph rendering\n - Font size should not be specified for stock images. They should automatically use appropriate size to fit their container.",
+      "status": "open",
+      "createdAt": "2025-12-12T20:44:53.206Z",
+      "finishedAt": null,
+      "taskOrder": [],
+      "categoryOrder": [],
+      "categoryId": "fcat-822kVsJq"
+    },
+    "feat-QiBYxDN2": {
+      "id": "feat-QiBYxDN2",
+      "title": "CVars",
+      "description": "",
+      "status": "open",
+      "createdAt": "2025-12-12T20:45:04.662Z",
+      "finishedAt": null,
+      "taskOrder": [],
+      "categoryOrder": [],
+      "categoryId": "fcat-822kVsJq"
+    },
+    "feat-gnBlx1Za": {
+      "id": "feat-gnBlx1Za",
+      "title": "Streaming data support",
+      "description": "",
+      "status": "open",
+      "createdAt": "2025-12-12T20:45:13.427Z",
+      "finishedAt": null,
+      "taskOrder": [],
+      "categoryOrder": [],
+      "categoryId": "fcat-822kVsJq"
+    },
+    "feat-6SAiV6QH": {
+      "id": "feat-6SAiV6QH",
+      "title": "Slang Integration",
+      "description": "",
+      "status": "open",
+      "createdAt": "2025-12-12T20:45:21.163Z",
+      "finishedAt": null,
+      "taskOrder": [],
+      "categoryOrder": [],
+      "categoryId": "fcat-822kVsJq"
+    },
+    "feat-65nli8oM": {
+      "id": "feat-65nli8oM",
+      "title": "Profiler API and Profiler GUI (with needed GUI improvements)",
+      "description": "",
+      "status": "open",
+      "createdAt": "2025-12-12T20:45:47.567Z",
+      "finishedAt": null,
+      "taskOrder": [],
+      "categoryOrder": [],
+      "categoryId": "fcat-87Hiseen"
+    },
+    "feat-1upc4YhK": {
+      "id": "feat-1upc4YhK",
+      "title": "Renderer improvements",
+      "description": "",
+      "status": "open",
+      "createdAt": "2025-12-12T20:45:58.506Z",
+      "finishedAt": null,
+      "taskOrder": [
+        "task-q4qbu6Od",
+        "task-OcrFk9bp",
+        "task-tStiPceH",
+        "task-btGcf2WT",
+        "task-nPFNAlnL",
+        "task-LOlct6Uq"
+      ],
+      "categoryOrder": [],
+      "categoryId": "fcat-87Hiseen"
+    },
+    "feat-8e8yWBDq": {
+      "id": "feat-8e8yWBDq",
+      "title": "Editor improvements",
+      "description": "",
+      "status": "open",
+      "createdAt": "2025-12-12T20:47:33.964Z",
+      "finishedAt": null,
+      "taskOrder": [
+        "task-AIjpPOKu",
+        "task-MuHOYQzR",
+        "task-llQwybws"
+      ],
+      "categoryOrder": [],
+      "categoryId": "fcat-87Hiseen"
+    },
+    "feat-Sj9buT23": {
+      "id": "feat-Sj9buT23",
+      "title": "Networking",
+      "description": "",
+      "status": "open",
+      "createdAt": "2025-12-12T20:48:14.422Z",
+      "finishedAt": null,
+      "taskOrder": [],
+      "categoryOrder": [],
+      "categoryId": "fcat-87Hiseen"
+    },
+    "feat-PR3muY7F": {
+      "id": "feat-PR3muY7F",
+      "title": "Landscape",
+      "description": "",
+      "status": "open",
+      "createdAt": "2025-12-12T20:48:19.521Z",
+      "finishedAt": null,
+      "taskOrder": [],
+      "categoryOrder": [],
+      "categoryId": "fcat-87Hiseen"
+    },
+    "feat-EQbh8wYh": {
+      "id": "feat-EQbh8wYh",
+      "title": "Platforms",
+      "description": "",
+      "status": "open",
+      "createdAt": "2025-12-12T20:48:25.533Z",
+      "finishedAt": null,
+      "taskOrder": [
+        "task-nF2S6T9Y",
+        "task-vKJiBCVe",
+        "task-L64Mt58u"
+      ],
+      "categoryOrder": [],
+      "categoryId": "fcat-87Hiseen"
+    },
+    "feat-nxjlqqao": {
+      "id": "feat-nxjlqqao",
+      "title": "Experimental",
+      "description": "",
+      "status": "open",
+      "createdAt": "2025-12-12T20:49:02.140Z",
+      "finishedAt": null,
+      "taskOrder": [
+        "task-qwkLPPqR",
+        "task-nUHhgvVL"
+      ],
+      "categoryOrder": [],
+      "categoryId": "fcat-87Hiseen"
+    },
+    "feat-5OnbVc6w": {
+      "id": "feat-5OnbVc6w",
+      "title": "Auto-deduce property name in B3D_SCRIPT_EXPORT",
+      "description": "",
+      "status": "open",
+      "createdAt": "2025-12-12T20:49:56.894Z",
+      "finishedAt": null,
+      "taskOrder": [],
+      "categoryOrder": [],
+      "categoryId": "fcat-8INaj2Q9"
+    },
+    "feat-2AxUyHbr": {
+      "id": "feat-2AxUyHbr",
+      "title": "Unify include paths",
+      "description": "",
+      "status": "open",
+      "createdAt": "2025-12-12T20:50:04.424Z",
+      "finishedAt": null,
+      "taskOrder": [],
+      "categoryOrder": [],
+      "categoryId": "fcat-8INaj2Q9"
+    },
+    "feat-VBG9Ur33": {
+      "id": "feat-VBG9Ur33",
+      "title": "TResult support for script",
+      "description": "For scripting purposes require all template arguments of TResult<T> and other templated classes, to be IReflectable\n - Either SPtr or value-type\n - How to generalize this though?\n  - Find all template uses in code-gen, then generate a method that converts a native object to script object\n   - Perhaps do this for all script-types in a general based? A global lookup table\n   - Method would need to accept e.g. TResult<SpecificType> and we use overload resolution to convert to correct script object\n   - Would need separate set of methods for engine and editor classes\n  - How to convert from object to native? This would only be needed for method parameters. In which case we can deduce the SpecificType\n    based on ",
+      "status": "open",
+      "createdAt": "2025-12-12T20:50:16.734Z",
+      "finishedAt": null,
+      "taskOrder": [],
+      "categoryOrder": [],
+      "categoryId": "fcat-8INaj2Q9"
+    },
+    "feat-o8zi5kYf": {
+      "id": "feat-o8zi5kYf",
+      "title": "LongAsynchronousOperation",
+      "description": " - LongAsynchronousOperation(Flags)\n  - Intederminate\n  - Abortable\n - GetProgress()\n - GetStatus()\n  - NotStarted,\n  - Running,\n  - Failed\n  - Aborted\n  - Finished\n - Abort()\n - Name\n - Description\n - T Output\n  - For scripting purposes, support TResult<Any>",
+      "status": "open",
+      "createdAt": "2025-12-12T20:50:28.103Z",
+      "finishedAt": null,
+      "taskOrder": [],
+      "categoryOrder": [],
+      "categoryId": "fcat-8INaj2Q9"
+    },
+    "feat-8fovEbXD": {
+      "id": "feat-8fovEbXD",
+      "title": "GUILayout support for backgrounds with padding/margins/border",
+      "description": "",
+      "status": "open",
+      "createdAt": "2025-12-12T20:50:51.556Z",
+      "finishedAt": null,
+      "taskOrder": [],
+      "categoryOrder": [],
+      "categoryId": "fcat-8INaj2Q9"
+    },
+    "feat-1STBdPdj": {
+      "id": "feat-1STBdPdj",
+      "title": "Finish ProjectLibrary refactor",
+      "description": " - Need a way to check if import is in progress\n  - Using imported project library path\n - Need a way to cancel import (all imports at once)\n - A way to associate editor data with a resource\nI don't like having 4 different meta-data fields on the packaged resource\n - At the very least I need to name them better:\n  - ResourceMetaData is fine\n  - PackageResourceMetaData needs a better name\n   - So does PackageResourceUserMetaData\n    - Also this is called User in some places, Additional in other\n\nScene saving/loading should be done via a popup that re-uses the library window functionality to open/save scenes\n - Rather than dealing with OS browse window\n\nTest:\n[ ] Test script compilation\n[ ] Test exiting editor while import is in progress\n[ ] Test if re-import is disabled in Inspector if resource is being imported\n[ ] Test saving scene\n[ ] Test loading scenes\n[ ] Test saving dirty project resources\n[ ] (For later) Test animation window clip saving/loading\n[ ] Double-click to open a source file in VS\n[ ] Library window should not show a synchronized package 'folder' if it has just one entry",
+      "status": "open",
+      "createdAt": "2025-12-12T20:51:03.614Z",
+      "finishedAt": null,
+      "taskOrder": [],
+      "categoryOrder": [],
+      "categoryId": "fcat-8INaj2Q9"
+    },
+    "feat-nDdUAXyg": {
+      "id": "feat-nDdUAXyg",
+      "title": "Automated testing",
+      "description": "",
+      "status": "open",
+      "createdAt": "2025-12-13T07:01:49.258Z",
+      "finishedAt": null,
+      "taskOrder": [],
+      "categoryOrder": [],
+      "categoryId": "fcat-9GWRmJDc",
+      "attachments": [
+        {
+          "id": "att-uR9TS7AT",
+          "filename": "CameraFrameCapture.md",
+          "storedName": "CameraFrameCapture.md",
+          "storedPath": "feature/feat-nDdUAXyg/CameraFrameCapture.md",
+          "mimeType": "application/octet-stream",
+          "size": 23386,
+          "uploadedAt": "2025-12-13T07:02:38.362Z"
+        }
+      ],
+      "priority": "high",
+      "complexity": 3
+    },
+    "feat-O1pQSUVV": {
+      "id": "feat-O1pQSUVV",
+      "title": "TaskList",
+      "description": "",
+      "status": "open",
+      "createdAt": "2025-12-13T08:31:59.663Z",
+      "finishedAt": null,
+      "taskOrder": [
+        "task-xU3JlNiG",
+        "task-2jZkCTd9",
+        "task-NA07Z6ti",
+        "task-W4BFjWbH",
+        "task-Ru8RXbWm",
+        "task-Gu18X5z4",
+        "task-LF0jKzV2"
+      ],
+      "categoryOrder": [],
+      "categoryId": "fcat-9GWRmJDc"
+    }
+  },
+  "bugs": {
+    "bug-afOrQPXt": {
+      "id": "bug-afOrQPXt",
+      "title": "Hang when expanding depth of field settings within Camera/Render Settings",
+      "description": "",
+      "createdAt": "2025-12-12T16:19:02.792Z",
+      "finishedAt": null,
+      "taskOrder": [],
+      "categoryOrder": [],
+      "categoryId": "bcat-3zMP8Ogm"
+    },
+    "bug-6PK55TQr": {
+      "id": "bug-6PK55TQr",
+      "title": "During PIE X/Y/Z buttons in the inspector will sometimes flash in/out of existence",
+      "description": "try adding a box collider + rigidbody and let it fall onto another collider",
+      "createdAt": "2025-12-12T16:19:16.132Z",
+      "finishedAt": null,
+      "taskOrder": [],
+      "categoryOrder": [],
+      "categoryId": "bcat-3zMP8Ogm"
+    },
+    "bug-arXatWIf": {
+      "id": "bug-arXatWIf",
+      "title": "Splash screen is all-black on start-up",
+      "description": "",
+      "createdAt": "2025-12-12T16:19:45.623Z",
+      "finishedAt": null,
+      "taskOrder": [],
+      "categoryOrder": []
+    },
+    "bug-wwd32S1c": {
+      "id": "bug-wwd32S1c",
+      "title": "Dragging a window over Library window shows the selection box",
+      "description": "",
+      "createdAt": "2025-12-12T16:19:54.551Z",
+      "finishedAt": null,
+      "taskOrder": [],
+      "categoryOrder": [],
+      "categoryId": "bcat-3zMP8Ogm"
+    },
+    "bug-A2HXWdJq": {
+      "id": "bug-A2HXWdJq",
+      "title": "While dragging a window the dock overlay is not shown",
+      "description": "",
+      "createdAt": "2025-12-12T16:20:01.881Z",
+      "finishedAt": null,
+      "taskOrder": [],
+      "categoryOrder": [],
+      "categoryId": "bcat-3zMP8Ogm"
+    },
+    "bug-HSTLLRGF": {
+      "id": "bug-HSTLLRGF",
+      "title": "X button to close editor windows doesnt work",
+      "description": "",
+      "createdAt": "2025-12-12T16:20:09.558Z",
+      "finishedAt": null,
+      "taskOrder": [],
+      "categoryOrder": [],
+      "categoryId": "bcat-3zMP8Ogm"
+    },
+    "bug-gYoo2zz6": {
+      "id": "bug-gYoo2zz6",
+      "title": "Cannot enter PIE with game window closed",
+      "description": "",
+      "createdAt": "2025-12-12T16:20:15.328Z",
+      "finishedAt": null,
+      "taskOrder": [],
+      "categoryOrder": [],
+      "categoryId": "bcat-3zMP8Ogm"
+    },
+    "bug-bRS6lidH": {
+      "id": "bug-bRS6lidH",
+      "title": "Import tool crashes during import",
+      "description": "",
+      "createdAt": "2025-12-12T16:20:22.309Z",
+      "finishedAt": null,
+      "taskOrder": [],
+      "categoryOrder": []
+    },
+    "bug-K5q0Cn3m": {
+      "id": "bug-K5q0Cn3m",
+      "title": "Plane collider doesn't work correctly (box falls through it)",
+      "description": " - Check if other collider visualizations match\n - This might have been fixed with more recent changes",
+      "createdAt": "2025-12-12T16:20:33.593Z",
+      "finishedAt": null,
+      "taskOrder": [],
+      "categoryOrder": []
+    },
+    "bug-fBl4T5tn": {
+      "id": "bug-fBl4T5tn",
+      "title": "Width/Height labels of the GUIArea2Field are too narrow (See Camera::Viewport inspector)",
+      "description": "",
+      "createdAt": "2025-12-12T16:20:43.741Z",
+      "finishedAt": null,
+      "taskOrder": [],
+      "categoryOrder": [],
+      "categoryId": "bcat-3zMP8Ogm"
+    },
+    "bug-mXoya35m": {
+      "id": "bug-mXoya35m",
+      "title": "Color field has height that is too low, cutting off the text (See Camera::Viewport inspector)",
+      "description": "",
+      "createdAt": "2025-12-12T16:20:50.222Z",
+      "finishedAt": null,
+      "taskOrder": [],
+      "categoryOrder": [],
+      "categoryId": "bcat-3zMP8Ogm"
+    },
+    "bug-fB8gyKL6": {
+      "id": "bug-fB8gyKL6",
+      "title": "Crash in GUI example when scrolling the scroll list",
+      "description": "",
+      "createdAt": "2025-12-12T16:21:00.829Z",
+      "finishedAt": null,
+      "taskOrder": [],
+      "categoryOrder": []
+    },
+    "bug-DxwBHVm7": {
+      "id": "bug-DxwBHVm7",
+      "title": "Tonemapping/Exposure looks wrong",
+      "description": "",
+      "createdAt": "2025-12-12T16:21:08.113Z",
+      "finishedAt": null,
+      "taskOrder": [],
+      "categoryOrder": []
+    },
+    "bug-o43kroyh": {
+      "id": "bug-o43kroyh",
+      "title": "Log window is broken when there more messages (top part is empty)",
+      "description": "",
+      "createdAt": "2025-12-12T16:21:20.995Z",
+      "finishedAt": null,
+      "taskOrder": [],
+      "categoryOrder": [],
+      "categoryId": "bcat-3zMP8Ogm"
+    },
+    "bug-vEDyY8Ri": {
+      "id": "bug-vEDyY8Ri",
+      "title": "Crash when attempting to resize log window (potentially shape allocation related)",
+      "description": "",
+      "createdAt": "2025-12-12T16:21:28.521Z",
+      "finishedAt": null,
+      "taskOrder": [],
+      "categoryOrder": []
+    },
+    "bug-elXzxguQ": {
+      "id": "bug-elXzxguQ",
+      "title": "Adding a box in an empty scene in the editor, and it has a blueish hue",
+      "description": "",
+      "createdAt": "2025-12-12T16:21:36.104Z",
+      "finishedAt": null,
+      "taskOrder": [],
+      "categoryOrder": [],
+      "categoryId": "bcat-3zMP8Ogm"
+    },
+    "bug-sDWcV3F9": {
+      "id": "bug-sDWcV3F9",
+      "title": "Crash when hitting Pause in the editor (Camera destructor called without Destroy() being called first)",
+      "description": "",
+      "createdAt": "2025-12-12T16:21:43.388Z",
+      "finishedAt": null,
+      "taskOrder": [],
+      "categoryOrder": []
+    },
+    "bug-XXHZaa6q": {
+      "id": "bug-XXHZaa6q",
+      "title": "Clicking on an item in Outliner doesn't work",
+      "description": "(i.e. try adding a new SceneObject, deselecting it in View and then selecting it in Outliner. I need to click above it to select it)",
+      "createdAt": "2025-12-12T16:21:51.967Z",
+      "finishedAt": null,
+      "taskOrder": [],
+      "categoryOrder": []
+    },
+    "bug-7cxt0dN0": {
+      "id": "bug-7cxt0dN0",
+      "title": "Picking doesn't trigger redraw of the camera viewport",
+      "description": "",
+      "createdAt": "2025-12-12T16:22:04.400Z",
+      "finishedAt": null,
+      "taskOrder": [],
+      "categoryOrder": [],
+      "categoryId": "bcat-3zMP8Ogm"
+    },
+    "bug-vCZbXEzH": {
+      "id": "bug-vCZbXEzH",
+      "title": "Light in the particle example is not moving",
+      "description": "",
+      "createdAt": "2025-12-12T16:22:11.417Z",
+      "finishedAt": null,
+      "taskOrder": [],
+      "categoryOrder": []
+    },
+    "bug-34LkVU6N": {
+      "id": "bug-34LkVU6N",
+      "title": "Selection in the input box in the GUI example doesn't work correctly",
+      "description": "",
+      "createdAt": "2025-12-12T16:22:51.151Z",
+      "finishedAt": null,
+      "taskOrder": [],
+      "categoryOrder": []
+    }
+  },
+  "tasks": {
+    "task-nToKKdxN": {
+      "id": "task-nToKKdxN",
+      "parentType": "feature",
+      "parentId": "feat-CSdMs0EN",
+      "categoryId": null,
+      "title": "Move Transform to use it",
+      "description": "",
+      "status": "open",
+      "tagIds": [],
+      "createdAt": "2025-12-12T12:33:43.062Z",
+      "finishedAt": null
+    },
+    "task-hQ5rx69p": {
+      "id": "task-hQ5rx69p",
+      "parentType": "feature",
+      "parentId": "feat-CSdMs0EN",
+      "categoryId": null,
+      "title": "ECS Serialization",
+      "description": "ECS serialization should be efficient and not done through Component RTTI. Instead entire packed storage should be serialized in one block, ideally (although this would create issues with version control, so alternative approach is also needed) This task can be moved later down the line if needed.",
+      "status": "open",
+      "tagIds": [],
+      "createdAt": "2025-12-12T12:33:43.093Z",
+      "finishedAt": null
+    },
+    "task-nxeKRM51": {
+      "id": "task-nxeKRM51",
+      "parentType": "feature",
+      "parentId": "feat-5uksqtP9",
+      "categoryId": null,
+      "title": "Rename BsZero and related",
+      "description": "",
+      "status": "open",
+      "tagIds": [],
+      "createdAt": "2025-12-12T15:48:18.043Z",
+      "finishedAt": null
+    },
+    "task-m89j6REh": {
+      "id": "task-m89j6REh",
+      "parentType": "feature",
+      "parentId": "feat-5uksqtP9",
+      "categoryId": null,
+      "title": "Update all copyright to 2025",
+      "description": "",
+      "status": "open",
+      "tagIds": [],
+      "createdAt": "2025-12-12T15:53:28.722Z",
+      "finishedAt": null
+    },
+    "task-pCdWzu2A": {
+      "id": "task-pCdWzu2A",
+      "parentType": "feature",
+      "parentId": "feat-5uksqtP9",
+      "categoryId": null,
+      "title": "Unify Texture usage flags",
+      "description": "",
+      "status": "open",
+      "tagIds": [],
+      "createdAt": "2025-12-12T15:53:31.859Z",
+      "finishedAt": null
+    },
+    "task-8dXabzOE": {
+      "id": "task-8dXabzOE",
+      "parentType": "feature",
+      "parentId": "feat-5uksqtP9",
+      "categoryId": null,
+      "title": "Ensure all log categories have a Log prefix",
+      "description": "",
+      "status": "open",
+      "tagIds": [],
+      "createdAt": "2025-12-12T15:53:33.628Z",
+      "finishedAt": null
+    },
+    "task-8wbMQTjg": {
+      "id": "task-8wbMQTjg",
+      "parentType": "feature",
+      "parentId": "feat-5uksqtP9",
+      "categoryId": null,
+      "title": "GameObjectHandle -> TGameObjectHandle, Optional -> TOptional",
+      "description": "",
+      "status": "open",
+      "tagIds": [],
+      "createdAt": "2025-12-12T15:53:41.200Z",
+      "finishedAt": null
+    },
+    "task-ivTXICBk": {
+      "id": "task-ivTXICBk",
+      "parentType": "feature",
+      "parentId": "feat-5uksqtP9",
+      "categoryId": null,
+      "title": "Material::FindTechnique -> FindVariation",
+      "description": " - Other uses of Technique\n - Technique class itself\n - Material::GetPass(techniqueIdx)\n - RendererUtility::SetPass(techniqueId), SetPassParams\n - Clean up documentation for GpuParameterSet\n  - Why does this need to have uniform buffer handling, can't we handle that directly on GpuParameters?",
+      "status": "open",
+      "tagIds": [],
+      "createdAt": "2025-12-12T15:53:44.032Z",
+      "finishedAt": null
+    },
+    "task-g7Wmitq8": {
+      "id": "task-g7Wmitq8",
+      "parentType": "feature",
+      "parentId": "feat-5uksqtP9",
+      "categoryId": null,
+      "title": "BS_PARAM_BLOCK_BEGIN -> BS_UNIFORM_BLOCK_BEGIN",
+      "description": " - Also various gParamBlockDef should be renamed to gUniformBlockDefinition",
+      "status": "open",
+      "tagIds": [],
+      "createdAt": "2025-12-12T15:53:46.367Z",
+      "finishedAt": null
+    },
+    "task-RjV2aBgz": {
+      "id": "task-RjV2aBgz",
+      "parentType": "feature",
+      "parentId": "feat-5uksqtP9",
+      "categoryId": null,
+      "title": "SPtr/UPtr -> Shared/Unique",
+      "description": "",
+      "status": "open",
+      "tagIds": [],
+      "createdAt": "2025-12-12T15:53:48.550Z",
+      "finishedAt": null
+    },
+    "task-fsqEs3sk": {
+      "id": "task-fsqEs3sk",
+      "parentType": "feature",
+      "parentId": "feat-5uksqtP9",
+      "categoryId": null,
+      "title": "RenderAPI plugin name to GpuBackend",
+      "description": "",
+      "status": "open",
+      "tagIds": [],
+      "createdAt": "2025-12-12T15:53:53.740Z",
+      "finishedAt": null
+    },
+    "task-cwEq4TJl": {
+      "id": "task-cwEq4TJl",
+      "parentType": "feature",
+      "parentId": "feat-5uksqtP9",
+      "categoryId": null,
+      "title": "StringUtil -> StringUtility",
+      "description": "",
+      "status": "open",
+      "tagIds": [],
+      "createdAt": "2025-12-12T16:22:36.786Z",
+      "finishedAt": null
+    },
+    "task-V1HMyMjV": {
+      "id": "task-V1HMyMjV",
+      "parentType": "feature",
+      "parentId": "feat-5uksqtP9",
+      "categoryId": null,
+      "title": "std::bind uses",
+      "description": "",
+      "status": "open",
+      "tagIds": [],
+      "createdAt": "2025-12-12T16:29:40.027Z",
+      "finishedAt": null
+    },
+    "task-kShYOlFU": {
+      "id": "task-kShYOlFU",
+      "parentType": "feature",
+      "parentId": "feat-5uksqtP9",
+      "categoryId": null,
+      "title": "GetInternalInternal() naming, *Internal() suffix and similar",
+      "description": "",
+      "status": "open",
+      "tagIds": [],
+      "createdAt": "2025-12-12T16:30:00.427Z",
+      "finishedAt": null
+    },
+    "task-RuqNVaPi": {
+      "id": "task-RuqNVaPi",
+      "parentType": "feature",
+      "parentId": "feat-krCBsi6x",
+      "categoryId": null,
+      "title": "Remove Lock/Unlock and replace with Map2",
+      "description": "",
+      "status": "open",
+      "tagIds": [],
+      "createdAt": "2025-12-12T16:31:25.177Z",
+      "finishedAt": null
+    },
+    "task-pfQaSoCY": {
+      "id": "task-pfQaSoCY",
+      "parentType": "feature",
+      "parentId": "feat-krCBsi6x",
+      "categoryId": null,
+      "title": "PerView/PerFrame buffers need to be allocated via transient allocator",
+      "description": "",
+      "status": "open",
+      "tagIds": [],
+      "createdAt": "2025-12-12T16:39:40.308Z",
+      "finishedAt": null
+    },
+    "task-0V0vAiMw": {
+      "id": "task-0V0vAiMw",
+      "parentType": "feature",
+      "parentId": "feat-krCBsi6x",
+      "categoryId": null,
+      "title": "CreateGpuParticleVertexInputBuffer hould use StoreOnGPU",
+      "description": "",
+      "status": "open",
+      "tagIds": [],
+      "createdAt": "2025-12-12T16:39:49.122Z",
+      "finishedAt": null
+    },
+    "task-3wCgIw1F": {
+      "id": "task-3wCgIw1F",
+      "parentType": "feature",
+      "parentId": "feat-krCBsi6x",
+      "categoryId": null,
+      "title": "Texture locking uses the discard options",
+      "description": "",
+      "status": "open",
+      "tagIds": [],
+      "createdAt": "2025-12-12T16:39:59.934Z",
+      "finishedAt": null
+    },
+    "task-HDiCJyKj": {
+      "id": "task-HDiCJyKj",
+      "parentType": "feature",
+      "parentId": "feat-krCBsi6x",
+      "categoryId": null,
+      "title": "MaterialParameterAdapter: shaderBlockDesc.Flags = GpuBufferFlag::StoreOnGPU | GpuBufferFlag::AllowWriteCachingOnCPU;",
+      "description": "",
+      "status": "open",
+      "tagIds": [],
+      "createdAt": "2025-12-12T16:40:11.955Z",
+      "finishedAt": null
+    },
+    "task-GrJf2HS1": {
+      "id": "task-GrJf2HS1",
+      "parentType": "feature",
+      "parentId": "feat-krCBsi6x",
+      "categoryId": null,
+      "title": "FlushCache in BeginRenderPass triggers warnings as a write operation triggers while a command buffer is bound",
+      "description": "",
+      "status": "open",
+      "tagIds": [],
+      "createdAt": "2025-12-12T16:40:39.513Z",
+      "finishedAt": null
+    },
+    "task-NZ81gTK4": {
+      "id": "task-NZ81gTK4",
+      "parentType": "feature",
+      "parentId": "feat-krCBsi6x",
+      "categoryId": null,
+      "title": "GpuBuffer->Lock/Unlock should not be accepting a discard flag",
+      "description": "",
+      "status": "open",
+      "tagIds": [],
+      "createdAt": "2025-12-12T16:57:11.589Z",
+      "finishedAt": null
+    },
+    "task-wS3rEMyu": {
+      "id": "task-wS3rEMyu",
+      "parentType": "feature",
+      "parentId": "feat-krCBsi6x",
+      "categoryId": null,
+      "title": "GpuBuffer flushing logic should be removed",
+      "description": "",
+      "status": "open",
+      "tagIds": [],
+      "createdAt": "2025-12-12T16:57:18.100Z",
+      "finishedAt": null
+    },
+    "task-5Rlm15zX": {
+      "id": "task-5Rlm15zX",
+      "parentType": "feature",
+      "parentId": "feat-krCBsi6x",
+      "categoryId": null,
+      "title": "GpuBuffer read async",
+      "description": "",
+      "status": "open",
+      "tagIds": [],
+      "createdAt": "2025-12-12T16:57:34.272Z",
+      "finishedAt": null
+    },
+    "task-jdclxyv7": {
+      "id": "task-jdclxyv7",
+      "parentType": "feature",
+      "parentId": "feat-krCBsi6x",
+      "categoryId": null,
+      "title": "Texture read async needs to be moved to Texture from VulkanTexture",
+      "description": "",
+      "status": "open",
+      "tagIds": [],
+      "createdAt": "2025-12-12T16:57:41.345Z",
+      "finishedAt": null
+    },
+    "task-yUsnO6Yv": {
+      "id": "task-yUsnO6Yv",
+      "parentType": "feature",
+      "parentId": "feat-krCBsi6x",
+      "categoryId": null,
+      "title": "VulkanGpuDevice::GetQueueMask is confusing, can I remove it?",
+      "description": "",
+      "status": "open",
+      "tagIds": [],
+      "createdAt": "2025-12-12T16:58:10.194Z",
+      "finishedAt": null,
+      "priority": "low"
+    },
+    "task-4XdkHZxU": {
+      "id": "task-4XdkHZxU",
+      "parentType": "feature",
+      "parentId": "feat-krCBsi6x",
+      "categoryId": null,
+      "title": "BufferWriteType -> delete",
+      "description": "",
+      "status": "open",
+      "tagIds": [],
+      "createdAt": "2025-12-12T16:58:21.305Z",
+      "finishedAt": null
+    },
+    "task-S0QtCyqQ": {
+      "id": "task-S0QtCyqQ",
+      "parentType": "feature",
+      "parentId": "feat-krCBsi6x",
+      "categoryId": null,
+      "title": "GpuQueueUsage -> GpuQueueType, and make it Enum class, move to GpuQueue header rather than it being in common types",
+      "description": "",
+      "status": "open",
+      "tagIds": [],
+      "createdAt": "2025-12-12T16:58:29.597Z",
+      "finishedAt": null
+    },
+    "task-hxd8DAAw": {
+      "id": "task-hxd8DAAw",
+      "parentType": "feature",
+      "parentId": "feat-5PeucF5e",
+      "categoryId": null,
+      "title": "Command buffer pool reset",
+      "description": "",
+      "status": "open",
+      "tagIds": [],
+      "createdAt": "2025-12-12T16:59:17.950Z",
+      "finishedAt": null
+    },
+    "task-dMB72L3M": {
+      "id": "task-dMB72L3M",
+      "parentType": "feature",
+      "parentId": "feat-5PeucF5e",
+      "categoryId": null,
+      "title": "Command buffer flush",
+      "description": "",
+      "status": "open",
+      "tagIds": [],
+      "createdAt": "2025-12-12T16:59:24.808Z",
+      "finishedAt": null
+    },
+    "task-InIwkeJs": {
+      "id": "task-InIwkeJs",
+      "parentType": "feature",
+      "parentId": "feat-5PeucF5e",
+      "categoryId": null,
+      "title": "Thread safe descriptor sets",
+      "description": "Have a basic plan in place for this\n",
+      "status": "open",
+      "tagIds": [
+        "tag-l238MwXg"
+      ],
+      "createdAt": "2025-12-12T16:59:56.235Z",
+      "finishedAt": null,
+      "attachments": [
+        {
+          "id": "att-j8UHRzPJ",
+          "filename": "ExplicitDescriptorPoolArchitecture.md",
+          "storedName": "ExplicitDescriptorPoolArchitecture.md",
+          "storedPath": "task/task-InIwkeJs/ExplicitDescriptorPoolArchitecture.md",
+          "mimeType": "application/octet-stream",
+          "size": 25930,
+          "uploadedAt": "2025-12-12T17:28:24.526Z"
+        }
+      ]
+    },
+    "task-H3EqIfsP": {
+      "id": "task-H3EqIfsP",
+      "parentType": "feature",
+      "parentId": "feat-5PeucF5e",
+      "categoryId": null,
+      "title": "Test if GPU profiler works correctly after refactor",
+      "description": "",
+      "status": "open",
+      "tagIds": [],
+      "createdAt": "2025-12-12T18:01:12.426Z",
+      "finishedAt": null
+    },
+    "task-JuKftofb": {
+      "id": "task-JuKftofb",
+      "parentType": "feature",
+      "parentId": "feat-jxXjvLhj",
+      "categoryId": null,
+      "title": "Ensure all existing functionality works, fix bugs",
+      "description": "",
+      "status": "open",
+      "tagIds": [],
+      "createdAt": "2025-12-12T20:41:56.668Z",
+      "finishedAt": null
+    },
+    "task-AYZcLr3z": {
+      "id": "task-AYZcLr3z",
+      "parentType": "feature",
+      "parentId": "feat-jxXjvLhj",
+      "categoryId": null,
+      "title": "Replace non vector path icons",
+      "description": "",
+      "status": "open",
+      "tagIds": [],
+      "createdAt": "2025-12-12T20:42:04.733Z",
+      "finishedAt": null
+    },
+    "task-tliXPFRw": {
+      "id": "task-tliXPFRw",
+      "parentType": "feature",
+      "parentId": "feat-DGFVcsb2",
+      "categoryId": null,
+      "title": "Especially modal window size changes",
+      "description": "",
+      "status": "open",
+      "tagIds": [],
+      "createdAt": "2025-12-12T20:42:31.431Z",
+      "finishedAt": null
+    },
+    "task-L8eTQK00": {
+      "id": "task-L8eTQK00",
+      "parentType": "feature",
+      "parentId": "feat-DGFVcsb2",
+      "categoryId": null,
+      "title": "Pass DPI scale to shape rendering",
+      "description": "",
+      "status": "open",
+      "tagIds": [],
+      "createdAt": "2025-12-12T20:42:38.873Z",
+      "finishedAt": null
+    },
+    "task-pgKXsvya": {
+      "id": "task-pgKXsvya",
+      "parentType": "feature",
+      "parentId": "feat-1rTZPKIc",
+      "categoryId": null,
+      "title": "Add GUITransform to store local position, size & scale, and screen position, size & scale",
+      "description": "",
+      "status": "open",
+      "tagIds": [],
+      "createdAt": "2025-12-12T20:44:17.283Z",
+      "finishedAt": null
+    },
+    "task-6EcHxarN": {
+      "id": "task-6EcHxarN",
+      "parentType": "feature",
+      "parentId": "feat-1rTZPKIc",
+      "categoryId": null,
+      "title": "GUISizeConstraints -> GUILocalTransform, GUILayoutData -> GUILayoutTransform, Absolute coordinates -> GUIWidgetTransform",
+      "description": "",
+      "status": "open",
+      "tagIds": [],
+      "createdAt": "2025-12-12T20:44:25.978Z",
+      "finishedAt": null
+    },
+    "task-q4qbu6Od": {
+      "id": "task-q4qbu6Od",
+      "parentType": "feature",
+      "parentId": "feat-1upc4YhK",
+      "categoryId": null,
+      "title": "Persistent GPU scene",
+      "description": " - When doing this I need to go over all GpuBuffer usages:\n  - Uniform buffers that are rarely updated need to be device local and updated via staging buffers\n  - CPU visible buffers need a ring buffer and dynamic offsets. Currently there's a single instance of that buffer, which ends up creating staging buffers when data is \n    written to the buffer (because it is currently used by the GPU from previous frame)",
+      "status": "open",
+      "tagIds": [],
+      "createdAt": "2025-12-12T20:46:08.413Z",
+      "finishedAt": null
+    },
+    "task-OcrFk9bp": {
+      "id": "task-OcrFk9bp",
+      "parentType": "feature",
+      "parentId": "feat-1upc4YhK",
+      "categoryId": null,
+      "title": "Occlusion culling (GPU based only?)",
+      "description": "",
+      "status": "open",
+      "tagIds": [],
+      "createdAt": "2025-12-12T20:46:25.700Z",
+      "finishedAt": null
+    },
+    "task-tStiPceH": {
+      "id": "task-tStiPceH",
+      "parentType": "feature",
+      "parentId": "feat-1upc4YhK",
+      "categoryId": null,
+      "title": "Instancing (Not needed with persistent scene?)",
+      "description": "",
+      "status": "open",
+      "tagIds": [],
+      "createdAt": "2025-12-12T20:46:31.297Z",
+      "finishedAt": null
+    },
+    "task-btGcf2WT": {
+      "id": "task-btGcf2WT",
+      "parentType": "feature",
+      "parentId": "feat-1upc4YhK",
+      "categoryId": null,
+      "title": "Reverse Z",
+      "description": "",
+      "status": "open",
+      "tagIds": [],
+      "createdAt": "2025-12-12T20:46:36.392Z",
+      "finishedAt": null
+    },
+    "task-nPFNAlnL": {
+      "id": "task-nPFNAlnL",
+      "parentType": "feature",
+      "parentId": "feat-1upc4YhK",
+      "categoryId": null,
+      "title": "View-relative coordinates",
+      "description": "",
+      "status": "open",
+      "tagIds": [],
+      "createdAt": "2025-12-12T20:46:42.242Z",
+      "finishedAt": null
+    },
+    "task-LOlct6Uq": {
+      "id": "task-LOlct6Uq",
+      "parentType": "feature",
+      "parentId": "feat-1upc4YhK",
+      "categoryId": null,
+      "title": "Large coordinate support",
+      "description": "",
+      "status": "open",
+      "tagIds": [],
+      "createdAt": "2025-12-12T20:46:48.636Z",
+      "finishedAt": null
+    },
+    "task-AIjpPOKu": {
+      "id": "task-AIjpPOKu",
+      "parentType": "feature",
+      "parentId": "feat-8e8yWBDq",
+      "categoryId": null,
+      "title": "Reset to default value",
+      "description": "",
+      "status": "open",
+      "tagIds": [],
+      "createdAt": "2025-12-12T20:47:53.866Z",
+      "finishedAt": null
+    },
+    "task-MuHOYQzR": {
+      "id": "task-MuHOYQzR",
+      "parentType": "feature",
+      "parentId": "feat-8e8yWBDq",
+      "categoryId": null,
+      "title": "Improved inspector field gri",
+      "description": "",
+      "status": "open",
+      "tagIds": [],
+      "createdAt": "2025-12-12T20:48:00.484Z",
+      "finishedAt": null
+    },
+    "task-llQwybws": {
+      "id": "task-llQwybws",
+      "parentType": "feature",
+      "parentId": "feat-8e8yWBDq",
+      "categoryId": null,
+      "title": "Improved project library browse window",
+      "description": "",
+      "status": "open",
+      "tagIds": [],
+      "createdAt": "2025-12-12T20:48:06.678Z",
+      "finishedAt": null
+    },
+    "task-nF2S6T9Y": {
+      "id": "task-nF2S6T9Y",
+      "parentType": "feature",
+      "parentId": "feat-EQbh8wYh",
+      "categoryId": null,
+      "title": "macOS + Metal",
+      "description": "",
+      "status": "open",
+      "tagIds": [],
+      "createdAt": "2025-12-12T20:48:35.938Z",
+      "finishedAt": null
+    },
+    "task-vKJiBCVe": {
+      "id": "task-vKJiBCVe",
+      "parentType": "feature",
+      "parentId": "feat-EQbh8wYh",
+      "categoryId": null,
+      "title": "Linux",
+      "description": "",
+      "status": "open",
+      "tagIds": [],
+      "createdAt": "2025-12-12T20:48:42.038Z",
+      "finishedAt": null
+    },
+    "task-L64Mt58u": {
+      "id": "task-L64Mt58u",
+      "parentType": "feature",
+      "parentId": "feat-EQbh8wYh",
+      "categoryId": null,
+      "title": "DirectX12",
+      "description": "",
+      "status": "open",
+      "tagIds": [],
+      "createdAt": "2025-12-12T20:48:47.872Z",
+      "finishedAt": null
+    },
+    "task-qwkLPPqR": {
+      "id": "task-qwkLPPqR",
+      "parentType": "feature",
+      "parentId": "feat-nxjlqqao",
+      "categoryId": null,
+      "title": "Mesh simplification algorithm",
+      "description": "",
+      "status": "open",
+      "tagIds": [],
+      "createdAt": "2025-12-12T20:49:14.875Z",
+      "finishedAt": null
+    },
+    "task-nUHhgvVL": {
+      "id": "task-nUHhgvVL",
+      "parentType": "feature",
+      "parentId": "feat-nxjlqqao",
+      "categoryId": null,
+      "title": "Mesh clustering algorithm (using Metis library)",
+      "description": "",
+      "status": "open",
+      "tagIds": [],
+      "createdAt": "2025-12-12T20:49:25.763Z",
+      "finishedAt": null
+    },
+    "task-cd1gEXBT": {
+      "id": "task-cd1gEXBT",
+      "parentType": "feature",
+      "parentId": "feat-r83VIlhj",
+      "categoryId": null,
+      "title": "Clean GitHub documentation",
+      "description": "",
+      "status": "open",
+      "tagIds": [],
+      "createdAt": "2025-12-13T07:05:13.890Z",
+      "finishedAt": null
+    },
+    "task-xU3JlNiG": {
+      "id": "task-xU3JlNiG",
+      "parentType": "feature",
+      "parentId": "feat-O1pQSUVV",
+      "categoryId": null,
+      "title": "Better name for this application",
+      "description": "",
+      "status": "done",
+      "tagIds": [],
+      "createdAt": "2025-12-13T08:32:09.201Z",
+      "finishedAt": "2025-12-13T09:07:26.127Z",
+      "promptHistory": [
+        {
+          "id": "ph-X8rVOg2E",
+          "timestamp": "2025-12-13T09:07:26.180Z",
+          "role": "assistant",
+          "content": "Renamed the application from TaskList to PromptFlow:\n\n1. Updated package names:\n   - Root: tasklist → promptflow\n   - Client: tasklist-client → promptflow-client\n   - Server: tasklist-server → promptflow-server\n\n2. Updated UI:\n   - Browser title: TaskList → PromptFlow\n   - Sidebar header: TaskList → PromptFlow\n\n3. Data directory:\n   - Renamed .tasklist/ → .promptflow/\n   - Updated server routes to use new path\n\n4. Added favicon:\n   - Created promptflow.svg icon (blue circle with chat bubble and flow arrow)\n   - Updated index.html to reference new icon"
+        }
+      ]
+    },
+    "task-2jZkCTd9": {
+      "id": "task-2jZkCTd9",
+      "parentType": "feature",
+      "parentId": "feat-O1pQSUVV",
+      "categoryId": null,
+      "title": "Show in progress bugs in the left panel",
+      "description": "",
+      "status": "open",
+      "tagIds": [],
+      "createdAt": "2025-12-13T08:32:15.936Z",
+      "finishedAt": null
+    },
+    "task-NA07Z6ti": {
+      "id": "task-NA07Z6ti",
+      "parentType": "feature",
+      "parentId": "feat-O1pQSUVV",
+      "categoryId": null,
+      "title": "Show plan in the details panel",
+      "description": "",
+      "status": "done",
+      "tagIds": [],
+      "createdAt": "2025-12-13T08:33:05.492Z",
+      "finishedAt": "2025-12-13T09:00:03.944Z"
+    },
+    "task-W4BFjWbH": {
+      "id": "task-W4BFjWbH",
+      "parentType": "feature",
+      "parentId": "feat-O1pQSUVV",
+      "categoryId": null,
+      "title": "Add the ability to manage multiple projects",
+      "description": "Allow users to organize their work across multiple separate projects, each with their own features, bugs, and tasks.",
+      "status": "in-progress",
+      "tagIds": [],
+      "createdAt": "2025-12-13T08:40:15.500Z",
+      "finishedAt": null,
+      "attachments": [
+        {
+          "id": "att-x9A8WrX7",
+          "filename": "PLAN-v1.md",
+          "storedName": "PLAN-v1.md",
+          "storedPath": "task/task-W4BFjWbH/PLAN-v1.md",
+          "mimeType": "text/markdown",
+          "size": 6076,
+          "uploadedAt": "2025-12-13T08:51:02.299Z"
+        }
+      ],
+      "promptHistory": [
+        {
+          "id": "ph-hky1ULis",
+          "timestamp": "2025-12-13T08:52:33.691Z",
+          "role": "assistant",
+          "content": "Created implementation plan v1 for multi-project support. The plan covers:\n\n- **Phase 1**: Data model & storage refactoring (project-scoped data files)\n- **Phase 2**: Server API changes (project CRUD + scoped routes)\n- **Phase 3**: Client context refactoring (ProjectProvider + hooks)\n- **Phase 4**: UI implementation (project selector, modals)\n- **Phase 5**: Polish & migration (auto-migrate existing data)\n\nKey technical decisions:\n- Each project gets its own directory under `.tasklist/projects/{projectId}/`\n- New `projects.json` for project metadata, `settings.json` for global preferences\n- Context hierarchy: ToastProvider > ProjectProvider > TaskProvider\n- Automatic migration of existing data to \"Default\" project on first load"
+        }
+      ]
+    },
+    "task-Ru8RXbWm": {
+      "id": "task-Ru8RXbWm",
+      "parentType": "feature",
+      "parentId": "feat-O1pQSUVV",
+      "categoryId": null,
+      "title": "Add the ability to add new high-level categories (not just Features/Bugs)",
+      "description": "Enable users to create custom top-level categories beyond the default Features and Bugs sections, allowing for more flexible organization of work items.",
+      "status": "open",
+      "tagIds": [],
+      "createdAt": "2025-12-13T08:40:15.553Z",
+      "finishedAt": null,
+      "attachments": [
+        {
+          "id": "att-DgcDrVWl",
+          "filename": "PLAN-v1.md",
+          "storedName": "PLAN-v1.md",
+          "storedPath": "task/task-Ru8RXbWm/PLAN-v1.md",
+          "mimeType": "text/markdown",
+          "size": 2708,
+          "uploadedAt": "2025-12-13T09:43:40.266Z"
+        },
+        {
+          "id": "att-y7T6rxJk",
+          "filename": "PLAN-v2.md",
+          "storedName": "PLAN-v2.md",
+          "storedPath": "task/task-Ru8RXbWm/PLAN-v2.md",
+          "mimeType": "text/markdown",
+          "size": 5410,
+          "uploadedAt": "2025-12-13T09:47:15.987Z"
+        }
+      ],
+      "promptHistory": [
+        {
+          "id": "ph-Mg9L8Kiz",
+          "timestamp": "2025-12-13T09:43:47.180Z",
+          "role": "assistant",
+          "content": "Created plan v1: Custom sections with data structure, 5-phase implementation, 7 files to modify."
+        },
+        {
+          "id": "ph-3RgkKhLE",
+          "timestamp": "2025-12-13T09:47:21.687Z",
+          "role": "assistant",
+          "content": "Updated to plan v2: Unified sections system - Features/Bugs become system sections, 8 phases, includes migration strategy."
+        }
+      ]
+    },
+    "task-Gu18X5z4": {
+      "id": "task-Gu18X5z4",
+      "parentType": "feature",
+      "parentId": "feat-O1pQSUVV",
+      "categoryId": null,
+      "title": "Open the task list to the right of the feature/bug list, rather than its own page",
+      "description": "",
+      "status": "open",
+      "tagIds": [],
+      "createdAt": "2025-12-13T09:00:37.747Z",
+      "finishedAt": null
+    },
+    "task-LF0jKzV2": {
+      "id": "task-LF0jKzV2",
+      "parentType": "feature",
+      "parentId": "feat-O1pQSUVV",
+      "categoryId": null,
+      "title": "Add names for complexity",
+      "description": "",
+      "status": "open",
+      "tagIds": [],
+      "createdAt": "2025-12-13T09:48:59.210Z",
+      "finishedAt": null
+    }
+  },
+  "categories": {},
+  "globalFeatureOrder": [],
+  "globalBugOrder": [
+    "bug-arXatWIf",
+    "bug-bRS6lidH",
+    "bug-K5q0Cn3m",
+    "bug-fB8gyKL6",
+    "bug-DxwBHVm7",
+    "bug-vEDyY8Ri",
+    "bug-sDWcV3F9",
+    "bug-XXHZaa6q",
+    "bug-vCZbXEzH",
+    "bug-34LkVU6N"
+  ],
+  "settings": {
+    "activeView": "feature",
+    "activeFeatureId": "feat-O1pQSUVV",
+    "theme": "dark"
+  },
+  "tags": {
+    "tag-H4pHyJrN": {
+      "id": "tag-H4pHyJrN",
+      "name": "High Priority",
+      "color": "#ef4444"
+    },
+    "tag-l238MwXg": {
+      "id": "tag-l238MwXg",
+      "name": "Has Plan",
+      "color": "#84cc16"
+    }
+  },
+  "featureCategories": {
+    "fcat-9GWRmJDc": {
+      "id": "fcat-9GWRmJDc",
+      "name": "0.4 alpha",
+      "featureOrder": [
+        "feat-krCBsi6x",
+        "feat-nDdUAXyg",
+        "feat-5PeucF5e",
+        "feat-pdVA3eb0",
+        "feat-WUyaXdCZ",
+        "feat-XOYFOXuN",
+        "feat-4XpfpWaK",
+        "feat-rMm1FaY7",
+        "feat-eWseFwXU",
+        "feat-FIto6LPz",
+        "feat-r83VIlhj",
+        "feat-CSdMs0EN",
+        "feat-5uksqtP9",
+        "feat-AQdft78m",
+        "feat-O1pQSUVV"
+      ],
+      "expanded": true
+    },
+    "fcat-Om7UqQMd": {
+      "id": "fcat-Om7UqQMd",
+      "name": "Archive",
+      "featureOrder": [
+        "feat-1vDBMJNC"
+      ],
+      "expanded": false
+    },
+    "fcat-eSyWLCLV": {
+      "id": "fcat-eSyWLCLV",
+      "name": "0.4",
+      "featureOrder": [
+        "feat-T4nhBrDY",
+        "feat-cECEdGYD",
+        "feat-aaTgbfp2",
+        "feat-uF1mIafC",
+        "feat-jxXjvLhj",
+        "feat-DGFVcsb2",
+        "feat-2pu09Mg8",
+        "feat-IbKj8Lma",
+        "feat-Kos6kJAS",
+        "feat-s27SSAdf",
+        "feat-O4QtSFrm",
+        "feat-AVaaiIhs"
+      ],
+      "expanded": false
+    },
+    "fcat-822kVsJq": {
+      "id": "fcat-822kVsJq",
+      "name": "Short-term",
+      "featureOrder": [
+        "feat-6SAiV6QH",
+        "feat-1rTZPKIc",
+        "feat-yGEB34Pa",
+        "feat-DvbXJKOe",
+        "feat-QiBYxDN2",
+        "feat-gnBlx1Za"
+      ],
+      "expanded": false
+    },
+    "fcat-87Hiseen": {
+      "id": "fcat-87Hiseen",
+      "name": "Long-term",
+      "featureOrder": [
+        "feat-65nli8oM",
+        "feat-1upc4YhK",
+        "feat-8e8yWBDq",
+        "feat-Sj9buT23",
+        "feat-PR3muY7F",
+        "feat-EQbh8wYh",
+        "feat-nxjlqqao"
+      ],
+      "expanded": false
+    },
+    "fcat-8INaj2Q9": {
+      "id": "fcat-8INaj2Q9",
+      "name": "Backlog",
+      "featureOrder": [
+        "feat-5OnbVc6w",
+        "feat-2AxUyHbr",
+        "feat-VBG9Ur33",
+        "feat-o8zi5kYf",
+        "feat-8fovEbXD",
+        "feat-1STBdPdj"
+      ],
+      "expanded": false
+    }
+  },
+  "featureCategoryOrder": [
+    "fcat-9GWRmJDc",
+    "fcat-eSyWLCLV",
+    "fcat-822kVsJq",
+    "fcat-87Hiseen",
+    "fcat-8INaj2Q9",
+    "fcat-Om7UqQMd"
+  ],
+  "bugCategories": {
+    "bcat-3zMP8Ogm": {
+      "id": "bcat-3zMP8Ogm",
+      "name": "Editor",
+      "bugOrder": [
+        "bug-HSTLLRGF",
+        "bug-gYoo2zz6",
+        "bug-wwd32S1c",
+        "bug-6PK55TQr",
+        "bug-afOrQPXt",
+        "bug-A2HXWdJq",
+        "bug-7cxt0dN0",
+        "bug-elXzxguQ",
+        "bug-o43kroyh",
+        "bug-mXoya35m",
+        "bug-fBl4T5tn"
+      ]
+    }
+  },
+  "bugCategoryOrder": [
+    "bcat-3zMP8Ogm"
+  ]
+}

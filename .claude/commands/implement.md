@@ -12,7 +12,7 @@ Implement a feature, bug, or task from the PromptFlow application.
 5. Mark the item as in-progress using `update` with `updates: { status: 'in-progress' }`
 6. Implement the feature/bug/task according to its description and plan
 7. When complete, mark as done using `update` with `updates: { status: 'done' }`
-8. Record what was implemented using `update` with `action: 'append_prompt'`
+8. Record what was implemented using `update` with `action: 'append_prompt'` (keep to 1-2 lines, e.g., "Implemented X: added Y, modified Z")
 
 ## MCP Tool Reference
 

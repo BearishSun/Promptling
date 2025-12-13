@@ -1,5 +1,7 @@
 import { memo, useState, useRef } from 'react';
 import { useTaskData, useUIState, useTaskActions } from '../../context/TaskProvider';
+import ProjectSelector from '../projects/ProjectSelector';
+import NewProjectModal from '../projects/NewProjectModal';
 
 // Icons as simple SVG components
 const FeaturesIcon = () => (
@@ -82,6 +84,8 @@ function Sidebar() {
   const { activeView, activeItemId, setActiveView, theme, setTheme } = useUIState();
   const { exportData, importData } = useTaskActions();
   const [featuresExpanded, setFeaturesExpanded] = useState(true);
+  const [showProjectModal, setShowProjectModal] = useState(false);
+  const [editingProject, setEditingProject] = useState(null);
   const fileInputRef = useRef(null);
 
   if (!data) return null;
@@ -127,10 +131,23 @@ function Sidebar() {
     e.target.value = '';
   };
 
+  const handleNewProject = () => {
+    setEditingProject(null);
+    setShowProjectModal(true);
+  };
+
+  const handleEditProject = (project) => {
+    setEditingProject(project);
+    setShowProjectModal(true);
+  };
+
   return (
     <aside className="sidebar">
       <div className="sidebar-header">
-        <h1>PromptFlow</h1>
+        <ProjectSelector
+          onNewProject={handleNewProject}
+          onEditProject={handleEditProject}
+        />
       </div>
 
       <div className="sidebar-content">
@@ -242,6 +259,16 @@ function Sidebar() {
           style={{ display: 'none' }}
         />
       </div>
+
+      {/* Project Modal */}
+      <NewProjectModal
+        isOpen={showProjectModal}
+        onClose={() => {
+          setShowProjectModal(false);
+          setEditingProject(null);
+        }}
+        editProject={editingProject}
+      />
     </aside>
   );
 }

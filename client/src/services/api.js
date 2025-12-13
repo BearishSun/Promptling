@@ -7,6 +7,22 @@ const api = axios.create({
   }
 });
 
+// Store to hold the active project ID
+let activeProjectId = null;
+
+// Function to set the active project ID (called by ProjectProvider)
+export function setActiveProjectId(projectId) {
+  activeProjectId = projectId;
+}
+
+// Add interceptor to include project ID in all requests
+api.interceptors.request.use((config) => {
+  if (activeProjectId) {
+    config.headers['X-Project-ID'] = activeProjectId;
+  }
+  return config;
+});
+
 export const tasksApi = {
   // Load all data
   getAll: () => api.get('/tasks').then(res => res.data),

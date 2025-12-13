@@ -3,13 +3,55 @@ const fs = require('fs').promises;
 const fsSync = require('fs');
 const path = require('path');
 const multer = require('multer');
+const {
+  loadProjects,
+  loadSettings,
+  getProjectDataPath,
+  getProjectDir,
+  checkMigrationNeeded,
+  migrateOldData
+} = require('./projects');
 
 const router = express.Router();
 // Store data in the project root (parent of server directory)
 const PROJECT_ROOT = path.resolve(__dirname, '..', '..');
 const DATA_DIR = path.join(PROJECT_ROOT, '.promptflow');
-const DATA_FILE = path.join(DATA_DIR, 'data.json');
-const ATTACHMENTS_DIR = path.join(DATA_DIR, 'attachments');
+const PROJECTS_DIR = path.join(DATA_DIR, 'projects');
+
+// Legacy paths (for backward compatibility during migration)
+const LEGACY_DATA_FILE = path.join(DATA_DIR, 'data.json');
+const LEGACY_ATTACHMENTS_DIR = path.join(DATA_DIR, 'attachments');
+
+// Get active project ID from request header or settings
+async function getActiveProjectId(req) {
+  // Check header first
+  const headerProjectId = req.headers['x-project-id'];
+  if (headerProjectId) {
+    return headerProjectId;
+  }
+  // Fall back to settings
+  const settings = await loadSettings();
+  return settings.activeProjectId;
+}
+
+// Get data file path for active project
+async function getDataFilePath(req) {
+  const projectId = await getActiveProjectId(req);
+  if (!projectId) {
+    // Return legacy path if no project is set
+    return LEGACY_DATA_FILE;
+  }
+  return getProjectDataPath(projectId);
+}
+
+// Get attachments directory for active project
+async function getAttachmentsDir(req) {
+  const projectId = await getActiveProjectId(req);
+  if (!projectId) {
+    return LEGACY_ATTACHMENTS_DIR;
+  }
+  return path.join(getProjectDir(projectId), 'attachments');
+}
 
 // Allowed file types
 const ALLOWED_MIME_TYPES = [
@@ -103,29 +145,49 @@ async function ensureDataDir() {
   }
 }
 
-// Load data with default fallback
-async function loadData() {
+// Load data with default fallback - now project-aware
+async function loadData(req) {
   await ensureDataDir();
+  const dataFile = await getDataFilePath(req);
+
+  // Ensure parent directory exists
+  const parentDir = path.dirname(dataFile);
   try {
-    const content = await fs.readFile(DATA_FILE, 'utf-8');
+    await fs.access(parentDir);
+  } catch {
+    await fs.mkdir(parentDir, { recursive: true });
+  }
+
+  try {
+    const content = await fs.readFile(dataFile, 'utf-8');
     return JSON.parse(content);
   } catch (error) {
     if (error.code === 'ENOENT') {
       const defaultData = getDefaultData();
-      await saveData(defaultData);
+      await saveData(defaultData, req);
       return defaultData;
     }
     throw error;
   }
 }
 
-// Save data atomically (write to temp, then rename)
-async function saveData(data) {
+// Save data atomically (write to temp, then rename) - now project-aware
+async function saveData(data, req) {
   data.lastModified = new Date().toISOString();
   await ensureDataDir();
-  const tempFile = `${DATA_FILE}.tmp`;
+  const dataFile = await getDataFilePath(req);
+
+  // Ensure parent directory exists
+  const parentDir = path.dirname(dataFile);
+  try {
+    await fs.access(parentDir);
+  } catch {
+    await fs.mkdir(parentDir, { recursive: true });
+  }
+
+  const tempFile = `${dataFile}.tmp`;
   await fs.writeFile(tempFile, JSON.stringify(data, null, 2));
-  await fs.rename(tempFile, DATA_FILE);
+  await fs.rename(tempFile, dataFile);
 }
 
 // Generate unique ID
@@ -141,7 +203,7 @@ function generateId(prefix) {
 // GET /api/tasks - Get all data
 router.get('/', async (req, res) => {
   try {
-    const data = await loadData();
+    const data = await loadData(req);
     res.json(data);
   } catch (error) {
     console.error('Error loading tasks:', error);
@@ -152,7 +214,7 @@ router.get('/', async (req, res) => {
 // PUT /api/tasks - Save all data
 router.put('/', async (req, res) => {
   try {
-    await saveData(req.body);
+    await saveData(req.body, req);
     res.json({ saved: true });
   } catch (error) {
     console.error('Error saving tasks:', error);
@@ -163,7 +225,7 @@ router.put('/', async (req, res) => {
 // POST /api/tasks/feature - Create feature
 router.post('/feature', async (req, res) => {
   try {
-    const data = await loadData();
+    const data = await loadData(req);
     const id = generateId('feat');
     const feature = {
       id,
@@ -177,7 +239,7 @@ router.post('/feature', async (req, res) => {
     };
     data.features[id] = feature;
     data.globalFeatureOrder.push(id);
-    await saveData(data);
+    await saveData(data, req);
     res.json(feature);
   } catch (error) {
     console.error('Error creating feature:', error);
@@ -188,7 +250,7 @@ router.post('/feature', async (req, res) => {
 // POST /api/tasks/bug - Create bug
 router.post('/bug', async (req, res) => {
   try {
-    const data = await loadData();
+    const data = await loadData(req);
     const id = generateId('bug');
     const bug = {
       id,
@@ -202,7 +264,7 @@ router.post('/bug', async (req, res) => {
     };
     data.bugs[id] = bug;
     data.globalBugOrder.push(id);
-    await saveData(data);
+    await saveData(data, req);
     res.json(bug);
   } catch (error) {
     console.error('Error creating bug:', error);
@@ -213,7 +275,7 @@ router.post('/bug', async (req, res) => {
 // POST /api/tasks/task - Create task
 router.post('/task', async (req, res) => {
   try {
-    const data = await loadData();
+    const data = await loadData(req);
     const id = generateId('task');
     const { parentType, parentId, categoryId, title, description, status, tagIds } = req.body;
 
@@ -243,7 +305,7 @@ router.post('/task', async (req, res) => {
       }
     }
 
-    await saveData(data);
+    await saveData(data, req);
     res.json(task);
   } catch (error) {
     console.error('Error creating task:', error);
@@ -254,7 +316,7 @@ router.post('/task', async (req, res) => {
 // POST /api/tasks/category - Create category
 router.post('/category', async (req, res) => {
   try {
-    const data = await loadData();
+    const data = await loadData(req);
     const id = generateId('cat');
     const { parentType, parentId, name } = req.body;
 
@@ -279,7 +341,7 @@ router.post('/category', async (req, res) => {
       }
     }
 
-    await saveData(data);
+    await saveData(data, req);
     res.json(category);
   } catch (error) {
     console.error('Error creating category:', error);
@@ -290,7 +352,7 @@ router.post('/category', async (req, res) => {
 router.put('/reorder', async (req, res) => {
   try {
     const { type, parentId, order } = req.body;
-    const data = await loadData();
+    const data = await loadData(req);
 
     switch (type) {
       case 'features':
@@ -345,7 +407,7 @@ router.put('/reorder', async (req, res) => {
         return res.status(400).json({ error: 'Invalid type' });
     }
 
-    await saveData(data);
+    await saveData(data, req);
     res.json({ updated: true });
   } catch (error) {
     console.error('Error reordering:', error);
@@ -356,9 +418,9 @@ router.put('/reorder', async (req, res) => {
 // PUT /api/tasks/settings - Update settings
 router.put('/settings', async (req, res) => {
   try {
-    const data = await loadData();
+    const data = await loadData(req);
     data.settings = { ...data.settings, ...req.body };
-    await saveData(data);
+    await saveData(data, req);
     res.json(data.settings);
   } catch (error) {
     console.error('Error updating settings:', error);
@@ -370,7 +432,7 @@ router.put('/settings', async (req, res) => {
 router.put('/move-task', async (req, res) => {
   try {
     const { taskId, newCategoryId, newParentType, newParentId } = req.body;
-    const data = await loadData();
+    const data = await loadData(req);
 
     const task = data.tasks[taskId];
     if (!task) {
@@ -407,7 +469,7 @@ router.put('/move-task', async (req, res) => {
       }
     }
 
-    await saveData(data);
+    await saveData(data, req);
     res.json(task);
   } catch (error) {
     console.error('Error moving task:', error);
@@ -420,7 +482,7 @@ router.put('/move-task', async (req, res) => {
 // POST /api/tasks/tag - Create tag
 router.post('/tag', async (req, res) => {
   try {
-    const data = await loadData();
+    const data = await loadData(req);
     if (!data.tags) data.tags = {};
 
     const id = generateId('tag');
@@ -433,7 +495,7 @@ router.post('/tag', async (req, res) => {
     };
 
     data.tags[id] = tag;
-    await saveData(data);
+    await saveData(data, req);
     res.json(tag);
   } catch (error) {
     console.error('Error creating tag:', error);
@@ -446,14 +508,14 @@ router.patch('/tag/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const updates = req.body;
-    const data = await loadData();
+    const data = await loadData(req);
 
     if (!data.tags || !data.tags[id]) {
       return res.status(404).json({ error: 'Tag not found' });
     }
 
     data.tags[id] = { ...data.tags[id], ...updates };
-    await saveData(data);
+    await saveData(data, req);
     res.json(data.tags[id]);
   } catch (error) {
     console.error('Error updating tag:', error);
@@ -465,7 +527,7 @@ router.patch('/tag/:id', async (req, res) => {
 router.delete('/tag/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const data = await loadData();
+    const data = await loadData(req);
 
     if (!data.tags || !data.tags[id]) {
       return res.status(404).json({ error: 'Tag not found' });
@@ -479,7 +541,7 @@ router.delete('/tag/:id', async (req, res) => {
     });
 
     delete data.tags[id];
-    await saveData(data);
+    await saveData(data, req);
     res.json({ deleted: true });
   } catch (error) {
     console.error('Error deleting tag:', error);
@@ -492,7 +554,7 @@ router.delete('/tag/:id', async (req, res) => {
 // POST /api/tasks/feature-category - Create feature category
 router.post('/feature-category', async (req, res) => {
   try {
-    const data = await loadData();
+    const data = await loadData(req);
     if (!data.featureCategories) data.featureCategories = {};
     if (!data.featureCategoryOrder) data.featureCategoryOrder = [];
 
@@ -507,7 +569,7 @@ router.post('/feature-category', async (req, res) => {
 
     data.featureCategories[id] = category;
     data.featureCategoryOrder.push(id);
-    await saveData(data);
+    await saveData(data, req);
     res.json(category);
   } catch (error) {
     console.error('Error creating feature category:', error);
@@ -520,14 +582,14 @@ router.patch('/feature-category/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const updates = req.body;
-    const data = await loadData();
+    const data = await loadData(req);
 
     if (!data.featureCategories?.[id]) {
       return res.status(404).json({ error: 'Feature category not found' });
     }
 
     data.featureCategories[id] = { ...data.featureCategories[id], ...updates };
-    await saveData(data);
+    await saveData(data, req);
     res.json(data.featureCategories[id]);
   } catch (error) {
     console.error('Error updating feature category:', error);
@@ -539,7 +601,7 @@ router.patch('/feature-category/:id', async (req, res) => {
 router.delete('/feature-category/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const data = await loadData();
+    const data = await loadData(req);
 
     if (!data.featureCategories?.[id]) {
       return res.status(404).json({ error: 'Feature category not found' });
@@ -558,7 +620,7 @@ router.delete('/feature-category/:id', async (req, res) => {
 
     delete data.featureCategories[id];
     data.featureCategoryOrder = (data.featureCategoryOrder || []).filter(cid => cid !== id);
-    await saveData(data);
+    await saveData(data, req);
     res.json({ deleted: true });
   } catch (error) {
     console.error('Error deleting feature category:', error);
@@ -569,7 +631,7 @@ router.delete('/feature-category/:id', async (req, res) => {
 // POST /api/tasks/bug-category - Create bug category
 router.post('/bug-category', async (req, res) => {
   try {
-    const data = await loadData();
+    const data = await loadData(req);
     if (!data.bugCategories) data.bugCategories = {};
     if (!data.bugCategoryOrder) data.bugCategoryOrder = [];
 
@@ -584,7 +646,7 @@ router.post('/bug-category', async (req, res) => {
 
     data.bugCategories[id] = category;
     data.bugCategoryOrder.push(id);
-    await saveData(data);
+    await saveData(data, req);
     res.json(category);
   } catch (error) {
     console.error('Error creating bug category:', error);
@@ -597,14 +659,14 @@ router.patch('/bug-category/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const updates = req.body;
-    const data = await loadData();
+    const data = await loadData(req);
 
     if (!data.bugCategories?.[id]) {
       return res.status(404).json({ error: 'Bug category not found' });
     }
 
     data.bugCategories[id] = { ...data.bugCategories[id], ...updates };
-    await saveData(data);
+    await saveData(data, req);
     res.json(data.bugCategories[id]);
   } catch (error) {
     console.error('Error updating bug category:', error);
@@ -616,7 +678,7 @@ router.patch('/bug-category/:id', async (req, res) => {
 router.delete('/bug-category/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const data = await loadData();
+    const data = await loadData(req);
 
     if (!data.bugCategories?.[id]) {
       return res.status(404).json({ error: 'Bug category not found' });
@@ -635,7 +697,7 @@ router.delete('/bug-category/:id', async (req, res) => {
 
     delete data.bugCategories[id];
     data.bugCategoryOrder = (data.bugCategoryOrder || []).filter(cid => cid !== id);
-    await saveData(data);
+    await saveData(data, req);
     res.json({ deleted: true });
   } catch (error) {
     console.error('Error deleting bug category:', error);
@@ -647,7 +709,7 @@ router.delete('/bug-category/:id', async (req, res) => {
 router.put('/move-feature', async (req, res) => {
   try {
     const { featureId, targetCategoryId } = req.body;
-    const data = await loadData();
+    const data = await loadData(req);
 
     const feature = data.features[featureId];
     if (!feature) {
@@ -671,7 +733,7 @@ router.put('/move-feature', async (req, res) => {
       data.globalFeatureOrder.push(featureId);
     }
 
-    await saveData(data);
+    await saveData(data, req);
     res.json(feature);
   } catch (error) {
     console.error('Error moving feature:', error);
@@ -683,7 +745,7 @@ router.put('/move-feature', async (req, res) => {
 router.put('/move-bug', async (req, res) => {
   try {
     const { bugId, targetCategoryId } = req.body;
-    const data = await loadData();
+    const data = await loadData(req);
 
     const bug = data.bugs[bugId];
     if (!bug) {
@@ -707,7 +769,7 @@ router.put('/move-bug', async (req, res) => {
       data.globalBugOrder.push(bugId);
     }
 
-    await saveData(data);
+    await saveData(data, req);
     res.json(bug);
   } catch (error) {
     console.error('Error moving bug:', error);
@@ -720,7 +782,7 @@ router.put('/move-bug', async (req, res) => {
 // GET /api/tasks/export - Export all data as JSON
 router.get('/export', async (req, res) => {
   try {
-    const data = await loadData();
+    const data = await loadData(req);
     res.setHeader('Content-Type', 'application/json');
     res.setHeader('Content-Disposition', `attachment; filename="tasklist-export-${new Date().toISOString().split('T')[0]}.json"`);
     res.json(data);
@@ -758,7 +820,7 @@ router.post('/import', async (req, res) => {
       }
     };
 
-    await saveData(validatedData);
+    await saveData(validatedData, req);
     res.json({ imported: true, stats: {
       features: Object.keys(validatedData.features).length,
       bugs: Object.keys(validatedData.bugs).length,
@@ -775,7 +837,7 @@ router.post('/import', async (req, res) => {
 router.post('/import/merge', async (req, res) => {
   try {
     const importData = req.body;
-    const existingData = await loadData();
+    const existingData = await loadData(req);
 
     // Merge features
     if (importData.features) {
@@ -813,7 +875,7 @@ router.post('/import/merge', async (req, res) => {
       Object.assign(existingData.tags, importData.tags);
     }
 
-    await saveData(existingData);
+    await saveData(existingData, req);
     res.json({ merged: true });
   } catch (error) {
     console.error('Error merging data:', error);
@@ -835,7 +897,7 @@ router.post('/attachment', upload.single('file'), async (req, res) => {
       return res.status(400).json({ error: 'itemType and itemId are required' });
     }
 
-    const data = await loadData();
+    const data = await loadData(req);
 
     // Get the item
     let item;
@@ -852,7 +914,8 @@ router.post('/attachment', upload.single('file'), async (req, res) => {
     }
 
     // Create item-specific folder: attachments/{itemType}/{itemId}/
-    const itemDir = path.join(ATTACHMENTS_DIR, itemType, itemId);
+    const attachmentsDir = await getAttachmentsDir(req);
+    const itemDir = path.join(attachmentsDir, itemType, itemId);
     await fs.mkdir(itemDir, { recursive: true });
 
     // Get unique filename (preserve original, add counter if conflict)
@@ -877,7 +940,7 @@ router.post('/attachment', upload.single('file'), async (req, res) => {
     if (!item.attachments) item.attachments = [];
     item.attachments.push(attachment);
 
-    await saveData(data);
+    await saveData(data, req);
     res.json(attachment);
   } catch (error) {
     console.error('Error uploading attachment:', error);
@@ -889,11 +952,12 @@ router.post('/attachment', upload.single('file'), async (req, res) => {
 router.get('/attachment/:itemType/:itemId/:filename', async (req, res) => {
   try {
     const { itemType, itemId, filename } = req.params;
-    const filePath = path.join(ATTACHMENTS_DIR, itemType, itemId, filename);
+    const attachmentsDir = await getAttachmentsDir(req);
+    const filePath = path.join(attachmentsDir, itemType, itemId, filename);
 
     // Security check - prevent directory traversal
     const normalizedPath = path.normalize(filePath);
-    if (!normalizedPath.startsWith(ATTACHMENTS_DIR)) {
+    if (!normalizedPath.startsWith(attachmentsDir)) {
       return res.status(403).json({ error: 'Access denied' });
     }
 
@@ -930,11 +994,12 @@ router.get('/attachment/:itemType/:itemId/:filename', async (req, res) => {
 router.get('/attachment-path/:itemType/:itemId/:filename', async (req, res) => {
   try {
     const { itemType, itemId, filename } = req.params;
-    const filePath = path.join(ATTACHMENTS_DIR, itemType, itemId, filename);
+    const attachmentsDir = await getAttachmentsDir(req);
+    const filePath = path.join(attachmentsDir, itemType, itemId, filename);
 
     // Security check
     const normalizedPath = path.normalize(filePath);
-    if (!normalizedPath.startsWith(ATTACHMENTS_DIR)) {
+    if (!normalizedPath.startsWith(attachmentsDir)) {
       return res.status(403).json({ error: 'Access denied' });
     }
 
@@ -956,7 +1021,7 @@ router.get('/attachment-path/:itemType/:itemId/:filename', async (req, res) => {
 router.delete('/attachment/:itemType/:itemId/:attachmentId', async (req, res) => {
   try {
     const { itemType, itemId, attachmentId } = req.params;
-    const data = await loadData();
+    const data = await loadData(req);
 
     // Get the item
     let item;
@@ -981,9 +1046,10 @@ router.delete('/attachment/:itemType/:itemId/:attachmentId', async (req, res) =>
     const attachment = item.attachments[attachmentIndex];
 
     // Delete the file - use storedPath if available, fallback to old structure
+    const attachmentsDir = await getAttachmentsDir(req);
     const filePath = attachment.storedPath
-      ? path.join(ATTACHMENTS_DIR, attachment.storedPath)
-      : path.join(ATTACHMENTS_DIR, attachment.storedName);
+      ? path.join(attachmentsDir, attachment.storedPath)
+      : path.join(attachmentsDir, attachment.storedName);
     try {
       await fs.unlink(filePath);
     } catch (e) {
@@ -992,7 +1058,7 @@ router.delete('/attachment/:itemType/:itemId/:attachmentId', async (req, res) =>
 
     // Remove from item
     item.attachments.splice(attachmentIndex, 1);
-    await saveData(data);
+    await saveData(data, req);
 
     res.json({ deleted: true });
   } catch (error) {
@@ -1007,7 +1073,7 @@ router.delete('/attachment/:itemType/:itemId/:attachmentId', async (req, res) =>
 router.get('/search', async (req, res) => {
   try {
     const { q, type = 'all', status } = req.query;
-    const data = await loadData();
+    const data = await loadData(req);
     const results = [];
 
     const matchesQuery = (item) => {
@@ -1056,7 +1122,7 @@ router.get('/:type/:id/prompt-history', async (req, res) => {
   try {
     const { type, id } = req.params;
     const { limit } = req.query;
-    const data = await loadData();
+    const data = await loadData(req);
 
     let item;
     switch (type) {
@@ -1087,7 +1153,7 @@ router.post('/:type/:id/prompt-history', async (req, res) => {
   try {
     const { type, id } = req.params;
     const { role, content } = req.body;
-    const data = await loadData();
+    const data = await loadData(req);
 
     let item;
     switch (type) {
@@ -1111,7 +1177,7 @@ router.post('/:type/:id/prompt-history', async (req, res) => {
     };
 
     item.promptHistory.push(entry);
-    await saveData(data);
+    await saveData(data, req);
 
     res.json({ added: true, entry, totalCount: item.promptHistory.length });
   } catch (error) {
@@ -1124,7 +1190,7 @@ router.post('/:type/:id/prompt-history', async (req, res) => {
 router.delete('/:type/:id/prompt-history', async (req, res) => {
   try {
     const { type, id } = req.params;
-    const data = await loadData();
+    const data = await loadData(req);
 
     let item;
     switch (type) {
@@ -1140,7 +1206,7 @@ router.delete('/:type/:id/prompt-history', async (req, res) => {
 
     const previousCount = item.promptHistory?.length || 0;
     item.promptHistory = [];
-    await saveData(data);
+    await saveData(data, req);
 
     res.json({ cleared: true, previousCount });
   } catch (error) {
@@ -1156,7 +1222,7 @@ router.get('/:type/:id/plan', async (req, res) => {
   try {
     const { type, id } = req.params;
     const { version } = req.query;
-    const data = await loadData();
+    const data = await loadData(req);
 
     let item;
     switch (type) {
@@ -1192,7 +1258,8 @@ router.get('/:type/:id/plan', async (req, res) => {
       targetPlan = plans[0]; // Latest
     }
 
-    const filePath = path.join(ATTACHMENTS_DIR, targetPlan.storedPath);
+    const attachmentsDir = await getAttachmentsDir(req);
+    const filePath = path.join(attachmentsDir, targetPlan.storedPath);
     const content = await fs.readFile(filePath, 'utf-8');
 
     res.json({
@@ -1213,7 +1280,7 @@ router.put('/:type/:id/plan', async (req, res) => {
   try {
     const { type, id } = req.params;
     const { content } = req.body;
-    const data = await loadData();
+    const data = await loadData(req);
 
     let item;
     switch (type) {
@@ -1237,7 +1304,8 @@ router.put('/:type/:id/plan', async (req, res) => {
     const filename = `PLAN-v${version}.md`;
 
     // Create directory and file
-    const itemDir = path.join(ATTACHMENTS_DIR, type, id);
+    const attachmentsDir = await getAttachmentsDir(req);
+    const itemDir = path.join(attachmentsDir, type, id);
     await fs.mkdir(itemDir, { recursive: true });
     await fs.writeFile(path.join(itemDir, filename), content, 'utf-8');
 
@@ -1255,7 +1323,7 @@ router.put('/:type/:id/plan', async (req, res) => {
     if (!item.attachments) item.attachments = [];
     item.attachments.push(attachment);
 
-    await saveData(data);
+    await saveData(data, req);
     res.json({ created: true, version, filename, attachmentId: attachment.id });
   } catch (error) {
     console.error('Error creating plan:', error);
@@ -1267,7 +1335,7 @@ router.put('/:type/:id/plan', async (req, res) => {
 router.get('/:type/:id/plan/versions', async (req, res) => {
   try {
     const { type, id } = req.params;
-    const data = await loadData();
+    const data = await loadData(req);
 
     let item;
     switch (type) {
@@ -1305,7 +1373,7 @@ router.patch('/:type/:id', async (req, res) => {
   try {
     const { type, id } = req.params;
     const updates = req.body;
-    const data = await loadData();
+    const data = await loadData(req);
 
     let collection;
     switch (type) {
@@ -1322,7 +1390,7 @@ router.patch('/:type/:id', async (req, res) => {
     }
 
     collection[id] = { ...collection[id], ...updates };
-    await saveData(data);
+    await saveData(data, req);
     res.json(collection[id]);
   } catch (error) {
     console.error('Error updating item:', error);
@@ -1334,7 +1402,7 @@ router.patch('/:type/:id', async (req, res) => {
 router.delete('/:type/:id', async (req, res) => {
   try {
     const { type, id } = req.params;
-    const data = await loadData();
+    const data = await loadData(req);
 
     switch (type) {
       case 'feature':
@@ -1434,7 +1502,7 @@ router.delete('/:type/:id', async (req, res) => {
         return res.status(400).json({ error: 'Invalid type' });
     }
 
-    await saveData(data);
+    await saveData(data, req);
     res.json({ deleted: true });
   } catch (error) {
     console.error('Error deleting item:', error);

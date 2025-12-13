@@ -1,22 +1,55 @@
 const express = require('express');
 const fs = require('fs').promises;
 const path = require('path');
+const {
+  loadSettings,
+  loadProjects,
+  saveProjects,
+  getProjectDataPath,
+  getProjectDir
+} = require('./projects');
 
 const router = express.Router();
 
 // Data paths - same as tasks.js
 const PROJECT_ROOT = path.resolve(__dirname, '..', '..');
 const DATA_DIR = path.join(PROJECT_ROOT, '.promptflow');
-const DATA_FILE = path.join(DATA_DIR, 'data.json');
-const ATTACHMENTS_DIR = path.join(DATA_DIR, 'attachments');
+const PROJECTS_DIR = path.join(DATA_DIR, 'projects');
+
+// Legacy paths (for backward compatibility)
+const LEGACY_DATA_FILE = path.join(DATA_DIR, 'data.json');
+const LEGACY_ATTACHMENTS_DIR = path.join(DATA_DIR, 'attachments');
 
 // Valid statuses
 const VALID_STATUSES = ['open', 'in-progress', 'done'];
 
-// Load data helper
-async function loadData() {
+// Get active project ID from request header or settings
+async function getActiveProjectId(req) {
+  const headerProjectId = req?.headers?.['x-project-id'];
+  if (headerProjectId) return headerProjectId;
+  const settings = await loadSettings();
+  return settings.activeProjectId;
+}
+
+// Get data file path for active project
+async function getDataFilePath(req) {
+  const projectId = await getActiveProjectId(req);
+  if (!projectId) return LEGACY_DATA_FILE;
+  return getProjectDataPath(projectId);
+}
+
+// Get attachments directory for active project
+async function getAttachmentsDir(req) {
+  const projectId = await getActiveProjectId(req);
+  if (!projectId) return LEGACY_ATTACHMENTS_DIR;
+  return path.join(getProjectDir(projectId), 'attachments');
+}
+
+// Load data helper - now project-aware
+async function loadData(req) {
+  const dataFile = await getDataFilePath(req);
   try {
-    const content = await fs.readFile(DATA_FILE, 'utf-8');
+    const content = await fs.readFile(dataFile, 'utf-8');
     return JSON.parse(content);
   } catch (error) {
     if (error.code === 'ENOENT') {
@@ -26,12 +59,19 @@ async function loadData() {
   }
 }
 
-// Save data atomically
-async function saveData(data) {
+// Save data atomically - now project-aware
+async function saveData(data, req) {
   data.lastModified = new Date().toISOString();
-  const tempFile = `${DATA_FILE}.tmp`;
+  const dataFile = await getDataFilePath(req);
+  const parentDir = path.dirname(dataFile);
+  try {
+    await fs.access(parentDir);
+  } catch {
+    await fs.mkdir(parentDir, { recursive: true });
+  }
+  const tempFile = `${dataFile}.tmp`;
   await fs.writeFile(tempFile, JSON.stringify(data, null, 2));
-  await fs.rename(tempFile, DATA_FILE);
+  await fs.rename(tempFile, dataFile);
 }
 
 // Generate unique ID
@@ -97,13 +137,14 @@ const TOOLS = [
   },
   {
     name: 'create',
-    description: 'Create a feature, bug, task, or category.',
+    description: 'Create a project, feature, bug, task, or category.',
     inputSchema: {
       type: 'object',
       properties: {
-        itemType: { type: 'string', enum: ['feature', 'bug', 'task', 'feature-category', 'bug-category', 'task-category'], description: 'What to create' },
-        title: { type: 'string', description: 'Title (for feature/bug/task) or name (for category)' },
+        itemType: { type: 'string', enum: ['project', 'feature', 'bug', 'task', 'feature-category', 'bug-category', 'task-category'], description: 'What to create' },
+        title: { type: 'string', description: 'Title/name of the item' },
         description: { type: 'string', description: 'Markdown description' },
+        color: { type: 'string', description: 'For project: hex color (e.g. #3b82f6)' },
         parentType: { type: 'string', enum: ['feature', 'bug'], description: 'For task/task-category: parent type' },
         parentId: { type: 'string', description: 'For task/task-category: parent ID' },
         categoryId: { type: 'string', description: 'Category to place item in' },
@@ -130,15 +171,15 @@ const TOOLS = [
   },
   {
     name: 'list',
-    description: 'List categories or attachments.',
+    description: 'List projects, categories, or attachments.',
     inputSchema: {
       type: 'object',
       properties: {
-        listType: { type: 'string', enum: ['categories', 'attachments'], description: 'What to list' },
-        type: { type: 'string', enum: ['feature', 'bug', 'task'], description: 'Item type (for attachments) or category type (feature/bug for categories)' },
+        listType: { type: 'string', enum: ['projects', 'categories', 'attachments'], description: 'What to list' },
+        type: { type: 'string', enum: ['feature', 'bug', 'task'], description: 'Item type (for attachments) or category type (feature/bug for categories). Not needed for projects.' },
         id: { type: 'string', description: 'Item ID (required for attachments)' }
       },
-      required: ['listType', 'type']
+      required: ['listType']
     }
   },
   {
@@ -160,10 +201,11 @@ const TOOLS = [
 ];
 
 // Tool Handler Functions - 6 consolidated handlers
+// Each handler now takes (args, req) to support project-scoped data
 const toolHandlers = {
   // 1. SEARCH
-  async search({ query, itemType = 'all', status }) {
-    const data = await loadData();
+  async search({ query, itemType = 'all', status }, req) {
+    const data = await loadData(req);
     const results = [];
     const q = query.toLowerCase();
 
@@ -193,8 +235,8 @@ const toolHandlers = {
   },
 
   // 2. GET
-  async get({ type, id }) {
-    const data = await loadData();
+  async get({ type, id }, req) {
+    const data = await loadData(req);
     let item;
     switch (type) {
       case 'feature': item = data.features[id]; break;
@@ -230,8 +272,39 @@ const toolHandlers = {
   },
 
   // 3. CREATE
-  async create({ itemType, title, description = '', parentType, parentId, categoryId, priority }) {
-    const data = await loadData();
+  async create({ itemType, title, description = '', color, parentType, parentId, categoryId, priority }, req) {
+    // Project (doesn't need project-scoped data)
+    if (itemType === 'project') {
+      const projectsData = await loadProjects();
+      const id = generateId('proj');
+      const project = {
+        id,
+        name: title,
+        color: color || '#3b82f6',
+        createdAt: new Date().toISOString()
+      };
+
+      // Create project directory
+      const projectDir = getProjectDir(id);
+      await fs.mkdir(projectDir, { recursive: true });
+      await fs.mkdir(path.join(projectDir, 'attachments'), { recursive: true });
+
+      // Initialize with default data
+      const defaultData = getDefaultData();
+      await fs.writeFile(
+        path.join(projectDir, 'data.json'),
+        JSON.stringify(defaultData, null, 2)
+      );
+
+      // Add to projects metadata
+      projectsData.projects[id] = project;
+      projectsData.order.push(id);
+      await saveProjects(projectsData);
+
+      return project;
+    }
+
+    const data = await loadData(req);
 
     // Feature
     if (itemType === 'feature') {
@@ -247,7 +320,7 @@ const toolHandlers = {
       } else {
         data.globalFeatureOrder.push(id);
       }
-      await saveData(data);
+      await saveData(data, req);
       return feature;
     }
 
@@ -265,7 +338,7 @@ const toolHandlers = {
       } else {
         data.globalBugOrder.push(id);
       }
-      await saveData(data);
+      await saveData(data, req);
       return bug;
     }
 
@@ -287,7 +360,7 @@ const toolHandlers = {
       } else {
         parent.taskOrder.push(id);
       }
-      await saveData(data);
+      await saveData(data, req);
       return task;
     }
 
@@ -299,7 +372,7 @@ const toolHandlers = {
       const category = { id, name: title, featureOrder: [] };
       data.featureCategories[id] = category;
       data.featureCategoryOrder.push(id);
-      await saveData(data);
+      await saveData(data, req);
       return category;
     }
 
@@ -310,7 +383,7 @@ const toolHandlers = {
       const category = { id, name: title, bugOrder: [] };
       data.bugCategories[id] = category;
       data.bugCategoryOrder.push(id);
-      await saveData(data);
+      await saveData(data, req);
       return category;
     }
 
@@ -324,7 +397,7 @@ const toolHandlers = {
       data.categories[id] = category;
       if (!parent.categoryOrder) parent.categoryOrder = [];
       parent.categoryOrder.push(id);
-      await saveData(data);
+      await saveData(data, req);
       return category;
     }
 
@@ -332,8 +405,8 @@ const toolHandlers = {
   },
 
   // 4. UPDATE (includes delete, append_prompt, save_plan)
-  async update({ type, id, updates, action, promptEntry, planContent }) {
-    const data = await loadData();
+  async update({ type, id, updates, action, promptEntry, planContent }, req) {
+    const data = await loadData(req);
 
     // Delete action
     if (action === 'delete') {
@@ -366,7 +439,7 @@ const toolHandlers = {
         }
         delete data.tasks[id];
       }
-      await saveData(data);
+      await saveData(data, req);
       return { deleted: true, type, id };
     }
 
@@ -385,7 +458,7 @@ const toolHandlers = {
       if (!item.promptHistory) item.promptHistory = [];
       const entry = { id: generateId('ph'), timestamp: new Date().toISOString(), role: promptEntry.role, content: promptEntry.content };
       item.promptHistory.push(entry);
-      await saveData(data);
+      await saveData(data, req);
       return { added: true, entryId: entry.id, totalCount: item.promptHistory.length };
     }
 
@@ -404,19 +477,22 @@ const toolHandlers = {
       const version = existingPlans.length + 1;
       const filename = `PLAN-v${version}.md`;
 
-      const itemDir = path.join(ATTACHMENTS_DIR, type, id);
+      const attachmentsDir = await getAttachmentsDir(req);
+      const itemDir = path.join(attachmentsDir, type, id);
       await fs.mkdir(itemDir, { recursive: true });
       await fs.writeFile(path.join(itemDir, filename), planContent, 'utf-8');
 
+      const storedPath = `${type}/${id}/${filename}`;
+      const fullPath = path.join(itemDir, filename);
       const attachment = {
         id: generateId('att'), filename, storedName: filename,
-        storedPath: `${type}/${id}/${filename}`, mimeType: 'text/markdown',
+        storedPath, mimeType: 'text/markdown',
         size: Buffer.byteLength(planContent, 'utf-8'), uploadedAt: new Date().toISOString()
       };
       if (!item.attachments) item.attachments = [];
       item.attachments.push(attachment);
-      await saveData(data);
-      return { saved: true, version, filename, attachmentId: attachment.id, totalVersions: version };
+      await saveData(data, req);
+      return { saved: true, version, filename, attachmentId: attachment.id, totalVersions: version, path: fullPath };
     }
 
     // Regular update
@@ -439,13 +515,24 @@ const toolHandlers = {
       }
     }
     Object.assign(item, updates);
-    await saveData(data);
+    await saveData(data, req);
     return item;
   },
 
-  // 5. LIST (categories or attachments)
-  async list({ listType, type, id }) {
-    const data = await loadData();
+  // 5. LIST (categories, attachments, or projects)
+  async list({ listType, type, id }, req) {
+    // Projects don't need project-scoped data
+    if (listType === 'projects') {
+      const projectsData = await loadProjects();
+      const settings = await loadSettings();
+      return {
+        projects: projectsData.order.map(id => projectsData.projects[id]).filter(Boolean),
+        activeProjectId: settings.activeProjectId,
+        count: projectsData.order.length
+      };
+    }
+
+    const data = await loadData(req);
 
     if (listType === 'categories') {
       if (type === 'feature') {
@@ -478,8 +565,8 @@ const toolHandlers = {
   },
 
   // 6. READ (plan, attachment, image, prompt_history)
-  async read({ type, id, contentType, attachmentId, version, limit }) {
-    const data = await loadData();
+  async read({ type, id, contentType, attachmentId, version, limit }, req) {
+    const data = await loadData(req);
     let item;
     switch (type) {
       case 'feature': item = data.features[id]; break;
@@ -515,7 +602,8 @@ const toolHandlers = {
         targetPlan = plans[0];
       }
 
-      const filePath = path.join(ATTACHMENTS_DIR, targetPlan.storedPath);
+      const attachmentsDir = await getAttachmentsDir(req);
+      const filePath = path.join(attachmentsDir, targetPlan.storedPath);
       const content = await fs.readFile(filePath, 'utf-8');
       return { exists: true, version: parseInt(targetPlan.filename.match(/PLAN-v(\d+)/)?.[1]), filename: targetPlan.filename, content, versions };
     }
@@ -532,7 +620,8 @@ const toolHandlers = {
     const attachment = (item.attachments || []).find(a => a.id === attachmentId);
     if (!attachment) throw new Error(`Attachment ${attachmentId} not found`);
 
-    const filePath = path.join(ATTACHMENTS_DIR, attachment.storedPath);
+    const attachmentsDir = await getAttachmentsDir(req);
+    const filePath = path.join(attachmentsDir, attachment.storedPath);
 
     if (contentType === 'image') {
       if (!attachment.mimeType?.startsWith('image/')) throw new Error('Attachment is not an image');
@@ -593,7 +682,8 @@ router.post('/', async (req, res) => {
         }
 
         try {
-          const toolResult = await handler(args || {});
+          // Pass req as second argument to handlers for project-scoped data
+          const toolResult = await handler(args || {}, req);
           result = {
             content: [
               {

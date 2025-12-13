@@ -16,8 +16,8 @@ Create or iterate on an implementation plan for a feature, bug, or task from the
 4. If there are image attachments, use `read` with `contentType: 'image'` to analyze them
 5. If there are text attachments, use `read` with `contentType: 'attachment'` to read them
 6. Use `read` with `contentType: 'prompt_history'` to understand previous discussions
-7. Create/update the plan using `update` with `action: 'save_plan'` and `planContent`
-8. Record this session using `update` with `action: 'append_prompt'`
+7. Create/update the plan using `update` with `action: 'save_plan'` and `planContent` (returns file path)
+8. Record this session using `update` with `action: 'append_prompt'` (keep to 1-2 lines, e.g., "Created plan v1 for X feature")
 
 ## MCP Tool Reference
 
