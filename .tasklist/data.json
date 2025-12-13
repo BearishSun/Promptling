@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "lastModified": "2025-12-12T20:51:45.350Z",
+  "lastModified": "2025-12-13T07:05:56.455Z",
   "features": {
     "feat-CSdMs0EN": {
       "id": "feat-CSdMs0EN",
@@ -51,18 +51,6 @@
       "complexity": 2,
       "priority": "medium"
     },
-    "feat-rMm1FaY7": {
-      "id": "feat-rMm1FaY7",
-      "title": "Clean GitHub documentation",
-      "description": "",
-      "status": "open",
-      "createdAt": "2025-12-12T12:34:01.884Z",
-      "finishedAt": null,
-      "taskOrder": [],
-      "categoryId": "fcat-9GWRmJDc",
-      "complexity": 2,
-      "priority": "medium"
-    },
     "feat-XOYFOXuN": {
       "id": "feat-XOYFOXuN",
       "title": "Make all plugins static libraries",
@@ -106,7 +94,9 @@
       "status": "open",
       "createdAt": "2025-12-12T12:34:03.152Z",
       "finishedAt": null,
-      "taskOrder": [],
+      "taskOrder": [
+        "task-cd1gEXBT"
+      ],
       "categoryId": "fcat-9GWRmJDc",
       "complexity": 2,
       "priority": "medium"
@@ -549,6 +539,30 @@
       "taskOrder": [],
       "categoryOrder": [],
       "categoryId": "fcat-8INaj2Q9"
+    },
+    "feat-nDdUAXyg": {
+      "id": "feat-nDdUAXyg",
+      "title": "Automated testing",
+      "description": "",
+      "status": "open",
+      "createdAt": "2025-12-13T07:01:49.258Z",
+      "finishedAt": null,
+      "taskOrder": [],
+      "categoryOrder": [],
+      "categoryId": "fcat-9GWRmJDc",
+      "attachments": [
+        {
+          "id": "att-uR9TS7AT",
+          "filename": "CameraFrameCapture.md",
+          "storedName": "CameraFrameCapture.md",
+          "storedPath": "feature/feat-nDdUAXyg/CameraFrameCapture.md",
+          "mimeType": "application/octet-stream",
+          "size": 23386,
+          "uploadedAt": "2025-12-13T07:02:38.362Z"
+        }
+      ],
+      "priority": "high",
+      "complexity": 3
     }
   },
   "bugs": {
@@ -1379,6 +1393,18 @@
       "tagIds": [],
       "createdAt": "2025-12-12T20:49:25.763Z",
       "finishedAt": null
+    },
+    "task-cd1gEXBT": {
+      "id": "task-cd1gEXBT",
+      "parentType": "feature",
+      "parentId": "feat-r83VIlhj",
+      "categoryId": null,
+      "title": "Clean GitHub documentation",
+      "description": "",
+      "status": "open",
+      "tagIds": [],
+      "createdAt": "2025-12-13T07:05:13.890Z",
+      "finishedAt": null
     }
   },
   "categories": {},
@@ -1418,6 +1444,8 @@
       "name": "Before public repo",
       "featureOrder": [
         "feat-krCBsi6x",
+        "feat-nDdUAXyg",
+        "feat-5PeucF5e",
         "feat-pdVA3eb0",
         "feat-WUyaXdCZ",
         "feat-XOYFOXuN",
@@ -1428,9 +1456,9 @@
         "feat-r83VIlhj",
         "feat-CSdMs0EN",
         "feat-5uksqtP9",
-        "feat-AQdft78m",
-        "feat-5PeucF5e"
-      ]
+        "feat-AQdft78m"
+      ],
+      "expanded": true
     },
     "fcat-Om7UqQMd": {
       "id": "fcat-Om7UqQMd",

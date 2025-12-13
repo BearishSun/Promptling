@@ -23,7 +23,8 @@ const clientBuildPath = path.join(__dirname, '..', 'client', 'dist');
 app.use(express.static(clientBuildPath));
 
 // Handle React routing - serve index.html for all non-API routes
-app.get('*', (req, res) => {
+// Express 5 requires named parameter for wildcards
+app.get('/{*path}', (req, res) => {
   res.sendFile(path.join(clientBuildPath, 'index.html'));
 });
 
