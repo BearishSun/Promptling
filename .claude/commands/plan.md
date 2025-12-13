@@ -1,28 +1,48 @@
-Create or iterate on an implementation plan for a feature, bug, or task from the TaskList application.
+Create or iterate on an implementation plan for a feature, bug, or task from the PromptFlow application.
 
 ## Usage
 /plan <item name or partial title> [additional context or changes]
 
 ## Instructions
 
-1. Use the `search_items` MCP tool to find the item by name
-2. Use `get_item_context` to get full details including:
+1. Use the `search` MCP tool to find the item by name
+2. Use `get` to get full details including:
    - Description (the main prompt/requirements)
    - Existing sub-tasks
-   - Attached documents and images
-3. Check if a plan already exists using `get_plan`:
+   - Attachment summary
+3. Check if a plan exists using `read` with `contentType: 'plan'`:
    - **If no plan exists**: Create a new implementation plan
    - **If plan exists**: Iterate on it, incorporating any new context provided
-4. If there are image attachments, use `read_image` to analyze them
-5. If there are text attachments, use `read_attachment` to read them
-6. Use `get_prompt_history` to understand previous discussions
-7. Create/update the plan:
-   - Break down into phases or steps
-   - Identify files to modify
-   - Consider edge cases and error handling
-   - Note dependencies or prerequisites
-8. Use `create_plan` (new) or `update_plan` (iterate) to save
-9. Use `append_prompt_history` to record this session
+4. If there are image attachments, use `read` with `contentType: 'image'` to analyze them
+5. If there are text attachments, use `read` with `contentType: 'attachment'` to read them
+6. Use `read` with `contentType: 'prompt_history'` to understand previous discussions
+7. Create/update the plan using `update` with `action: 'save_plan'` and `planContent`
+8. Record this session using `update` with `action: 'append_prompt'`
+
+## MCP Tool Reference
+
+```javascript
+// Search for item
+search({ query: 'item name', itemType: 'all' })
+
+// Get full item details
+get({ type: 'feature', id: 'feat-xxx' })
+
+// Read existing plan
+read({ type: 'feature', id: 'feat-xxx', contentType: 'plan' })
+
+// Read image attachment
+read({ type: 'feature', id: 'feat-xxx', contentType: 'image', attachmentId: 'att-xxx' })
+
+// Read prompt history
+read({ type: 'feature', id: 'feat-xxx', contentType: 'prompt_history' })
+
+// Save plan (auto-versions)
+update({ type: 'feature', id: 'feat-xxx', action: 'save_plan', planContent: '# Plan...' })
+
+// Append to prompt history
+update({ type: 'feature', id: 'feat-xxx', action: 'append_prompt', promptEntry: { role: 'assistant', content: 'Created plan v1' } })
+```
 
 ## Plan Format
 ```markdown

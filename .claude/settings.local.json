@@ -1,15 +1,12 @@
 {
   "permissions": {
     "allow": [
-      "mcp__tasklist__search_items",
-      "mcp__tasklist__create_task",
-      "mcp__tasklist__get_item_context",
-      "mcp__tasklist__get_plan",
-      "mcp__tasklist__get_prompt_history",
-      "mcp__tasklist__list_attachments",
-      "mcp__tasklist__create_plan",
-      "mcp__tasklist__append_prompt_history",
-      "mcp__tasklist__mark_in_progress"
+      "mcp__tasklist__search",
+      "mcp__tasklist__get",
+      "mcp__tasklist__create",
+      "mcp__tasklist__update",
+      "mcp__tasklist__list",
+      "mcp__tasklist__read"
     ]
   }
 }
