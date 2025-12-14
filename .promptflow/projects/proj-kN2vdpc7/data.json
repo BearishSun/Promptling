@@ -1,6 +1,6 @@
 {
   "version": 4,
-  "lastModified": "2025-12-14T20:45:01.747Z",
+  "lastModified": "2025-12-14T21:11:06.817Z",
   "sections": {
     "sect-features": {
       "id": "sect-features",
@@ -10,15 +10,16 @@
       "isSystem": true,
       "itemOrder": [
         "item-nqfX3MwG",
-        "item-wYxI7FyT",
         "item-YLqY112h",
-        "item-i46TjNM2",
         "item-uPlYW3Uc",
-        "item-k7dKgqdH",
         "item-yPVxIzTH",
         "feat-xCrs6ImE",
         "item-19vGe2ep",
-        "feat-AsFKJHjA"
+        "feat-AsFKJHjA",
+        "item-eGJ5ko2t",
+        "item-wYxI7FyT",
+        "item-k7dKgqdH",
+        "item-i46TjNM2"
       ],
       "categoryOrder": [
         "icat-afNDkFen"
@@ -180,7 +181,7 @@
       "sectionId": "sect-features",
       "title": "Ability to move features/bugs between sections",
       "description": "",
-      "status": "open",
+      "status": "done",
       "priority": "medium",
       "complexity": 2,
       "categoryId": null,
@@ -203,11 +204,17 @@
           "timestamp": "2025-12-14T11:26:45.745Z",
           "role": "assistant",
           "content": "Created plan v1: Add Section dropdown in DetailPanel to move items between sections. Backend already supports this via move-item API."
+        },
+        {
+          "id": "ph-QmnKNvUO",
+          "timestamp": "2025-12-14T21:04:26.451Z",
+          "role": "assistant",
+          "content": "Implemented: Added Section dropdown in DetailPanel.jsx for items to move between sections using existing moveItemToCategory action."
         }
       ],
       "tagIds": [],
       "createdAt": "2025-12-13T16:12:32.300Z",
-      "finishedAt": null
+      "finishedAt": "2025-12-14T21:04:21.726Z"
     },
     "feat-AsFKJHjA": {
       "id": "feat-AsFKJHjA",
@@ -347,7 +354,7 @@
     "item-k7dKgqdH": {
       "id": "item-k7dKgqdH",
       "sectionId": "sect-features",
-      "title": "When creating new features don't set priority",
+      "title": "Remove the priority from items/tasks",
       "description": "",
       "status": "open",
       "priority": "medium",
@@ -465,6 +472,23 @@
       "tagIds": [],
       "createdAt": "2025-12-14T20:07:57.704Z",
       "finishedAt": "2025-12-14T20:21:56.075Z"
+    },
+    "item-eGJ5ko2t": {
+      "id": "item-eGJ5ko2t",
+      "sectionId": "sect-features",
+      "title": "Uncategorized category cannot be collapsed",
+      "description": "",
+      "status": "open",
+      "priority": "medium",
+      "complexity": null,
+      "categoryId": null,
+      "taskOrder": [],
+      "categoryOrder": [],
+      "attachments": [],
+      "promptHistory": [],
+      "tagIds": [],
+      "createdAt": "2025-12-14T20:55:45.223Z",
+      "finishedAt": null
     }
   },
   "itemCategories": {

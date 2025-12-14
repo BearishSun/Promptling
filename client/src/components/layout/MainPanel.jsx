@@ -408,7 +408,13 @@ function SectionItemsList({ sectionId }) {
   }, [sectionId, createItem, selectItem]);
 
   const renderItem = useCallback((item) => (
-    <SortableItemWrapper key={item.id} id={item.id} disabled={shiftHeld}>
+    <SortableItemWrapper
+      key={item.id}
+      id={item.id}
+      categoryId={item.categoryId}
+      items={data?.items}
+      disabled={shiftHeld}
+    >
       {({ dragHandleProps }) => (
         <ItemContent
           item={item}

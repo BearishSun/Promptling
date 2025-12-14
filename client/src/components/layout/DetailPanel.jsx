@@ -123,7 +123,7 @@ const getItemTypeLabel = (type, item, data) => {
 
 function DetailPanel() {
   const { data } = useTaskData();
-  const { updateTask, deleteTask, updateItem, deleteItem, createTag, addTagToTask, removeTagFromTask, uploadAttachment, deleteAttachment } = useTaskActions();
+  const { updateTask, deleteTask, updateItem, deleteItem, createTag, addTagToTask, removeTagFromTask, uploadAttachment, deleteAttachment, moveItemToCategory } = useTaskActions();
   const { selectedItemType, selectedItemId, clearSelection } = useUIState();
   const [editTitle, setEditTitle] = useState('');
   const [isEditingTitle, setIsEditingTitle] = useState(false);
@@ -414,6 +414,11 @@ function DetailPanel() {
     return filename?.toLowerCase().endsWith('.md') || filename?.toLowerCase().endsWith('.markdown');
   }, []);
 
+  const handleMoveToSection = useCallback(async (targetSectionId) => {
+    if (targetSectionId === item?.sectionId) return;
+    await moveItemToCategory(selectedItemId, null, targetSectionId);
+  }, [item?.sectionId, selectedItemId, moveItemToCategory]);
+
   if (!item) {
     return null;
   }
@@ -485,6 +490,24 @@ function DetailPanel() {
             placeholder="Add a description... (supports Markdown)"
           />
         </div>
+
+        {/* Section selector - only for items */}
+        {selectedItemType === 'item' && (
+          <div className="detail-section">
+            <div className="detail-section-title">Section</div>
+            <select
+              className="form-select"
+              value={item.sectionId || ''}
+              onChange={(e) => handleMoveToSection(e.target.value)}
+            >
+              {Object.values(data.sections || {}).map(section => (
+                <option key={section.id} value={section.id}>
+                  {section.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
         {/* Status */}
         <div className="detail-section">

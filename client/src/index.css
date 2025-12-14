@@ -1808,6 +1808,7 @@ body {
   font-size: 14px;
   outline: none;
   background: var(--bg-primary);
+  color: var(--text-primary);
   cursor: pointer;
 }
 

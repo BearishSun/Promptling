@@ -85,7 +85,12 @@ function TaskList({ parentType, parentId }) {
 
   // Render a single task item
   const renderTask = useCallback((task) => (
-    <SortableItemWrapper key={task.id} id={task.id}>
+    <SortableItemWrapper
+      key={task.id}
+      id={task.id}
+      categoryId={task.categoryId}
+      items={data?.tasks}
+    >
       {({ dragHandleProps }) => (
         <TaskItem
           task={task}
@@ -97,7 +102,7 @@ function TaskList({ parentType, parentId }) {
         />
       )}
     </SortableItemWrapper>
-  ), [data?.tags, selectedTaskId, selectTask, toggleTaskComplete]);
+  ), [data?.tasks, data?.tags, selectedTaskId, selectTask, toggleTaskComplete]);
 
   if (!parent) {
     return (
