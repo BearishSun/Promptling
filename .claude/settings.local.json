@@ -13,7 +13,11 @@
       "Bash(npx eslint:*)",
       "Bash(npx vite build:*)",
       "Bash(npm run build:*)",
-      "WebSearch"
+      "WebSearch",
+      "mcp__promptling__get",
+      "mcp__promptling__read",
+      "mcp__promptling__update",
+      "Bash(node -e:*)"
     ]
   }
 }

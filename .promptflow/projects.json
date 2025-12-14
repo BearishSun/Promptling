@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "lastModified": "2025-12-13T10:11:26.168Z",
+  "lastModified": "2025-12-13T21:16:51.780Z",
   "projects": {
     "proj-4c6Raf2U": {
       "id": "proj-4c6Raf2U",
@@ -10,7 +10,7 @@
     },
     "proj-kN2vdpc7": {
       "id": "proj-kN2vdpc7",
-      "name": "PromptFlow",
+      "name": "Promptling",
       "color": "#3b82f6",
       "createdAt": "2025-12-13T10:11:15.570Z"
     }

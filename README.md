@@ -281,9 +281,36 @@ pm2 restart tasklist
 
 ## Data Storage
 
-All data is stored in `.tasklist/data.json` in the project root. Attachments are stored in `.tasklist/attachments/`.
+All data is stored in the `.promptflow` directory by default:
+- `projects.json` - Project metadata
+- `settings.json` - Global settings
+- `projects/<project-id>/data.json` - Project data (items, tasks, categories)
+- `projects/<project-id>/attachments/` - File attachments
 
 ## Configuration
+
+### Data Directory Location
+
+By default, Promptling stores all data in the `.promptflow` directory within the project folder. You can customize this location by creating a `promptling.config.json` file in the project root:
+
+```json
+{
+  "dataDir": ".promptflow"
+}
+```
+
+The `dataDir` can be:
+- **Relative path** (relative to the project root): `".promptflow"`, `"../my-data"`, `"data/promptling"`
+- **Absolute path**: `"D:\\MyData\\promptling"`, `"/home/user/promptling-data"`
+
+This is useful when you want to:
+- Store data outside the project folder (e.g., for backup purposes)
+- Share data between multiple Promptling instances
+- Keep data separate from the application code
+
+See `promptling.config.example.json` for an example configuration.
+
+### Server Port
 
 The server port can be changed via environment variable:
 

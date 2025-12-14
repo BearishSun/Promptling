@@ -1,6 +1,6 @@
 {
   "version": 4,
-  "lastModified": "2025-12-13T18:25:18.928Z",
+  "lastModified": "2025-12-14T10:02:05.554Z",
   "sections": {
     "sect-features": {
       "id": "sect-features",
@@ -11,13 +11,16 @@
       "itemOrder": [
         "item-uPlYW3Uc",
         "item-wYxI7FyT",
+        "item-i46TjNM2",
         "feat-AsFKJHjA",
-        "item-vABtRoNq",
-        "item-jn4uzVlP",
-        "feat-xCrs6ImE",
-        "item-K10wOsgM"
+        "item-yPVxIzTH",
+        "item-19vGe2ep",
+        "item-k7dKgqdH",
+        "item-YLqY112h"
       ],
-      "categoryOrder": [],
+      "categoryOrder": [
+        "icat-afNDkFen"
+      ],
       "createdAt": "2025-12-13T12:02:32.069Z"
     },
     "sect-bugs": {
@@ -96,7 +99,7 @@
       "status": "done",
       "priority": "medium",
       "complexity": null,
-      "categoryId": null,
+      "categoryId": "icat-afNDkFen",
       "taskOrder": [],
       "categoryOrder": [],
       "attachments": [],
@@ -120,7 +123,7 @@
       "status": "done",
       "priority": "medium",
       "complexity": null,
-      "categoryId": null,
+      "categoryId": "icat-afNDkFen",
       "taskOrder": [],
       "categoryOrder": [],
       "attachments": [],
@@ -236,7 +239,7 @@
       "status": "done",
       "priority": "medium",
       "complexity": null,
-      "categoryId": null,
+      "categoryId": "icat-afNDkFen",
       "taskOrder": [],
       "categoryOrder": [],
       "attachments": [],
@@ -269,6 +272,30 @@
       "sectionId": "sect-features",
       "title": "Add a config json file for setting data file location",
       "description": "Allow the user to specify a config file in the root app folder, and configure the location of the app data files (projects, items, tasks, attachments, etc.)",
+      "status": "done",
+      "priority": "medium",
+      "complexity": null,
+      "categoryId": "icat-afNDkFen",
+      "taskOrder": [],
+      "categoryOrder": [],
+      "attachments": [],
+      "promptHistory": [
+        {
+          "id": "ph-moxnzDZc",
+          "timestamp": "2025-12-13T18:35:26.883Z",
+          "role": "assistant",
+          "content": "Implemented config file support: created server/config.js module, updated projects.js/tasks.js/mcp.js to use config paths, added promptling.config.example.json and README documentation"
+        }
+      ],
+      "tagIds": [],
+      "createdAt": "2025-12-13T18:24:30.067Z",
+      "finishedAt": "2025-12-13T18:35:21.689Z"
+    },
+    "item-yPVxIzTH": {
+      "id": "item-yPVxIzTH",
+      "sectionId": "sect-features",
+      "title": "Move data into a folder outside the repo",
+      "description": "",
       "status": "open",
       "priority": "medium",
       "complexity": null,
@@ -278,11 +305,93 @@
       "attachments": [],
       "promptHistory": [],
       "tagIds": [],
-      "createdAt": "2025-12-13T18:24:30.067Z",
+      "createdAt": "2025-12-13T21:13:19.424Z",
+      "finishedAt": null
+    },
+    "item-19vGe2ep": {
+      "id": "item-19vGe2ep",
+      "sectionId": "sect-features",
+      "title": "Reinit the git repo, remove the local data history",
+      "description": "",
+      "status": "open",
+      "priority": "medium",
+      "complexity": null,
+      "categoryId": null,
+      "taskOrder": [],
+      "categoryOrder": [],
+      "attachments": [],
+      "promptHistory": [],
+      "tagIds": [],
+      "createdAt": "2025-12-13T21:13:50.795Z",
+      "finishedAt": null
+    },
+    "item-k7dKgqdH": {
+      "id": "item-k7dKgqdH",
+      "sectionId": "sect-features",
+      "title": "When creating new features don't set priority",
+      "description": "",
+      "status": "open",
+      "priority": "medium",
+      "complexity": null,
+      "categoryId": null,
+      "taskOrder": [],
+      "categoryOrder": [],
+      "attachments": [],
+      "promptHistory": [],
+      "tagIds": [],
+      "createdAt": "2025-12-13T21:14:17.137Z",
+      "finishedAt": null
+    },
+    "item-i46TjNM2": {
+      "id": "item-i46TjNM2",
+      "sectionId": "sect-features",
+      "title": "Ability to move tasks to a new feature",
+      "description": "",
+      "status": "open",
+      "priority": "medium",
+      "complexity": null,
+      "categoryId": null,
+      "taskOrder": [],
+      "categoryOrder": [],
+      "attachments": [],
+      "promptHistory": [],
+      "tagIds": [],
+      "createdAt": "2025-12-14T10:00:01.112Z",
+      "finishedAt": null
+    },
+    "item-YLqY112h": {
+      "id": "item-YLqY112h",
+      "sectionId": "sect-features",
+      "title": "Update details view",
+      "description": "Display FEATURE/TASK/BUG text at the top\nMove STATUS, PRIORITY, COMPLEXITY items below the DESCRIPTION box",
+      "status": "open",
+      "priority": "medium",
+      "complexity": null,
+      "categoryId": null,
+      "taskOrder": [],
+      "categoryOrder": [],
+      "attachments": [],
+      "promptHistory": [],
+      "tagIds": [],
+      "createdAt": "2025-12-14T10:01:22.602Z",
       "finishedAt": null
     }
   },
-  "itemCategories": {},
+  "itemCategories": {
+    "icat-afNDkFen": {
+      "id": "icat-afNDkFen",
+      "sectionId": "sect-features",
+      "name": "Archive",
+      "itemOrder": [
+        "item-vABtRoNq",
+        "item-jn4uzVlP",
+        "feat-xCrs6ImE",
+        "item-K10wOsgM"
+      ],
+      "createdAt": "2025-12-13T21:14:33.783Z",
+      "expanded": false
+    }
+  },
   "tasks": {
     "task-u4bXmhAG": {
       "id": "task-u4bXmhAG",

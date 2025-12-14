@@ -2,15 +2,17 @@ const express = require('express');
 const fs = require('fs').promises;
 const fsSync = require('fs');
 const path = require('path');
+const { getDataPaths, getAppRoot } = require('../config');
 
 const router = express.Router();
 
-// Store data in the project root (parent of server directory)
-const PROJECT_ROOT = path.resolve(__dirname, '..', '..');
-const DATA_DIR = path.join(PROJECT_ROOT, '.promptflow');
-const PROJECTS_FILE = path.join(DATA_DIR, 'projects.json');
-const SETTINGS_FILE = path.join(DATA_DIR, 'settings.json');
-const PROJECTS_DIR = path.join(DATA_DIR, 'projects');
+// Get paths from config
+const paths = getDataPaths();
+const PROJECT_ROOT = getAppRoot();
+const DATA_DIR = paths.dataDir;
+const PROJECTS_FILE = paths.projectsFile;
+const SETTINGS_FILE = paths.settingsFile;
+const PROJECTS_DIR = paths.projectsDir;
 
 // Generate unique ID
 function generateId(prefix) {

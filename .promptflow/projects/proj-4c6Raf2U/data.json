@@ -1,6 +1,6 @@
 {
   "version": 4,
-  "lastModified": "2025-12-13T17:40:00.014Z",
+  "lastModified": "2025-12-14T09:58:51.080Z",
   "sections": {
     "sect-features": {
       "id": "sect-features",
@@ -229,15 +229,15 @@
       "complexity": 3,
       "categoryId": "fcat-9GWRmJDc",
       "taskOrder": [
-        "task-0V0vAiMw",
         "task-RuqNVaPi",
+        "task-wS3rEMyu",
+        "task-NZ81gTK4",
+        "task-5Rlm15zX",
+        "task-0V0vAiMw",
         "task-pfQaSoCY",
         "task-3wCgIw1F",
         "task-HDiCJyKj",
         "task-GrJf2HS1",
-        "task-NZ81gTK4",
-        "task-wS3rEMyu",
-        "task-5Rlm15zX",
         "task-jdclxyv7",
         "task-yUsnO6Yv",
         "task-4XdkHZxU",
@@ -853,31 +853,6 @@
       "createdAt": "2025-12-13T07:01:49.258Z",
       "finishedAt": null
     },
-    "feat-O1pQSUVV": {
-      "id": "feat-O1pQSUVV",
-      "sectionId": "sect-features",
-      "title": "TaskList",
-      "description": "",
-      "status": "open",
-      "priority": "medium",
-      "complexity": null,
-      "categoryId": "fcat-9GWRmJDc",
-      "taskOrder": [
-        "task-xU3JlNiG",
-        "task-2jZkCTd9",
-        "task-NA07Z6ti",
-        "task-W4BFjWbH",
-        "task-Ru8RXbWm",
-        "task-Gu18X5z4",
-        "task-LF0jKzV2"
-      ],
-      "categoryOrder": [],
-      "attachments": [],
-      "promptHistory": [],
-      "tagIds": [],
-      "createdAt": "2025-12-13T08:31:59.663Z",
-      "finishedAt": null
-    },
     "bug-afOrQPXt": {
       "id": "bug-afOrQPXt",
       "sectionId": "sect-bugs",
@@ -1240,7 +1215,7 @@
     "fcat-9GWRmJDc": {
       "id": "fcat-9GWRmJDc",
       "sectionId": "sect-features",
-      "name": "0.4 alpha",
+      "name": "0.5 alpha",
       "itemOrder": [
         "feat-krCBsi6x",
         "feat-nDdUAXyg",
@@ -1255,8 +1230,7 @@
         "feat-r83VIlhj",
         "feat-CSdMs0EN",
         "feat-5uksqtP9",
-        "feat-AQdft78m",
-        "feat-O1pQSUVV"
+        "feat-AQdft78m"
       ],
       "expanded": true
     },
@@ -1266,12 +1240,13 @@
       "name": "Archive",
       "itemOrder": [
         "feat-1vDBMJNC"
-      ]
+      ],
+      "expanded": false
     },
     "fcat-eSyWLCLV": {
       "id": "fcat-eSyWLCLV",
       "sectionId": "sect-features",
-      "name": "0.4",
+      "name": "0.5",
       "itemOrder": [
         "feat-T4nhBrDY",
         "feat-cECEdGYD",
@@ -2037,153 +2012,6 @@
       "attachments": [],
       "promptHistory": [],
       "createdAt": "2025-12-13T07:05:13.890Z",
-      "finishedAt": null
-    },
-    "task-xU3JlNiG": {
-      "id": "task-xU3JlNiG",
-      "itemId": "feat-O1pQSUVV",
-      "categoryId": null,
-      "title": "Better name for this application",
-      "description": "",
-      "status": "done",
-      "tagIds": [],
-      "attachments": [],
-      "promptHistory": [
-        {
-          "id": "ph-X8rVOg2E",
-          "timestamp": "2025-12-13T09:07:26.180Z",
-          "role": "assistant",
-          "content": "Renamed the application from TaskList to PromptFlow:\n\n1. Updated package names:\n   - Root: tasklist → promptflow\n   - Client: tasklist-client → promptflow-client\n   - Server: tasklist-server → promptflow-server\n\n2. Updated UI:\n   - Browser title: TaskList → PromptFlow\n   - Sidebar header: TaskList → PromptFlow\n\n3. Data directory:\n   - Renamed .tasklist/ → .promptflow/\n   - Updated server routes to use new path\n\n4. Added favicon:\n   - Created promptflow.svg icon (blue circle with chat bubble and flow arrow)\n   - Updated index.html to reference new icon"
-        }
-      ],
-      "createdAt": "2025-12-13T08:32:09.201Z",
-      "finishedAt": "2025-12-13T09:07:26.127Z"
-    },
-    "task-2jZkCTd9": {
-      "id": "task-2jZkCTd9",
-      "itemId": "feat-O1pQSUVV",
-      "categoryId": null,
-      "title": "Show in progress bugs in the left panel",
-      "description": "",
-      "status": "open",
-      "tagIds": [],
-      "attachments": [],
-      "promptHistory": [],
-      "createdAt": "2025-12-13T08:32:15.936Z",
-      "finishedAt": null
-    },
-    "task-NA07Z6ti": {
-      "id": "task-NA07Z6ti",
-      "itemId": "feat-O1pQSUVV",
-      "categoryId": null,
-      "title": "Show plan in the details panel",
-      "description": "",
-      "status": "done",
-      "tagIds": [],
-      "attachments": [],
-      "promptHistory": [],
-      "createdAt": "2025-12-13T08:33:05.492Z",
-      "finishedAt": "2025-12-13T09:00:03.944Z"
-    },
-    "task-W4BFjWbH": {
-      "id": "task-W4BFjWbH",
-      "itemId": "feat-O1pQSUVV",
-      "categoryId": null,
-      "title": "Add the ability to manage multiple projects",
-      "description": "Allow users to organize their work across multiple separate projects, each with their own features, bugs, and tasks.",
-      "status": "done",
-      "tagIds": [],
-      "attachments": [
-        {
-          "id": "att-x9A8WrX7",
-          "filename": "PLAN-v1.md",
-          "storedName": "PLAN-v1.md",
-          "storedPath": "task/task-W4BFjWbH/PLAN-v1.md",
-          "mimeType": "text/markdown",
-          "size": 6076,
-          "uploadedAt": "2025-12-13T08:51:02.299Z"
-        }
-      ],
-      "promptHistory": [
-        {
-          "id": "ph-hky1ULis",
-          "timestamp": "2025-12-13T08:52:33.691Z",
-          "role": "assistant",
-          "content": "Created implementation plan v1 for multi-project support. The plan covers:\n\n- **Phase 1**: Data model & storage refactoring (project-scoped data files)\n- **Phase 2**: Server API changes (project CRUD + scoped routes)\n- **Phase 3**: Client context refactoring (ProjectProvider + hooks)\n- **Phase 4**: UI implementation (project selector, modals)\n- **Phase 5**: Polish & migration (auto-migrate existing data)\n\nKey technical decisions:\n- Each project gets its own directory under `.tasklist/projects/{projectId}/`\n- New `projects.json` for project metadata, `settings.json` for global preferences\n- Context hierarchy: ToastProvider > ProjectProvider > TaskProvider\n- Automatic migration of existing data to \"Default\" project on first load"
-        }
-      ],
-      "createdAt": "2025-12-13T08:40:15.500Z",
-      "finishedAt": "2025-12-13T10:10:10.913Z"
-    },
-    "task-Ru8RXbWm": {
-      "id": "task-Ru8RXbWm",
-      "itemId": "feat-O1pQSUVV",
-      "categoryId": null,
-      "title": "Add the ability to add new high-level categories (not just Features/Bugs)",
-      "description": "Enable users to create custom top-level categories beyond the default Features and Bugs sections, allowing for more flexible organization of work items.",
-      "status": "done",
-      "tagIds": [],
-      "attachments": [
-        {
-          "id": "att-DgcDrVWl",
-          "filename": "PLAN-v1.md",
-          "storedName": "PLAN-v1.md",
-          "storedPath": "task/task-Ru8RXbWm/PLAN-v1.md",
-          "mimeType": "text/markdown",
-          "size": 2708,
-          "uploadedAt": "2025-12-13T09:43:40.266Z"
-        },
-        {
-          "id": "att-y7T6rxJk",
-          "filename": "PLAN-v2.md",
-          "storedName": "PLAN-v2.md",
-          "storedPath": "task/task-Ru8RXbWm/PLAN-v2.md",
-          "mimeType": "text/markdown",
-          "size": 5410,
-          "uploadedAt": "2025-12-13T09:47:15.987Z"
-        }
-      ],
-      "promptHistory": [
-        {
-          "id": "ph-Mg9L8Kiz",
-          "timestamp": "2025-12-13T09:43:47.180Z",
-          "role": "assistant",
-          "content": "Created plan v1: Custom sections with data structure, 5-phase implementation, 7 files to modify."
-        },
-        {
-          "id": "ph-3RgkKhLE",
-          "timestamp": "2025-12-13T09:47:21.687Z",
-          "role": "assistant",
-          "content": "Updated to plan v2: Unified sections system - Features/Bugs become system sections, 8 phases, includes migration strategy."
-        }
-      ],
-      "createdAt": "2025-12-13T08:40:15.553Z",
-      "finishedAt": "2025-12-13T15:01:15.365Z"
-    },
-    "task-Gu18X5z4": {
-      "id": "task-Gu18X5z4",
-      "itemId": "feat-O1pQSUVV",
-      "categoryId": null,
-      "title": "Open the task list to the right of the feature/bug list, rather than its own page",
-      "description": "",
-      "status": "open",
-      "tagIds": [],
-      "attachments": [],
-      "promptHistory": [],
-      "createdAt": "2025-12-13T09:00:37.747Z",
-      "finishedAt": null
-    },
-    "task-LF0jKzV2": {
-      "id": "task-LF0jKzV2",
-      "itemId": "feat-O1pQSUVV",
-      "categoryId": null,
-      "title": "Add names for complexity",
-      "description": "",
-      "status": "open",
-      "tagIds": [],
-      "attachments": [],
-      "promptHistory": [],
-      "createdAt": "2025-12-13T09:48:59.210Z",
       "finishedAt": null
     }
   },

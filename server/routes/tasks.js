@@ -3,6 +3,7 @@ const fs = require('fs').promises;
 const fsSync = require('fs');
 const path = require('path');
 const multer = require('multer');
+const { getDataPaths } = require('../config');
 const {
   loadProjects,
   loadSettings,
@@ -13,10 +14,10 @@ const {
 } = require('./projects');
 
 const router = express.Router();
-// Store data in the project root (parent of server directory)
-const PROJECT_ROOT = path.resolve(__dirname, '..', '..');
-const DATA_DIR = path.join(PROJECT_ROOT, '.promptflow');
-const PROJECTS_DIR = path.join(DATA_DIR, 'projects');
+// Get paths from config
+const paths = getDataPaths();
+const DATA_DIR = paths.dataDir;
+const PROJECTS_DIR = paths.projectsDir;
 
 // Legacy paths (for backward compatibility during migration)
 const LEGACY_DATA_FILE = path.join(DATA_DIR, 'data.json');

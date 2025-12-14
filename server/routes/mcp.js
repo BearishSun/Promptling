@@ -1,6 +1,7 @@
 const express = require('express');
 const fs = require('fs').promises;
 const path = require('path');
+const { getDataPaths } = require('../config');
 const {
   loadSettings,
   loadProjects,
@@ -11,10 +12,10 @@ const {
 
 const router = express.Router();
 
-// Data paths - same as tasks.js
-const PROJECT_ROOT = path.resolve(__dirname, '..', '..');
-const DATA_DIR = path.join(PROJECT_ROOT, '.promptflow');
-const PROJECTS_DIR = path.join(DATA_DIR, 'projects');
+// Get paths from config
+const paths = getDataPaths();
+const DATA_DIR = paths.dataDir;
+const PROJECTS_DIR = paths.projectsDir;
 
 // Legacy paths (for backward compatibility)
 const LEGACY_DATA_FILE = path.join(DATA_DIR, 'data.json');
