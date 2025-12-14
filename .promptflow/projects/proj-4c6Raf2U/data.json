@@ -1,6 +1,6 @@
 {
   "version": 4,
-  "lastModified": "2025-12-14T09:58:51.080Z",
+  "lastModified": "2025-12-14T18:39:14.225Z",
   "sections": {
     "sect-features": {
       "id": "sect-features",
@@ -235,15 +235,20 @@
         "task-5Rlm15zX",
         "task-0V0vAiMw",
         "task-pfQaSoCY",
-        "task-3wCgIw1F",
         "task-HDiCJyKj",
         "task-GrJf2HS1",
+        "task-3wCgIw1F",
         "task-jdclxyv7",
-        "task-yUsnO6Yv",
-        "task-4XdkHZxU",
-        "task-S0QtCyqQ"
+        "task-5Mvue2Nl"
       ],
-      "categoryOrder": [],
+      "categoryOrder": [
+        "cat-hiMxMQPa",
+        "cat-NUdmKIBo",
+        "cat-Te0oKGIw",
+        "cat-Fog02kjy",
+        "cat-LudBjCrk",
+        "cat-5CO2vBJD"
+      ],
       "attachments": [],
       "promptHistory": [],
       "tagIds": [],
@@ -1514,12 +1519,12 @@
       "categoryId": null,
       "title": "Remove Lock/Unlock and replace with Map2",
       "description": "",
-      "status": "open",
+      "status": "done",
       "tagIds": [],
       "attachments": [],
       "promptHistory": [],
       "createdAt": "2025-12-12T16:31:25.177Z",
-      "finishedAt": null
+      "finishedAt": "2025-12-14T10:39:48.491Z"
     },
     "task-pfQaSoCY": {
       "id": "task-pfQaSoCY",
@@ -1566,12 +1571,12 @@
       "categoryId": null,
       "title": "MaterialParameterAdapter: shaderBlockDesc.Flags = GpuBufferFlag::StoreOnGPU | GpuBufferFlag::AllowWriteCachingOnCPU;",
       "description": "",
-      "status": "open",
+      "status": "done",
       "tagIds": [],
       "attachments": [],
       "promptHistory": [],
       "createdAt": "2025-12-12T16:40:11.955Z",
-      "finishedAt": null
+      "finishedAt": "2025-12-14T18:24:48.817Z"
     },
     "task-GrJf2HS1": {
       "id": "task-GrJf2HS1",
@@ -1579,12 +1584,12 @@
       "categoryId": null,
       "title": "FlushCache in BeginRenderPass triggers warnings as a write operation triggers while a command buffer is bound",
       "description": "",
-      "status": "open",
+      "status": "done",
       "tagIds": [],
       "attachments": [],
       "promptHistory": [],
       "createdAt": "2025-12-12T16:40:39.513Z",
-      "finishedAt": null
+      "finishedAt": "2025-12-14T18:24:37.973Z"
     },
     "task-NZ81gTK4": {
       "id": "task-NZ81gTK4",
@@ -1592,25 +1597,25 @@
       "categoryId": null,
       "title": "GpuBuffer->Lock/Unlock should not be accepting a discard flag",
       "description": "",
-      "status": "open",
+      "status": "done",
       "tagIds": [],
       "attachments": [],
       "promptHistory": [],
       "createdAt": "2025-12-12T16:57:11.589Z",
-      "finishedAt": null
+      "finishedAt": "2025-12-14T11:20:47.403Z"
     },
     "task-wS3rEMyu": {
       "id": "task-wS3rEMyu",
       "itemId": "feat-krCBsi6x",
       "categoryId": null,
       "title": "GpuBuffer flushing logic should be removed",
-      "description": "",
-      "status": "open",
+      "description": "This means removing WriteCached/WriteCachedType/ZeroOutCached/ReadCached/FlushCache from render::GpuBuffer. mCache and mIsCache dirty members should also be removed.\n\nTMaterialParameterAdapter::Update should be updated as it depends on these calls. It should instead use the GpuBufferMappedScope to write to the GpuBuffer memory directly. render::GpuBuffer already has a Map() method that supports this. b3d::GpuBuffer doesn't - one should be added which returns a pointer to the internal CPU cached memory. It's existing WriteCached/WriteCachedType/ZeroOutCached/ReadCached should be renamed to Write/WriteTyped/Read (must share the same names between regular and render proxy of GpuBuffer).\n\nAll calls to GpuBuffer::FlushCache can be removed as caching is no longer supported. GpuBufferFlag::AllowWriteCachingOnCPU should be removed. All b3d::GpuBuffer objects will have a CPU cache by default.",
+      "status": "done",
       "tagIds": [],
       "attachments": [],
       "promptHistory": [],
       "createdAt": "2025-12-12T16:57:18.100Z",
-      "finishedAt": null
+      "finishedAt": "2025-12-14T18:24:56.045Z"
     },
     "task-5Rlm15zX": {
       "id": "task-5Rlm15zX",
@@ -1641,7 +1646,7 @@
     "task-yUsnO6Yv": {
       "id": "task-yUsnO6Yv",
       "itemId": "feat-krCBsi6x",
-      "categoryId": null,
+      "categoryId": "cat-NUdmKIBo",
       "title": "VulkanGpuDevice::GetQueueMask is confusing, can I remove it?",
       "description": "",
       "status": "open",
@@ -1654,7 +1659,7 @@
     "task-4XdkHZxU": {
       "id": "task-4XdkHZxU",
       "itemId": "feat-krCBsi6x",
-      "categoryId": null,
+      "categoryId": "cat-hiMxMQPa",
       "title": "BufferWriteType -> delete",
       "description": "",
       "status": "open",
@@ -1667,7 +1672,7 @@
     "task-S0QtCyqQ": {
       "id": "task-S0QtCyqQ",
       "itemId": "feat-krCBsi6x",
-      "categoryId": null,
+      "categoryId": "cat-LudBjCrk",
       "title": "GpuQueueUsage -> GpuQueueType, and make it Enum class, move to GpuQueue header rather than it being in common types",
       "description": "",
       "status": "open",
@@ -2013,9 +2018,153 @@
       "promptHistory": [],
       "createdAt": "2025-12-13T07:05:13.890Z",
       "finishedAt": null
+    },
+    "task-HLVBoirw": {
+      "id": "task-HLVBoirw",
+      "itemId": "feat-krCBsi6x",
+      "categoryId": "cat-5CO2vBJD",
+      "title": "PerCamera buffer need to be re-created every frame",
+      "description": "Right now it's created once, and then updated during its lifetime. But this is incorrect as the buffer will be used on the GPU for the previous frame while we are updating it for the current frame.",
+      "status": "open",
+      "tagIds": [],
+      "attachments": [],
+      "promptHistory": [],
+      "createdAt": "2025-12-14T10:38:13.522Z",
+      "finishedAt": null
+    },
+    "task-5Mvue2Nl": {
+      "id": "task-5Mvue2Nl",
+      "itemId": "feat-krCBsi6x",
+      "categoryId": null,
+      "title": "Validation error when rendering shadows",
+      "description": "Shadows require a pipeline layout with stages Vertex|Fragment|Geometry, but currently the PerObject buffers are allocated only using stages Vertex|Fragment. That layout is still necessary for regular (non-shadow) rendering, so we need a different layout (and parameter set) for shadows. UniformBufferPool should probably be extended so it can return an additional GpuParameterSet for shadows only (likely I need a helper getter + enum, similar to how I have AllocationResult::GetSuballocation getter, but for parameter sets).",
+      "status": "open",
+      "tagIds": [],
+      "attachments": [],
+      "promptHistory": [],
+      "createdAt": "2025-12-14T11:13:42.606Z",
+      "finishedAt": null
+    },
+    "task-rdrvnIWc": {
+      "id": "task-rdrvnIWc",
+      "itemId": "feat-krCBsi6x",
+      "categoryId": "cat-5CO2vBJD",
+      "title": "Update cached GpuBuffer calls",
+      "description": "TGpuParameterPrimitive and TGpuParameterStruct\nTMaterialParameterAdapter<IsRenderProxy>::Update",
+      "status": "in-progress",
+      "tagIds": [],
+      "attachments": [],
+      "promptHistory": [],
+      "createdAt": "2025-12-14T11:55:44.328Z",
+      "finishedAt": null
+    },
+    "task-tpY0FzVj": {
+      "id": "task-tpY0FzVj",
+      "itemId": "feat-krCBsi6x",
+      "categoryId": "cat-5CO2vBJD",
+      "title": "Update documentation on new GpuBuffer locking approach",
+      "description": "GpuBufferMappedScope and GpuBuffer::Map instead of old GpuBuffer::Lock/Unlock\nAlso WriteCached and related methods were removed, as was the GpuBufferFlag::AllowWriteCachingOnCPU flag.",
+      "status": "open",
+      "tagIds": [],
+      "attachments": [],
+      "promptHistory": [],
+      "createdAt": "2025-12-14T11:57:22.384Z",
+      "finishedAt": null
+    },
+    "task-cNvK18Jh": {
+      "id": "task-cNvK18Jh",
+      "itemId": "feat-krCBsi6x",
+      "categoryId": "cat-LudBjCrk",
+      "title": "Remove suballocation index from GpuBufferSuballocation",
+      "description": "",
+      "status": "open",
+      "tagIds": [],
+      "attachments": [],
+      "promptHistory": [],
+      "createdAt": "2025-12-14T14:26:18.246Z",
+      "finishedAt": null
+    },
+    "task-hyCsz7vl": {
+      "id": "task-hyCsz7vl",
+      "itemId": "feat-krCBsi6x",
+      "categoryId": "cat-Te0oKGIw",
+      "title": "Test",
+      "description": "",
+      "status": "open",
+      "tagIds": [],
+      "attachments": [],
+      "promptHistory": [],
+      "createdAt": "2025-12-14T18:27:43.363Z",
+      "finishedAt": null
+    },
+    "task-FVjJo5g7": {
+      "id": "task-FVjJo5g7",
+      "itemId": "feat-krCBsi6x",
+      "categoryId": "cat-Fog02kjy",
+      "title": "Test",
+      "description": "",
+      "status": "open",
+      "tagIds": [],
+      "attachments": [],
+      "promptHistory": [],
+      "createdAt": "2025-12-14T18:30:41.536Z",
+      "finishedAt": null
     }
   },
-  "taskCategories": {},
+  "taskCategories": {
+    "cat-hiMxMQPa": {
+      "id": "cat-hiMxMQPa",
+      "itemId": "feat-krCBsi6x",
+      "name": "Cleanup",
+      "taskOrder": [
+        "task-4XdkHZxU"
+      ],
+      "expanded": true
+    },
+    "cat-NUdmKIBo": {
+      "id": "cat-NUdmKIBo",
+      "itemId": "feat-krCBsi6x",
+      "name": "Cleanup",
+      "taskOrder": [
+        "task-yUsnO6Yv"
+      ]
+    },
+    "cat-Te0oKGIw": {
+      "id": "cat-Te0oKGIw",
+      "itemId": "feat-krCBsi6x",
+      "name": "Cleanup",
+      "taskOrder": [
+        "task-hyCsz7vl"
+      ]
+    },
+    "cat-Fog02kjy": {
+      "id": "cat-Fog02kjy",
+      "itemId": "feat-krCBsi6x",
+      "name": "Test",
+      "taskOrder": [
+        "task-FVjJo5g7"
+      ]
+    },
+    "cat-LudBjCrk": {
+      "id": "cat-LudBjCrk",
+      "itemId": "feat-krCBsi6x",
+      "name": "Cleanup",
+      "taskOrder": [
+        "task-S0QtCyqQ",
+        "task-cNvK18Jh"
+      ]
+    },
+    "cat-5CO2vBJD": {
+      "id": "cat-5CO2vBJD",
+      "itemId": "feat-krCBsi6x",
+      "name": "Immediate",
+      "taskOrder": [
+        "task-rdrvnIWc",
+        "task-tpY0FzVj",
+        "task-HLVBoirw"
+      ]
+    }
+  },
   "tags": {
     "tag-H4pHyJrN": {
       "id": "tag-H4pHyJrN",

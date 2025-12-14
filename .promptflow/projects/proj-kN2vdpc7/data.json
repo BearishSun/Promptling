@@ -1,6 +1,6 @@
 {
   "version": 4,
-  "lastModified": "2025-12-14T10:02:05.554Z",
+  "lastModified": "2025-12-14T11:26:45.745Z",
   "sections": {
     "sect-features": {
       "id": "sect-features",
@@ -16,7 +16,8 @@
         "item-yPVxIzTH",
         "item-19vGe2ep",
         "item-k7dKgqdH",
-        "item-YLqY112h"
+        "item-YLqY112h",
+        "item-x1T8nrPZ"
       ],
       "categoryOrder": [
         "icat-afNDkFen"
@@ -184,8 +185,25 @@
       "categoryId": null,
       "taskOrder": [],
       "categoryOrder": [],
-      "attachments": [],
-      "promptHistory": [],
+      "attachments": [
+        {
+          "id": "att-wbgsciQo",
+          "filename": "PLAN-v1.md",
+          "storedName": "PLAN-v1.md",
+          "storedPath": "item/item-uPlYW3Uc/PLAN-v1.md",
+          "mimeType": "text/markdown",
+          "size": 3401,
+          "uploadedAt": "2025-12-14T11:26:40.669Z"
+        }
+      ],
+      "promptHistory": [
+        {
+          "id": "ph-4wytvohB",
+          "timestamp": "2025-12-14T11:26:45.745Z",
+          "role": "assistant",
+          "content": "Created plan v1: Add Section dropdown in DetailPanel to move items between sections. Backend already supports this via move-item API."
+        }
+      ],
       "tagIds": [],
       "createdAt": "2025-12-13T16:12:32.300Z",
       "finishedAt": null
@@ -364,6 +382,30 @@
       "sectionId": "sect-features",
       "title": "Update details view",
       "description": "Display FEATURE/TASK/BUG text at the top\nMove STATUS, PRIORITY, COMPLEXITY items below the DESCRIPTION box",
+      "status": "done",
+      "priority": "medium",
+      "complexity": null,
+      "categoryId": null,
+      "taskOrder": [],
+      "categoryOrder": [],
+      "attachments": [],
+      "promptHistory": [
+        {
+          "id": "ph-a5oCX6r5",
+          "timestamp": "2025-12-14T10:06:09.058Z",
+          "role": "assistant",
+          "content": "Updated DetailPanel.jsx: removed type badge, moved STATUS/PRIORITY/COMPLEXITY sections below DESCRIPTION"
+        }
+      ],
+      "tagIds": [],
+      "createdAt": "2025-12-14T10:01:22.602Z",
+      "finishedAt": "2025-12-14T10:06:04.351Z"
+    },
+    "item-x1T8nrPZ": {
+      "id": "item-x1T8nrPZ",
+      "sectionId": "sect-features",
+      "title": "New Item",
+      "description": "Completed items/tasks should always go to the bottom of their corresponding category, and it shouldn't be possible to sort them above non-completed items/tasks.",
       "status": "open",
       "priority": "medium",
       "complexity": null,
@@ -373,7 +415,7 @@
       "attachments": [],
       "promptHistory": [],
       "tagIds": [],
-      "createdAt": "2025-12-14T10:01:22.602Z",
+      "createdAt": "2025-12-14T11:21:11.531Z",
       "finishedAt": null
     }
   },

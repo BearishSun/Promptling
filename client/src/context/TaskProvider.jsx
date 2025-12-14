@@ -487,6 +487,69 @@ export function TaskProvider({ children }) {
       await loadData(); // Reload to get proper task reassignment
     },
 
+    moveTaskToCategory: (taskId, targetCategoryId) => {
+      optimisticUpdate(
+        prev => {
+          const task = prev.tasks[taskId];
+          if (!task) return prev;
+
+          const oldCategoryId = task.categoryId;
+          const itemId = task.itemId;
+
+          // Create new state
+          const newState = { ...prev };
+
+          // Update task's categoryId
+          newState.tasks = {
+            ...prev.tasks,
+            [taskId]: { ...task, categoryId: targetCategoryId || null }
+          };
+
+          // Remove from old location
+          if (oldCategoryId && prev.taskCategories[oldCategoryId]) {
+            newState.taskCategories = {
+              ...prev.taskCategories,
+              [oldCategoryId]: {
+                ...prev.taskCategories[oldCategoryId],
+                taskOrder: prev.taskCategories[oldCategoryId].taskOrder.filter(id => id !== taskId)
+              }
+            };
+          } else if (itemId && prev.items[itemId]) {
+            newState.items = {
+              ...prev.items,
+              [itemId]: {
+                ...prev.items[itemId],
+                taskOrder: prev.items[itemId].taskOrder.filter(id => id !== taskId)
+              }
+            };
+          }
+
+          // Add to new location
+          if (targetCategoryId && prev.taskCategories[targetCategoryId]) {
+            newState.taskCategories = {
+              ...newState.taskCategories,
+              [targetCategoryId]: {
+                ...prev.taskCategories[targetCategoryId],
+                taskOrder: [...(prev.taskCategories[targetCategoryId].taskOrder || []), taskId]
+              }
+            };
+          } else if (itemId && prev.items[itemId]) {
+            const currentItemTaskOrder = newState.items?.[itemId]?.taskOrder || prev.items[itemId].taskOrder;
+            newState.items = {
+              ...newState.items,
+              [itemId]: {
+                ...prev.items[itemId],
+                taskOrder: [...currentItemTaskOrder.filter(id => id !== taskId), taskId]
+              }
+            };
+          }
+
+          return newState;
+        },
+        () => tasksApi.moveTask({ taskId, newCategoryId: targetCategoryId })
+      );
+    },
+
     // Reorder tasks within a parent (item or taskCategory)
     reorderTasks: (parentId, newOrder, isCategory = false) => {
       optimisticUpdate(

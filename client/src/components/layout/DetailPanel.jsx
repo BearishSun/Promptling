@@ -476,11 +476,14 @@ function DetailPanel() {
       </div>
 
       <div className="detail-content">
-        {/* Type indicator */}
+        {/* Description */}
         <div className="detail-section">
-          <span className={`type-badge type-${selectedItemType}`}>
-            {typeLabel}
-          </span>
+          <div className="detail-section-title">Description</div>
+          <MarkdownEditor
+            value={item.description || ''}
+            onChange={handleDescriptionChange}
+            placeholder="Add a description... (supports Markdown)"
+          />
         </div>
 
         {/* Status */}
@@ -640,17 +643,6 @@ function DetailPanel() {
             </div>
           </div>
         )}
-
-
-        {/* Description */}
-        <div className="detail-section">
-          <div className="detail-section-title">Description</div>
-          <MarkdownEditor
-            value={item.description || ''}
-            onChange={handleDescriptionChange}
-            placeholder="Add a description... (supports Markdown)"
-          />
-        </div>
 
         {/* Plans */}
         {planVersions.length > 0 && (
