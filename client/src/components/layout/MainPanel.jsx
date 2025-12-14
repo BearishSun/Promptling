@@ -1,32 +1,16 @@
-import { memo, useState, useCallback, useMemo, useRef, useEffect } from 'react';
-import {
-  DndContext,
-  DragOverlay,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  useDroppable
-} from '@dnd-kit/core';
-import {
-  SortableContext,
-  sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
-  useSortable
-} from '@dnd-kit/sortable';
+import { memo, useState, useCallback, useEffect } from 'react';
+import { DndContext, DragOverlay, closestCenter } from '@dnd-kit/core';
+import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useTaskData, useTaskActions, useUIState, SYSTEM_SECTIONS } from '../../context/TaskProvider';
 import { useToast } from '../../context/ToastContext';
+import { useSortableList } from '../../hooks/useSortableList';
+import { DraggableCategoryWrapper, DroppableUncategorizedZone } from '../shared/CategoryList';
+import { DragIcon, PlusIcon } from '../shared/icons';
 import TaskList from '../tasks/TaskList';
 import { PRIORITIES, COMPLEXITIES } from '../../services/api';
 
-const PlusIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M12 5v14M5 12h14" />
-  </svg>
-);
-
+// Icons specific to MainPanel
 const FolderIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
     <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z" />
@@ -40,39 +24,9 @@ const SearchIcon = () => (
   </svg>
 );
 
-const ChevronIcon = ({ expanded }) => (
-  <svg
-    className={`category-toggle ${expanded ? '' : 'collapsed'}`}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-  >
-    <path d="M6 9l6 6 6-6" />
-  </svg>
-);
-
-const DragIcon = () => (
-  <svg className="task-drag-handle" viewBox="0 0 24 24" fill="currentColor">
-    <circle cx="9" cy="6" r="1.5" />
-    <circle cx="15" cy="6" r="1.5" />
-    <circle cx="9" cy="12" r="1.5" />
-    <circle cx="15" cy="12" r="1.5" />
-    <circle cx="9" cy="18" r="1.5" />
-    <circle cx="15" cy="18" r="1.5" />
-  </svg>
-);
-
 const BackIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
     <path d="M19 12H5M12 19l-7-7 7-7" />
-  </svg>
-);
-
-const BugIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <circle cx="12" cy="12" r="10" />
-    <path d="M12 8v4M12 16h.01" />
   </svg>
 );
 
@@ -82,23 +36,16 @@ const FeatureIcon = () => (
   </svg>
 );
 
-const TrashIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
-  </svg>
-);
-
-const EditIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
-    <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
-  </svg>
-);
-
 const CopyIcon = () => (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
     <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
     <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
+  </svg>
+);
+
+const ArrowRightIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M5 12h14M12 5l7 7-7 7" />
   </svg>
 );
 
@@ -129,7 +76,6 @@ function MainPanel() {
 
   const handleAddTask = useCallback(async () => {
     if (!activeItemId) return;
-    // Determine parent type based on item's section
     const item = data?.items?.[activeItemId];
     const parentType = item?.sectionId === SYSTEM_SECTIONS.BUGS ? 'bug' : 'feature';
     const task = await createTask(parentType, activeItemId, null, 'New Task');
@@ -145,13 +91,6 @@ function MainPanel() {
     setShowAddMenu(false);
   }, [activeItemId, data?.items, createCategory]);
 
-  const handleDelete = useCallback(async () => {
-    if (!activeItemId || activeView !== 'item') return;
-    if (!confirm('Delete this item?')) return;
-    await deleteItem(activeItemId);
-    setActiveSection(activeSectionId);
-  }, [activeView, activeItemId, activeSectionId, deleteItem, setActiveSection]);
-
   const handleTitleEdit = useCallback(() => {
     if (currentItem) {
       setEditTitle(currentItem.title);
@@ -166,7 +105,6 @@ function MainPanel() {
     setIsEditingTitle(false);
   }, [editTitle, currentItem, activeView, activeItemId, updateItem]);
 
-  // V4 handlers for section views
   const handleAddItem = useCallback(async () => {
     if (!activeSectionId) return;
     const item = await createItem(activeSectionId, 'New Item');
@@ -181,13 +119,11 @@ function MainPanel() {
   }, [activeSectionId, createItemCategory]);
 
   const canAdd = activeView === 'item';
-  const canAddGlobal = activeView === 'section';
 
   return (
     <main className="main-panel">
       <div className="main-header">
         <div className="main-header-content">
-        {/* Back button for item view, or spacer for alignment */}
         {activeView === 'item' ? (
           <button
             className="btn btn-ghost"
@@ -200,7 +136,6 @@ function MainPanel() {
           <div style={{ width: '32px' }} />
         )}
 
-        {/* Title */}
         {isEditingTitle ? (
           <input
             type="text"
@@ -225,7 +160,6 @@ function MainPanel() {
           </h2>
         )}
 
-        {/* Search - centered */}
         <div className="search-wrapper" style={{ flex: 1, maxWidth: '400px', margin: '0 16px' }}>
           <SearchIcon />
           <input
@@ -237,14 +171,13 @@ function MainPanel() {
           />
         </div>
 
-        {/* Add dropdown for section view (v4) */}
         {activeView === 'section' && (
           <div className="dropdown">
             <button
               className="btn btn-primary"
               onClick={() => setShowAddMenu(!showAddMenu)}
             >
-              <PlusIcon />
+              <PlusIcon size={16} />
               Add
             </button>
             {showAddMenu && (
@@ -262,22 +195,19 @@ function MainPanel() {
           </div>
         )}
 
-
-
-        {/* Add button for item detail view (tasks) */}
         {canAdd && (
           <div className="dropdown">
             <button
               className="btn btn-primary"
               onClick={() => setShowAddMenu(!showAddMenu)}
             >
-              <PlusIcon />
+              <PlusIcon size={16} />
               Add
             </button>
             {showAddMenu && (
               <div className="dropdown-menu">
                 <div className="dropdown-item" onClick={handleAddTask}>
-                  <PlusIcon />
+                  <PlusIcon size={16} />
                   Add Task
                 </div>
                 <div className="dropdown-item" onClick={handleAddCategory}>
@@ -309,7 +239,6 @@ function MainPanel() {
         )}
       </div>
 
-      {/* Click outside handler for dropdown */}
       {showAddMenu && (
         <div
           style={{
@@ -338,18 +267,6 @@ const StatusBadge = ({ status }) => {
     </span>
   );
 };
-
-// Arrow right icon for viewing tasks
-const ArrowRightIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M5 12h14M12 5l7 7-7 7" />
-  </svg>
-);
-
-
-
-
-// ============ V4 UNIFIED SECTION ITEMS LIST ============
 
 // Sortable Item component for section items
 function SortableItem({ item, completedCount, taskCount, onOpenDetails, onViewTasks, convertMode }) {
@@ -459,73 +376,30 @@ function SectionItemsList({ sectionId }) {
 
   const section = data?.sections?.[sectionId];
 
-  // Filter items by search query
-  const filterItems = useCallback((items) => {
-    if (!searchQuery) return items;
-    const query = searchQuery.toLowerCase();
-    return items.filter(item =>
-      item.title.toLowerCase().includes(query) ||
-      (item.description || '').toLowerCase().includes(query)
-    );
-  }, [searchQuery]);
-
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
-  );
-
-  // Get categories for this section
-  const categories = useMemo(() => {
-    if (!section || !data?.itemCategories) return [];
-    return (section.categoryOrder || [])
-      .map(id => data.itemCategories[id])
-      .filter(Boolean);
-  }, [section, data?.itemCategories]);
-
-  // Get uncategorized items
-  const uncategorizedItemsRaw = useMemo(() => {
-    if (!section || !data?.items) return [];
-    return (section.itemOrder || [])
-      .map(id => data.items[id])
-      .filter(item => item && !item.categoryId);
-  }, [section, data?.items]);
-
-  // Sort items with completed ones at the bottom
-  const sortCompletedToBottom = useCallback((items) => {
-    const nonCompleted = items.filter(item => item.status !== 'done');
-    const completed = items.filter(item => item.status === 'done');
-    return [...nonCompleted, ...completed];
-  }, []);
-
-  const uncategorizedItems = useMemo(() => {
-    return sortCompletedToBottom(filterItems(uncategorizedItemsRaw));
-  }, [uncategorizedItemsRaw, filterItems, sortCompletedToBottom]);
-
-  const getCategoryItems = useCallback((category) => {
-    if (!data?.items) return [];
-    const items = (category.itemOrder || [])
-      .map(id => data.items[id])
-      .filter(Boolean);
-    return sortCompletedToBottom(filterItems(items));
-  }, [data?.items, filterItems, sortCompletedToBottom]);
+  // Use shared sortable list hook
+  const {
+    sensors,
+    categories,
+    uncategorizedItems,
+    allSortableIds,
+    getCategoryItems,
+    getNonCompletedCount
+  } = useSortableList({
+    data,
+    parentId: sectionId,
+    parent: section,
+    categoriesKey: 'itemCategories',
+    itemsKey: 'items',
+    itemOrderKey: 'itemOrder',
+    searchQuery,
+    categoryIdPrefix: 'icat-'
+  });
 
   // Handle adding item to specific category
   const handleAddItemToCategory = useCallback(async (categoryId) => {
     const item = await createItem(sectionId, 'New Item', categoryId);
     selectItem('item', item.id);
   }, [sectionId, createItem, selectItem]);
-
-  // All sortable IDs
-  const allSortableIds = useMemo(() => {
-    const ids = [];
-    categories.forEach(cat => ids.push(`icat-${cat.id}`));
-    categories.forEach(cat => {
-      const catItems = getCategoryItems(cat);
-      catItems.forEach(item => ids.push(item.id));
-    });
-    uncategorizedItems.forEach(item => ids.push(item.id));
-    return ids;
-  }, [categories, getCategoryItems, uncategorizedItems]);
 
   const handleDragStart = useCallback((event) => {
     const activeId = String(event.active.id);
@@ -545,7 +419,6 @@ function SectionItemsList({ sectionId }) {
 
     // Handle category drag
     if (activeId.startsWith('icat-')) {
-      // Only allow dropping on other categories
       if (!overId.startsWith('icat-')) return;
 
       const activeCatId = activeId.replace('icat-', '');
@@ -597,7 +470,6 @@ function SectionItemsList({ sectionId }) {
       const activeCompleted = activeItem.status === 'done';
       const overCompleted = overItem.status === 'done';
       if (activeCompleted !== overCompleted) {
-        // Don't allow reordering between completed and non-completed
         return;
       }
 
@@ -634,7 +506,6 @@ function SectionItemsList({ sectionId }) {
           const newOrder = [...uncatIds];
           newOrder.splice(oldIndex, 1);
           newOrder.splice(newIndex, 0, activeId);
-          // Rebuild full itemOrder: categorized items stay in place, uncategorized get new order
           const categorizedIds = sectionItemOrder.filter(id => {
             const item = data.items[id];
             return item && item.categoryId;
@@ -644,6 +515,27 @@ function SectionItemsList({ sectionId }) {
       }
     }
   }, [data, section, sectionId, shiftHeld, convertToTask, moveItemToCategory, reorderItemsInCategory, reorderSectionItems, categories, reorderItemCategories]);
+
+  // Render items for a category
+  const renderItems = useCallback((items) => {
+    return items.map(item => {
+      const taskCount = item.taskOrder?.length || 0;
+      const completedCount = (item.taskOrder || []).filter(tid =>
+        data.tasks[tid]?.finishedAt || data.tasks[tid]?.status === 'done'
+      ).length;
+      return (
+        <SortableItem
+          key={item.id}
+          item={item}
+          taskCount={taskCount}
+          completedCount={completedCount}
+          onOpenDetails={() => selectItem('item', item.id)}
+          onViewTasks={() => setActiveItem(item.id)}
+          convertMode={shiftHeld}
+        />
+      );
+    });
+  }, [data.tasks, selectItem, setActiveItem, shiftHeld]);
 
   const hasContent = categories.length > 0 || uncategorizedItems.length > 0;
 
@@ -676,38 +568,39 @@ function SectionItemsList({ sectionId }) {
       >
         <SortableContext items={allSortableIds} strategy={verticalListSortingStrategy}>
           {/* Categories with their items */}
-          {categories.map(category => (
-            <DraggableItemCategory
-              key={category.id}
-              category={category}
-              items={getCategoryItems(category)}
-              data={data}
-              onSelect={setActiveItem}
-              onEdit={selectItem}
-              onUpdateCategory={updateItemCategory}
-              onDeleteCategory={deleteItemCategory}
-              onAddItem={handleAddItemToCategory}
-              convertMode={shiftHeld}
-            />
-          ))}
+          {categories.map(category => {
+            const items = getCategoryItems(category);
+            return (
+              <DraggableCategoryWrapper
+                key={category.id}
+                category={category}
+                sortableId={`icat-${category.id}`}
+                droppableId={`item-category-${category.id}`}
+                droppableData={{ type: 'item-category', categoryId: category.id }}
+                onUpdateCategory={updateItemCategory}
+                onDeleteCategory={deleteItemCategory}
+                onAddItem={handleAddItemToCategory}
+                deleteConfirmMessage={`Delete category "${category.name}"? Items will be moved to uncategorized.`}
+                emptyMessage="No items in this category"
+                itemCount={getNonCompletedCount(items)}
+              >
+                {renderItems(items)}
+              </DraggableCategoryWrapper>
+            );
+          })}
 
           {/* Uncategorized items */}
           {(uncategorizedItems.length > 0 || categories.length > 0) && (
-            <div className="category-section">
-              {categories.length > 0 && (
-                <div className="category-header">
-                  <span className="category-name">Uncategorized</span>
-                  <span className="category-count">{uncategorizedItems.filter(i => i.status !== 'done').length}</span>
-                </div>
-              )}
-              <DroppableUncategorizedItems
-                items={uncategorizedItems}
-                data={data}
-                onOpenDetails={selectItem}
-                onViewTasks={setActiveItem}
-                convertMode={shiftHeld}
-              />
-            </div>
+            <DroppableUncategorizedZone
+              droppableId="uncategorized-items"
+              droppableData={{ type: 'item-category', categoryId: null }}
+              showHeader={categories.length > 0}
+              headerLabel="Uncategorized"
+              itemCount={getNonCompletedCount(uncategorizedItems)}
+              emptyMessage="Drop items here to uncategorize"
+            >
+              {renderItems(uncategorizedItems)}
+            </DroppableUncategorizedZone>
           )}
         </SortableContext>
 
@@ -729,209 +622,6 @@ function SectionItemsList({ sectionId }) {
           )}
         </DragOverlay>
       </DndContext>
-    </div>
-  );
-}
-
-// Droppable category for items
-function DroppableItemCategory({ category, items, data, onSelect, onEdit, onUpdateCategory, onDeleteCategory, onAddItem, convertMode, dragHandleProps }) {
-  const expanded = category.expanded !== false;
-  const [isEditing, setIsEditing] = useState(false);
-  const [editName, setEditName] = useState(category.name);
-  const isEditingRef = useRef(false);
-
-  useEffect(() => {
-    isEditingRef.current = isEditing;
-  }, [isEditing]);
-
-  useEffect(() => {
-    if (!isEditingRef.current) {
-      setEditName(category.name);
-    }
-  }, [category.name]);
-
-  const { setNodeRef, isOver } = useDroppable({
-    id: `item-category-${category.id}`,
-    data: { type: 'item-category', categoryId: category.id }
-  });
-
-  const toggleExpanded = useCallback(() => {
-    onUpdateCategory(category.id, { expanded: !expanded });
-  }, [category.id, expanded, onUpdateCategory]);
-
-  const handleDelete = useCallback((e) => {
-    e.stopPropagation();
-    if (confirm(`Delete category "${category.name}"? Items will be moved to uncategorized.`)) {
-      onDeleteCategory(category.id);
-    }
-  }, [category.id, category.name, onDeleteCategory]);
-
-  const handleNameSubmit = useCallback(() => {
-    if (editName.trim() && editName !== category.name) {
-      onUpdateCategory(category.id, { name: editName.trim() });
-    }
-    setIsEditing(false);
-  }, [editName, category.id, category.name, onUpdateCategory]);
-
-  return (
-    <>
-      <div className="category-header" onClick={toggleExpanded}>
-        {dragHandleProps && (
-          <div {...dragHandleProps} onClick={(e) => e.stopPropagation()}>
-            <DragIcon />
-          </div>
-        )}
-        <ChevronIcon expanded={expanded} />
-        {isEditing ? (
-          <input
-            type="text"
-            className="category-name-input"
-            value={editName}
-            onChange={(e) => setEditName(e.target.value)}
-            onBlur={handleNameSubmit}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') handleNameSubmit();
-              if (e.key === 'Escape') { setEditName(category.name); setIsEditing(false); }
-            }}
-            onClick={(e) => e.stopPropagation()}
-            autoFocus
-          />
-        ) : (
-          <span
-            className="category-name"
-            onClick={(e) => e.stopPropagation()}
-            onDoubleClick={() => setIsEditing(true)}
-          >
-            {category.name}
-          </span>
-        )}
-        <span className="category-count">{items.filter(i => i.status !== 'done').length}</span>
-        {onAddItem && (
-          <button
-            className="btn btn-ghost btn-sm category-add"
-            onClick={(e) => {
-              e.stopPropagation();
-              onAddItem(category.id);
-            }}
-            title="Add item to category"
-          >
-            <PlusIcon />
-          </button>
-        )}
-        <button
-          className="btn btn-ghost btn-sm category-delete"
-          onClick={handleDelete}
-          title="Delete category"
-        >
-          <TrashIcon />
-        </button>
-      </div>
-
-      {expanded && (
-        <div
-          ref={setNodeRef}
-          className="category-tasks"
-          style={{
-            background: isOver ? 'var(--bg-hover)' : undefined,
-            borderRadius: isOver ? '6px' : undefined,
-            transition: 'background 0.15s ease'
-          }}
-        >
-          <SortableContext items={items.map(i => i.id)} strategy={verticalListSortingStrategy}>
-            {items.map(item => {
-              const taskCount = item.taskOrder?.length || 0;
-              const completedCount = (item.taskOrder || []).filter(tid => data.tasks[tid]?.finishedAt || data.tasks[tid]?.status === 'done').length;
-              return (
-                <SortableItem
-                  key={item.id}
-                  item={item}
-                  taskCount={taskCount}
-                  completedCount={completedCount}
-                  onOpenDetails={() => onEdit('item', item.id)}
-                  onViewTasks={() => onSelect(item.id)}
-                  convertMode={convertMode}
-                />
-              );
-            })}
-            {items.length === 0 && (
-              <div style={{ padding: '12px', color: 'var(--text-muted)', fontSize: '13px' }}>
-                No items in this category
-              </div>
-            )}
-          </SortableContext>
-        </div>
-      )}
-    </>
-  );
-}
-
-// Draggable wrapper for item category
-function DraggableItemCategory({ category, ...props }) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging
-  } = useSortable({ id: `icat-${category.id}` }); // Prefix with icat- to distinguish from items
-
-  const style = {
-    transform: CSS.Translate.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1
-  };
-
-  return (
-    <div ref={setNodeRef} style={style} className="category-section">
-      <DroppableItemCategory
-        category={category}
-        {...props}
-        dragHandleProps={{ ...attributes, ...listeners }}
-      />
-    </div>
-  );
-}
-
-// Droppable uncategorized zone for items
-function DroppableUncategorizedItems({ items, data, onOpenDetails, onViewTasks, convertMode }) {
-  const { setNodeRef, isOver } = useDroppable({
-    id: 'uncategorized-items',
-    data: { type: 'item-category', categoryId: null }
-  });
-
-  return (
-    <div
-      ref={setNodeRef}
-      className="category-tasks"
-      style={{
-        background: isOver ? 'var(--bg-hover)' : undefined,
-        borderRadius: isOver ? '6px' : undefined,
-        transition: 'background 0.15s ease'
-      }}
-    >
-      <SortableContext items={items.map(i => i.id)} strategy={verticalListSortingStrategy}>
-        {items.map(item => {
-          const taskCount = item.taskOrder?.length || 0;
-          const completedCount = (item.taskOrder || []).filter(tid => data.tasks[tid]?.finishedAt || data.tasks[tid]?.status === 'done').length;
-          return (
-            <SortableItem
-              key={item.id}
-              item={item}
-              taskCount={taskCount}
-              completedCount={completedCount}
-              onOpenDetails={() => onOpenDetails('item', item.id)}
-              onViewTasks={() => onViewTasks(item.id)}
-              convertMode={convertMode}
-            />
-          );
-        })}
-        {items.length === 0 && (
-          <div style={{ padding: '12px', color: 'var(--text-muted)', fontSize: '13px' }}>
-            Drop items here to uncategorize
-          </div>
-        )}
-      </SortableContext>
     </div>
   );
 }

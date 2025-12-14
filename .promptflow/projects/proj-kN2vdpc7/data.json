@@ -1,6 +1,6 @@
 {
   "version": 4,
-  "lastModified": "2025-12-14T20:09:30.734Z",
+  "lastModified": "2025-12-14T20:22:41.976Z",
   "sections": {
     "sect-features": {
       "id": "sect-features",
@@ -364,7 +364,7 @@
     "item-i46TjNM2": {
       "id": "item-i46TjNM2",
       "sectionId": "sect-features",
-      "title": "Ability to move tasks to a new feature",
+      "title": "Ability to move tasks to a different feature",
       "description": "",
       "status": "open",
       "priority": "medium",
@@ -431,17 +431,40 @@
       "sectionId": "sect-features",
       "title": "Code reuse between SectionItemsList and TaskList",
       "description": "Looks like section items and task list use very different code, but perform basically identical functionality, just with different data. Can we unify that code? Section item code is likely more mature.",
-      "status": "open",
+      "status": "done",
       "priority": "medium",
       "complexity": null,
       "categoryId": null,
       "taskOrder": [],
       "categoryOrder": [],
-      "attachments": [],
-      "promptHistory": [],
+      "attachments": [
+        {
+          "id": "att-JOlofXTR",
+          "filename": "PLAN-v1.md",
+          "storedName": "PLAN-v1.md",
+          "storedPath": "item/item-nqfX3MwG/PLAN-v1.md",
+          "mimeType": "text/markdown",
+          "size": 7661,
+          "uploadedAt": "2025-12-14T20:14:35.850Z"
+        }
+      ],
+      "promptHistory": [
+        {
+          "id": "ph-ikx0Tyn7",
+          "timestamp": "2025-12-14T20:14:41.854Z",
+          "role": "assistant",
+          "content": "Created plan v1: Analyzed TaskList.jsx (560 lines) and SectionItemsList in MainPanel.jsx (400 lines). Identified ~80% code duplication. Plan covers 7 phases: extract shared icons, create shared category components, create useSortableList hook, create SortableList orchestrator, refactor both components, and testing."
+        },
+        {
+          "id": "ph-TLMl68xL",
+          "timestamp": "2025-12-14T20:22:02.124Z",
+          "role": "assistant",
+          "content": "Implemented: Created shared components (icons.jsx, DroppableCategory, DraggableCategoryWrapper, DroppableUncategorizedZone) and useSortableList hook. Refactored TaskList (560→272 lines) and MainPanel/SectionItemsList (940→629 lines). Total ~400 lines of reusable shared code."
+        }
+      ],
       "tagIds": [],
       "createdAt": "2025-12-14T20:07:57.704Z",
-      "finishedAt": null
+      "finishedAt": "2025-12-14T20:21:56.075Z"
     }
   },
   "itemCategories": {

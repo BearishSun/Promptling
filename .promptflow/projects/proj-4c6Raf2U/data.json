@@ -1,6 +1,6 @@
 {
   "version": 4,
-  "lastModified": "2025-12-14T20:10:11.938Z",
+  "lastModified": "2025-12-14T20:24:48.058Z",
   "sections": {
     "sect-features": {
       "id": "sect-features",
@@ -1223,8 +1223,8 @@
       "name": "0.5 alpha",
       "itemOrder": [
         "feat-krCBsi6x",
-        "feat-nDdUAXyg",
         "feat-5PeucF5e",
+        "feat-nDdUAXyg",
         "feat-pdVA3eb0",
         "feat-WUyaXdCZ",
         "feat-XOYFOXuN",
@@ -1233,9 +1233,9 @@
         "feat-eWseFwXU",
         "feat-FIto6LPz",
         "feat-r83VIlhj",
-        "feat-CSdMs0EN",
         "feat-5uksqtP9",
-        "feat-AQdft78m"
+        "feat-AQdft78m",
+        "feat-CSdMs0EN"
       ],
       "expanded": true
     },
