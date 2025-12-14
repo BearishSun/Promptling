@@ -352,7 +352,14 @@ function TaskList({ parentType, parentId }) {
     );
   }, [searchQuery]);
 
-  const uncategorizedTasks = useMemo(() => filterTasks(uncategorizedTasksRaw), [uncategorizedTasksRaw, filterTasks]);
+  // Sort tasks with completed ones at the bottom
+  const sortCompletedToBottom = useCallback((tasks) => {
+    const nonCompleted = tasks.filter(task => task.status !== 'done');
+    const completed = tasks.filter(task => task.status === 'done');
+    return [...nonCompleted, ...completed];
+  }, []);
+
+  const uncategorizedTasks = useMemo(() => sortCompletedToBottom(filterTasks(uncategorizedTasksRaw)), [uncategorizedTasksRaw, filterTasks, sortCompletedToBottom]);
 
   // Get tasks for a category
   const getCategoryTasks = useCallback((category) => {
@@ -360,8 +367,8 @@ function TaskList({ parentType, parentId }) {
     const tasks = (category.taskOrder || [])
       .map(id => data.tasks[id])
       .filter(Boolean);
-    return filterTasks(tasks);
-  }, [data?.tasks, filterTasks]);
+    return sortCompletedToBottom(filterTasks(tasks));
+  }, [data?.tasks, filterTasks, sortCompletedToBottom]);
 
   // Add task to a specific category
   const handleAddTaskToCategory = useCallback(async (categoryId) => {
@@ -434,6 +441,14 @@ function TaskList({ parentType, parentId }) {
     if (overTask) {
       const targetCategoryId = overTask.categoryId || null;
       const currentCategoryId = activeTask.categoryId || null;
+
+      // Prevent mixing completed and non-completed tasks when reordering
+      const activeCompleted = activeTask.status === 'done';
+      const overCompleted = overTask.status === 'done';
+      if (activeCompleted !== overCompleted) {
+        // Don't allow reordering between completed and non-completed
+        return;
+      }
 
       // If tasks are in different categories, move to target category
       if (targetCategoryId !== currentCategoryId) {

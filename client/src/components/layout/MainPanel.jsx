@@ -490,17 +490,24 @@ function SectionItemsList({ sectionId }) {
       .filter(item => item && !item.categoryId);
   }, [section, data?.items]);
 
+  // Sort items with completed ones at the bottom
+  const sortCompletedToBottom = useCallback((items) => {
+    const nonCompleted = items.filter(item => item.status !== 'done');
+    const completed = items.filter(item => item.status === 'done');
+    return [...nonCompleted, ...completed];
+  }, []);
+
   const uncategorizedItems = useMemo(() => {
-    return filterItems(uncategorizedItemsRaw);
-  }, [uncategorizedItemsRaw, filterItems]);
+    return sortCompletedToBottom(filterItems(uncategorizedItemsRaw));
+  }, [uncategorizedItemsRaw, filterItems, sortCompletedToBottom]);
 
   const getCategoryItems = useCallback((category) => {
     if (!data?.items) return [];
     const items = (category.itemOrder || [])
       .map(id => data.items[id])
       .filter(Boolean);
-    return filterItems(items);
-  }, [data?.items, filterItems]);
+    return sortCompletedToBottom(filterItems(items));
+  }, [data?.items, filterItems, sortCompletedToBottom]);
 
   // Handle adding item to specific category
   const handleAddItemToCategory = useCallback(async (categoryId) => {
@@ -585,6 +592,14 @@ function SectionItemsList({ sectionId }) {
     if (overItem) {
       const targetCategoryId = overItem.categoryId || null;
       const currentCategoryId = activeItem.categoryId || null;
+
+      // Prevent mixing completed and non-completed items when reordering
+      const activeCompleted = activeItem.status === 'done';
+      const overCompleted = overItem.status === 'done';
+      if (activeCompleted !== overCompleted) {
+        // Don't allow reordering between completed and non-completed
+        return;
+      }
 
       // If items are in different categories, move to target category
       if (targetCategoryId !== currentCategoryId) {

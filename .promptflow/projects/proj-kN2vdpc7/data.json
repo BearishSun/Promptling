@@ -1,6 +1,6 @@
 {
   "version": 4,
-  "lastModified": "2025-12-14T11:26:45.745Z",
+  "lastModified": "2025-12-14T20:09:30.734Z",
   "sections": {
     "sect-features": {
       "id": "sect-features",
@@ -17,7 +17,8 @@
         "item-19vGe2ep",
         "item-k7dKgqdH",
         "item-YLqY112h",
-        "item-x1T8nrPZ"
+        "item-x1T8nrPZ",
+        "item-nqfX3MwG"
       ],
       "categoryOrder": [
         "icat-afNDkFen"
@@ -404,8 +405,32 @@
     "item-x1T8nrPZ": {
       "id": "item-x1T8nrPZ",
       "sectionId": "sect-features",
-      "title": "New Item",
+      "title": "Completed items/tasks should always go to the bottom of their corresponding category",
       "description": "Completed items/tasks should always go to the bottom of their corresponding category, and it shouldn't be possible to sort them above non-completed items/tasks.",
+      "status": "done",
+      "priority": "medium",
+      "complexity": null,
+      "categoryId": null,
+      "taskOrder": [],
+      "categoryOrder": [],
+      "attachments": [],
+      "promptHistory": [
+        {
+          "id": "ph-o3jWpzZb",
+          "timestamp": "2025-12-14T20:09:13.248Z",
+          "role": "assistant",
+          "content": "Implemented: Added sortCompletedToBottom helper in MainPanel.jsx and TaskList.jsx to display completed items/tasks at bottom. Added drag constraint to prevent reordering between completed and non-completed items/tasks."
+        }
+      ],
+      "tagIds": [],
+      "createdAt": "2025-12-14T11:21:11.531Z",
+      "finishedAt": "2025-12-14T20:09:13.192Z"
+    },
+    "item-nqfX3MwG": {
+      "id": "item-nqfX3MwG",
+      "sectionId": "sect-features",
+      "title": "Code reuse between SectionItemsList and TaskList",
+      "description": "Looks like section items and task list use very different code, but perform basically identical functionality, just with different data. Can we unify that code? Section item code is likely more mature.",
       "status": "open",
       "priority": "medium",
       "complexity": null,
@@ -415,7 +440,7 @@
       "attachments": [],
       "promptHistory": [],
       "tagIds": [],
-      "createdAt": "2025-12-14T11:21:11.531Z",
+      "createdAt": "2025-12-14T20:07:57.704Z",
       "finishedAt": null
     }
   },
