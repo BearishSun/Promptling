@@ -1,6 +1,6 @@
 {
   "version": 4,
-  "lastModified": "2025-12-14T20:22:41.976Z",
+  "lastModified": "2025-12-14T20:45:01.747Z",
   "sections": {
     "sect-features": {
       "id": "sect-features",
@@ -9,16 +9,16 @@
       "color": "#3b82f6",
       "isSystem": true,
       "itemOrder": [
-        "item-uPlYW3Uc",
+        "item-nqfX3MwG",
         "item-wYxI7FyT",
-        "item-i46TjNM2",
-        "feat-AsFKJHjA",
-        "item-yPVxIzTH",
-        "item-19vGe2ep",
-        "item-k7dKgqdH",
         "item-YLqY112h",
-        "item-x1T8nrPZ",
-        "item-nqfX3MwG"
+        "item-i46TjNM2",
+        "item-uPlYW3Uc",
+        "item-k7dKgqdH",
+        "item-yPVxIzTH",
+        "feat-xCrs6ImE",
+        "item-19vGe2ep",
+        "feat-AsFKJHjA"
       ],
       "categoryOrder": [
         "icat-afNDkFen"
@@ -258,7 +258,7 @@
       "status": "done",
       "priority": "medium",
       "complexity": null,
-      "categoryId": "icat-afNDkFen",
+      "categoryId": null,
       "taskOrder": [],
       "categoryOrder": [],
       "attachments": [],
@@ -284,7 +284,7 @@
       ],
       "tagIds": [],
       "createdAt": "2025-12-13T17:03:39.900Z",
-      "finishedAt": "2025-12-13T17:30:32.149Z"
+      "finishedAt": "2025-12-14T20:40:22.896Z"
     },
     "item-K10wOsgM": {
       "id": "item-K10wOsgM",
@@ -410,7 +410,7 @@
       "status": "done",
       "priority": "medium",
       "complexity": null,
-      "categoryId": null,
+      "categoryId": "icat-afNDkFen",
       "taskOrder": [],
       "categoryOrder": [],
       "attachments": [],
@@ -475,11 +475,11 @@
       "itemOrder": [
         "item-vABtRoNq",
         "item-jn4uzVlP",
-        "feat-xCrs6ImE",
-        "item-K10wOsgM"
+        "item-K10wOsgM",
+        "item-x1T8nrPZ"
       ],
       "createdAt": "2025-12-13T21:14:33.783Z",
-      "expanded": false
+      "expanded": true
     }
   },
   "tasks": {

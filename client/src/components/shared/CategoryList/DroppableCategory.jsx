@@ -1,10 +1,11 @@
-import { memo, useState, useCallback, useRef, useEffect } from 'react';
+import { memo, useState, useCallback, useRef, useEffect, Children } from 'react';
 import { useDroppable } from '@dnd-kit/core';
 import { ChevronIcon, DragIcon, PlusIcon, TrashIcon } from '../icons';
 
 /**
  * Generic droppable category container.
  * Handles expand/collapse, inline name editing, and delete functionality.
+ * The category is always droppable - when collapsed, the header is the drop zone.
  */
 function DroppableCategory({
   category,
@@ -34,10 +35,21 @@ function DroppableCategory({
     }
   }, [category.name]);
 
-  const { setNodeRef, isOver } = useDroppable({
+  // Droppable for expanded state (the content area)
+  const { setNodeRef: setExpandedDropRef, isOver: isOverExpanded } = useDroppable({
     id: droppableId,
-    data: droppableData
+    data: droppableData,
+    disabled: !expanded
   });
+
+  // Droppable for collapsed state (the header)
+  const { setNodeRef: setCollapsedDropRef, isOver: isOverCollapsed } = useDroppable({
+    id: `${droppableId}-collapsed`,
+    data: droppableData,
+    disabled: expanded
+  });
+
+  const isOver = isOverExpanded || isOverCollapsed;
 
   const toggleExpanded = useCallback(() => {
     onUpdateCategory(category.id, { expanded: !expanded });
@@ -60,7 +72,15 @@ function DroppableCategory({
 
   return (
     <>
-      <div className="category-header" onClick={toggleExpanded}>
+      <div
+        ref={!expanded ? setCollapsedDropRef : undefined}
+        className="category-header"
+        onClick={toggleExpanded}
+        style={{
+          background: isOverCollapsed ? 'var(--bg-hover)' : undefined,
+          transition: 'background 0.15s ease'
+        }}
+      >
         {dragHandleProps && (
           <div {...dragHandleProps} onClick={(e) => e.stopPropagation()}>
             <DragIcon />
@@ -124,16 +144,16 @@ function DroppableCategory({
 
       {expanded && (
         <div
-          ref={setNodeRef}
+          ref={setExpandedDropRef}
           className="category-tasks"
           style={{
-            background: isOver ? 'var(--bg-hover)' : undefined,
-            borderRadius: isOver ? '6px' : undefined,
+            background: isOverExpanded ? 'var(--bg-hover)' : undefined,
+            borderRadius: isOverExpanded ? '6px' : undefined,
             transition: 'background 0.15s ease'
           }}
         >
           {children}
-          {itemCount === 0 && (
+          {Children.count(children) === 0 && (
             <div style={{ padding: '12px', color: 'var(--text-muted)', fontSize: '13px' }}>
               {emptyMessage}
             </div>

@@ -56,21 +56,33 @@ export function useSortableList({
     return [...nonCompleted, ...completed];
   }, []);
 
-  // Get categories ordered by parent's categoryOrder
+  // Get categories ordered by parent's categoryOrder (with deduplication)
   const categories = useMemo(() => {
     if (!data?.[categoriesKey] || !parent) return [];
 
     const categoryOrder = parent[categoryOrderKey] || [];
-    // Look up categories by ID from the parent's categoryOrder
+    const seen = new Set();
+    // Look up categories by ID from the parent's categoryOrder, dedupe in case of data corruption
     return categoryOrder
+      .filter(id => {
+        if (seen.has(id)) return false;
+        seen.add(id);
+        return true;
+      })
       .map(id => data[categoriesKey][id])
       .filter(Boolean);
   }, [data, categoriesKey, parent, categoryOrderKey]);
 
-  // Get uncategorized items (raw, before filtering/sorting)
+  // Get uncategorized items (raw, before filtering/sorting) - deduplicated
   const uncategorizedItemsRaw = useMemo(() => {
     if (!parent || !data?.[itemsKey]) return [];
+    const seen = new Set();
     return (parent[itemOrderKey] || [])
+      .filter(id => {
+        if (seen.has(id)) return false;
+        seen.add(id);
+        return true;
+      })
       .map(id => data[itemsKey][id])
       .filter(item => item && !item.categoryId);
   }, [parent, data, itemsKey, itemOrderKey]);
@@ -80,10 +92,16 @@ export function useSortableList({
     return sortCompletedToBottom(filterItems(uncategorizedItemsRaw));
   }, [uncategorizedItemsRaw, filterItems, sortCompletedToBottom]);
 
-  // Get items for a specific category (filtered and sorted)
+  // Get items for a specific category (filtered and sorted) - deduplicated
   const getCategoryItems = useCallback((category) => {
     if (!data?.[itemsKey]) return [];
+    const seen = new Set();
     const items = (category[itemOrderKey] || [])
+      .filter(id => {
+        if (seen.has(id)) return false;
+        seen.add(id);
+        return true;
+      })
       .map(id => data[itemsKey][id])
       .filter(Boolean);
     return sortCompletedToBottom(filterItems(items));
@@ -94,18 +112,25 @@ export function useSortableList({
     return items.filter(item => item.status !== 'done').length;
   }, []);
 
-  // Build all sortable IDs (categories prefixed, then all items)
+  // Build all sortable IDs (categories prefixed, then all items) - deduplicated
   const allSortableIds = useMemo(() => {
+    const seen = new Set();
     const ids = [];
+    const addUnique = (id) => {
+      if (!seen.has(id)) {
+        seen.add(id);
+        ids.push(id);
+      }
+    };
     // Add category IDs with prefix
-    categories.forEach(cat => ids.push(`${categoryIdPrefix}${cat.id}`));
+    categories.forEach(cat => addUnique(`${categoryIdPrefix}${cat.id}`));
     // Add item IDs from each category
     categories.forEach(cat => {
       const catItems = getCategoryItems(cat);
-      catItems.forEach(item => ids.push(item.id));
+      catItems.forEach(item => addUnique(item.id));
     });
     // Add uncategorized item IDs
-    uncategorizedItems.forEach(item => ids.push(item.id));
+    uncategorizedItems.forEach(item => addUnique(item.id));
     return ids;
   }, [categories, getCategoryItems, uncategorizedItems, categoryIdPrefix]);
 

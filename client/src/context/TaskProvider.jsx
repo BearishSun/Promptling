@@ -482,12 +482,54 @@ export function TaskProvider({ children }) {
       );
     },
 
-    deleteCategory: async (id) => {
-      await tasksApi.deleteCategory(id);
-      await loadData(); // Reload to get proper task reassignment
+    deleteCategory: (id) => {
+      optimisticUpdate(
+        prev => {
+          const category = prev.taskCategories[id];
+          if (!category) return prev;
+
+          const parentId = category.itemId;
+          const tasksInCategory = category.taskOrder || [];
+
+          // Remove category from taskCategories
+          const { [id]: removed, ...remainingCategories } = prev.taskCategories;
+
+          // Update tasks to remove categoryId
+          const updatedTasks = { ...prev.tasks };
+          tasksInCategory.forEach(taskId => {
+            if (updatedTasks[taskId]) {
+              updatedTasks[taskId] = { ...updatedTasks[taskId], categoryId: null };
+            }
+          });
+
+          // Update parent item: remove from categoryOrder, add tasks to taskOrder
+          const parentItem = prev.items[parentId];
+          if (!parentItem) return { ...prev, taskCategories: remainingCategories, tasks: updatedTasks };
+
+          const newCategoryOrder = (parentItem.categoryOrder || []).filter(cid => cid !== id);
+          const currentTaskOrder = parentItem.taskOrder || [];
+          // Add uncategorized tasks to the end (they're not in taskOrder yet since they were in a category)
+          const newTaskOrder = [...currentTaskOrder, ...tasksInCategory];
+
+          return {
+            ...prev,
+            taskCategories: remainingCategories,
+            tasks: updatedTasks,
+            items: {
+              ...prev.items,
+              [parentId]: {
+                ...parentItem,
+                categoryOrder: newCategoryOrder,
+                taskOrder: newTaskOrder
+              }
+            }
+          };
+        },
+        () => tasksApi.deleteCategory(id)
+      );
     },
 
-    moveTaskToCategory: (taskId, targetCategoryId) => {
+    moveTaskToCategory: (taskId, targetCategoryId, insertBeforeTaskId = null) => {
       optimisticUpdate(
         prev => {
           const task = prev.tasks[taskId];
@@ -524,22 +566,41 @@ export function TaskProvider({ children }) {
             };
           }
 
+          // Helper to insert at position
+          const insertAtPosition = (order, insertBefore) => {
+            if (!insertBefore) return [...order, taskId];
+            const newOrder = [];
+            for (const id of order) {
+              if (id === insertBefore) newOrder.push(taskId);
+              if (id !== taskId) newOrder.push(id);
+            }
+            if (!newOrder.includes(taskId)) newOrder.push(taskId);
+            return newOrder;
+          };
+
           // Add to new location
           if (targetCategoryId && prev.taskCategories[targetCategoryId]) {
+            const currentOrder = newState.taskCategories?.[targetCategoryId]?.taskOrder
+              || prev.taskCategories[targetCategoryId].taskOrder || [];
             newState.taskCategories = {
               ...newState.taskCategories,
               [targetCategoryId]: {
                 ...prev.taskCategories[targetCategoryId],
-                taskOrder: [...(prev.taskCategories[targetCategoryId].taskOrder || []), taskId]
+                taskOrder: insertAtPosition(currentOrder.filter(id => id !== taskId), insertBeforeTaskId)
               }
             };
           } else if (itemId && prev.items[itemId]) {
             const currentItemTaskOrder = newState.items?.[itemId]?.taskOrder || prev.items[itemId].taskOrder;
+            // Filter for uncategorized tasks only when inserting into uncategorized
+            const uncategorizedOrder = currentItemTaskOrder.filter(id => {
+              const t = prev.tasks[id];
+              return t && !t.categoryId && id !== taskId;
+            });
             newState.items = {
               ...newState.items,
               [itemId]: {
                 ...prev.items[itemId],
-                taskOrder: [...currentItemTaskOrder.filter(id => id !== taskId), taskId]
+                taskOrder: insertAtPosition(currentItemTaskOrder.filter(id => id !== taskId), insertBeforeTaskId)
               }
             };
           }

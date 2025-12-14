@@ -1,11 +1,9 @@
 import { memo, useState, useCallback, useEffect } from 'react';
-import { DndContext, DragOverlay, closestCenter } from '@dnd-kit/core';
-import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
 import { useTaskData, useTaskActions, useUIState, SYSTEM_SECTIONS } from '../../context/TaskProvider';
 import { useToast } from '../../context/ToastContext';
 import { useSortableList } from '../../hooks/useSortableList';
-import { DraggableCategoryWrapper, DroppableUncategorizedZone } from '../shared/CategoryList';
+import { useDragHandlers } from '../../hooks/useDragHandlers';
+import { CategorizedList, SortableItemWrapper } from '../shared/CategoryList';
 import { DragIcon, PlusIcon } from '../shared/icons';
 import TaskList from '../tasks/TaskList';
 import { PRIORITIES, COMPLEXITIES } from '../../services/api';
@@ -51,25 +49,19 @@ const ArrowRightIcon = () => (
 
 function MainPanel() {
   const { data } = useTaskData();
-  const { createTask, createCategory, createItem, deleteItem, updateItem, createItemCategory } = useTaskActions();
-  const { activeView, activeSectionId, activeItemId, searchQuery, setSearchQuery, setActiveView, setActiveSection, selectItem, selectTask } = useUIState();
+  const { createTask, createCategory, createItem, updateItem, createItemCategory } = useTaskActions();
+  const { activeView, activeSectionId, activeItemId, searchQuery, setSearchQuery, setActiveSection, selectItem, selectTask } = useUIState();
   const [showAddMenu, setShowAddMenu] = useState(false);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editTitle, setEditTitle] = useState('');
 
-  // Get current section
   const currentSection = data?.sections?.[activeSectionId];
-
-  // Get current parent item (for item view)
   const currentItem = activeView === 'item' ? data?.items?.[activeItemId] : null;
 
-  // Get title based on view
   const getTitle = () => {
     switch (activeView) {
-      case 'section':
-        return currentSection?.name || 'Section';
-      case 'item':
-        return currentItem?.title || 'Item';
+      case 'section': return currentSection?.name || 'Section';
+      case 'item': return currentItem?.title || 'Item';
       default: return 'Tasks';
     }
   };
@@ -125,11 +117,7 @@ function MainPanel() {
       <div className="main-header">
         <div className="main-header-content">
         {activeView === 'item' ? (
-          <button
-            className="btn btn-ghost"
-            onClick={() => setActiveSection(activeSectionId)}
-            title="Back to section"
-          >
+          <button className="btn btn-ghost" onClick={() => setActiveSection(activeSectionId)} title="Back to section">
             <BackIcon />
           </button>
         ) : (
@@ -173,10 +161,7 @@ function MainPanel() {
 
         {activeView === 'section' && (
           <div className="dropdown">
-            <button
-              className="btn btn-primary"
-              onClick={() => setShowAddMenu(!showAddMenu)}
-            >
+            <button className="btn btn-primary" onClick={() => setShowAddMenu(!showAddMenu)}>
               <PlusIcon size={16} />
               Add
             </button>
@@ -197,10 +182,7 @@ function MainPanel() {
 
         {canAdd && (
           <div className="dropdown">
-            <button
-              className="btn btn-primary"
-              onClick={() => setShowAddMenu(!showAddMenu)}
-            >
+            <button className="btn btn-primary" onClick={() => setShowAddMenu(!showAddMenu)}>
               <PlusIcon size={16} />
               Add
             </button>
@@ -232,32 +214,24 @@ function MainPanel() {
         ) : (
           <div className="empty-state">
             <div className="empty-state-title">Select a view</div>
-            <div className="empty-state-text">
-              Choose a section from the sidebar
-            </div>
+            <div className="empty-state-text">Choose a section from the sidebar</div>
           </div>
         )}
       </div>
 
       {showAddMenu && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            zIndex: 99
-          }}
-          onClick={() => setShowAddMenu(false)}
-        />
+        <div style={{ position: 'fixed', inset: 0, zIndex: 99 }} onClick={() => setShowAddMenu(false)} />
       )}
     </main>
   );
 }
 
+// Status badge component
 const StatusBadge = ({ status }) => {
   const statusInfo = {
-    'open': { label: 'Open', color: '#3b82f6' },
-    'in-progress': { label: 'In Progress', color: '#f59e0b' },
-    'done': { label: 'Done', color: '#22c55e' }
+    'open': { label: 'Open' },
+    'in-progress': { label: 'In Progress' },
+    'done': { label: 'Done' }
   };
   const info = statusInfo[status] || statusInfo.open;
   return (
@@ -268,36 +242,16 @@ const StatusBadge = ({ status }) => {
   );
 };
 
-// Sortable Item component for section items
-function SortableItem({ item, completedCount, taskCount, onOpenDetails, onViewTasks, convertMode }) {
+// Item display component (used inside SortableItemWrapper)
+function ItemContent({ item, data, onOpenDetails, onViewTasks, dragHandleProps }) {
   const { showToast } = useToast();
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging
-  } = useSortable({ id: item.id });
-
-  const style = {
-    transform: convertMode ? undefined : CSS.Translate.toString(transform),
-    transition: convertMode ? undefined : transition,
-    opacity: isDragging ? 0.5 : 1
-  };
-
   const status = item.status || 'open';
   const priorityInfo = PRIORITIES.find(p => p.value === item.priority);
   const complexityInfo = COMPLEXITIES.find(c => c.value === item.complexity);
-
-  const handleClick = () => {
-    onOpenDetails(item.id);
-  };
-
-  const handleViewTasksClick = (e) => {
-    e.stopPropagation();
-    onViewTasks(item.id);
-  };
+  const taskCount = item.taskOrder?.length || 0;
+  const completedCount = (item.taskOrder || []).filter(tid =>
+    data.tasks[tid]?.finishedAt || data.tasks[tid]?.status === 'done'
+  ).length;
 
   const handleCopyId = useCallback((e) => {
     e.stopPropagation();
@@ -307,15 +261,13 @@ function SortableItem({ item, completedCount, taskCount, onOpenDetails, onViewTa
   }, [item.id, showToast]);
 
   return (
-    <div ref={setNodeRef} style={style} className={`task-item compact ${status === 'done' ? 'completed' : ''}`} onClick={handleClick}>
-      <div {...attributes} {...listeners}>
+    <div className={`task-item compact ${status === 'done' ? 'completed' : ''}`} onClick={() => onOpenDetails(item.id)}>
+      <div {...dragHandleProps}>
         <DragIcon />
       </div>
       <div className="task-content">
         <div className="task-title">{item.title}</div>
-        {item.description && (
-          <div className="task-description-preview">{item.description}</div>
-        )}
+        {item.description && <div className="task-description-preview">{item.description}</div>}
         <div className="task-meta">
           <StatusBadge status={status} />
           {priorityInfo && (
@@ -337,14 +289,14 @@ function SortableItem({ item, completedCount, taskCount, onOpenDetails, onViewTa
       <button className="btn btn-icon btn-ghost btn-sm item-copy-btn" onClick={handleCopyId} title="Copy item ID">
         <CopyIcon />
       </button>
-      <button className="btn btn-icon btn-ghost btn-sm item-edit-btn" onClick={handleViewTasksClick} title="View tasks">
+      <button className="btn btn-icon btn-ghost btn-sm item-edit-btn" onClick={(e) => { e.stopPropagation(); onViewTasks(item.id); }} title="View tasks">
         <ArrowRightIcon />
       </button>
     </div>
   );
 }
 
-// Section Items List - unified component for any section
+// Section Items List component
 function SectionItemsList({ sectionId }) {
   const { data } = useTaskData();
   const { setActiveItem, selectItem, searchQuery } = useUIState();
@@ -376,7 +328,6 @@ function SectionItemsList({ sectionId }) {
 
   const section = data?.sections?.[sectionId];
 
-  // Use shared sortable list hook
   const {
     sensors,
     categories,
@@ -395,11 +346,49 @@ function SectionItemsList({ sectionId }) {
     categoryIdPrefix: 'icat-'
   });
 
-  // Handle adding item to specific category
-  const handleAddItemToCategory = useCallback(async (categoryId) => {
-    const item = await createItem(sectionId, 'New Item', categoryId);
-    selectItem('item', item.id);
-  }, [sectionId, createItem, selectItem]);
+  // Callbacks for drag handlers
+  const handleReorderCategories = useCallback((newOrder) => {
+    reorderItemCategories(sectionId, newOrder);
+  }, [reorderItemCategories, sectionId]);
+
+  const handleReorderInCategory = useCallback((categoryId, newOrder) => {
+    reorderItemsInCategory(categoryId, newOrder);
+  }, [reorderItemsInCategory]);
+
+  const handleReorderUncategorized = useCallback((newOrder) => {
+    reorderSectionItems(sectionId, newOrder);
+  }, [reorderSectionItems, sectionId]);
+
+  // Move item to category (position not preserved - item goes to end)
+  const handleMoveToCategory = useCallback((itemId, categoryId) => {
+    moveItemToCategory(itemId, categoryId);
+  }, [moveItemToCategory]);
+
+  // Special drop handler for shift+drag to convert to task
+  const handleSpecialDrop = useCallback((activeId, overId, activeItem, overItem) => {
+    if (shiftHeld && overItem) {
+      convertToTask('feature', activeId, overId);
+      return true;
+    }
+    return false;
+  }, [shiftHeld, convertToTask]);
+
+  const { handleDragEnd } = useDragHandlers({
+    data,
+    parent: section,
+    parentId: sectionId,
+    categories,
+    categoryIdPrefix: 'icat-',
+    droppableType: 'item-category',
+    itemsKey: 'items',
+    categoriesKey: 'itemCategories',
+    itemOrderKey: 'itemOrder',
+    onReorderCategories: handleReorderCategories,
+    onMoveToCategory: handleMoveToCategory,
+    onReorderInCategory: handleReorderInCategory,
+    onReorderUncategorized: handleReorderUncategorized,
+    onSpecialDrop: handleSpecialDrop
+  });
 
   const handleDragStart = useCallback((event) => {
     const activeId = String(event.active.id);
@@ -407,137 +396,30 @@ function SectionItemsList({ sectionId }) {
     setActiveDragType(activeId.startsWith('icat-') ? 'category' : 'item');
   }, []);
 
-  const handleDragEnd = useCallback((event) => {
-    const { active, over } = event;
+  const wrappedDragEnd = useCallback((event) => {
     setActiveDragId(null);
     setActiveDragType(null);
+    handleDragEnd(event);
+  }, [handleDragEnd]);
 
-    if (!over) return;
+  const handleAddItemToCategory = useCallback(async (categoryId) => {
+    const item = await createItem(sectionId, 'New Item', categoryId);
+    selectItem('item', item.id);
+  }, [sectionId, createItem, selectItem]);
 
-    const activeId = String(active.id);
-    const overId = String(over.id);
-
-    // Handle category drag
-    if (activeId.startsWith('icat-')) {
-      if (!overId.startsWith('icat-')) return;
-
-      const activeCatId = activeId.replace('icat-', '');
-      const overCatId = overId.replace('icat-', '');
-
-      if (activeCatId === overCatId) return;
-
-      const oldIndex = categories.findIndex(c => c.id === activeCatId);
-      const newIndex = categories.findIndex(c => c.id === overCatId);
-
-      if (oldIndex !== -1 && newIndex !== -1) {
-        const newOrder = categories.map(c => c.id);
-        newOrder.splice(oldIndex, 1);
-        newOrder.splice(newIndex, 0, activeCatId);
-        reorderItemCategories(sectionId, newOrder);
-      }
-      return;
-    }
-
-    // Handle item drag
-    const activeItem = data?.items?.[activeId];
-    if (!activeItem) return;
-
-    // If Shift is held and dropping on another item, convert to task
-    if (shiftHeld && data?.items?.[overId]) {
-      convertToTask('feature', activeId, overId);
-      return;
-    }
-
-    // Check if dropped on a category zone
-    const overData = over.data?.current;
-    if (overData?.type === 'item-category') {
-      const targetCategoryId = overData.categoryId;
-      const currentCategoryId = activeItem.categoryId || null;
-
-      if (targetCategoryId !== currentCategoryId) {
-        moveItemToCategory(activeId, targetCategoryId);
-        return;
-      }
-    }
-
-    // Check if dropped on another item
-    const overItem = data?.items?.[overId];
-    if (overItem) {
-      const targetCategoryId = overItem.categoryId || null;
-      const currentCategoryId = activeItem.categoryId || null;
-
-      // Prevent mixing completed and non-completed items when reordering
-      const activeCompleted = activeItem.status === 'done';
-      const overCompleted = overItem.status === 'done';
-      if (activeCompleted !== overCompleted) {
-        return;
-      }
-
-      // If items are in different categories, move to target category
-      if (targetCategoryId !== currentCategoryId) {
-        moveItemToCategory(activeId, targetCategoryId);
-        return;
-      }
-
-      // Same category - reorder within that category
-      if (targetCategoryId) {
-        const category = data?.itemCategories?.[targetCategoryId];
-        if (category) {
-          const itemOrder = category.itemOrder || [];
-          const oldIndex = itemOrder.indexOf(activeId);
-          const newIndex = itemOrder.indexOf(overId);
-          if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
-            const newOrder = [...itemOrder];
-            newOrder.splice(oldIndex, 1);
-            newOrder.splice(newIndex, 0, activeId);
-            reorderItemsInCategory(targetCategoryId, newOrder);
-          }
-        }
-      } else {
-        // Both uncategorized - reorder in section's itemOrder
-        const sectionItemOrder = section?.itemOrder || [];
-        const uncatIds = sectionItemOrder.filter(id => {
-          const item = data.items[id];
-          return item && !item.categoryId;
-        });
-        const oldIndex = uncatIds.indexOf(activeId);
-        const newIndex = uncatIds.indexOf(overId);
-        if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
-          const newOrder = [...uncatIds];
-          newOrder.splice(oldIndex, 1);
-          newOrder.splice(newIndex, 0, activeId);
-          const categorizedIds = sectionItemOrder.filter(id => {
-            const item = data.items[id];
-            return item && item.categoryId;
-          });
-          reorderSectionItems(sectionId, [...categorizedIds, ...newOrder]);
-        }
-      }
-    }
-  }, [data, section, sectionId, shiftHeld, convertToTask, moveItemToCategory, reorderItemsInCategory, reorderSectionItems, categories, reorderItemCategories]);
-
-  // Render items for a category
-  const renderItems = useCallback((items) => {
-    return items.map(item => {
-      const taskCount = item.taskOrder?.length || 0;
-      const completedCount = (item.taskOrder || []).filter(tid =>
-        data.tasks[tid]?.finishedAt || data.tasks[tid]?.status === 'done'
-      ).length;
-      return (
-        <SortableItem
-          key={item.id}
+  const renderItem = useCallback((item) => (
+    <SortableItemWrapper key={item.id} id={item.id} disabled={shiftHeld}>
+      {({ dragHandleProps }) => (
+        <ItemContent
           item={item}
-          taskCount={taskCount}
-          completedCount={completedCount}
+          data={data}
           onOpenDetails={() => selectItem('item', item.id)}
           onViewTasks={() => setActiveItem(item.id)}
-          convertMode={shiftHeld}
+          dragHandleProps={dragHandleProps}
         />
-      );
-    });
-  }, [data.tasks, selectItem, setActiveItem, shiftHeld]);
-
-  const hasContent = categories.length > 0 || uncategorizedItems.length > 0;
+      )}
+    </SortableItemWrapper>
+  ), [data, selectItem, setActiveItem, shiftHeld]);
 
   if (!section) {
     return (
@@ -547,82 +429,49 @@ function SectionItemsList({ sectionId }) {
     );
   }
 
-  if (!hasContent) {
-    return (
-      <div className="empty-state">
-        <div className="empty-state-title">No items yet</div>
-        <div className="empty-state-text">
-          Click "Add" in the header to create one
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="task-list">
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        onDragStart={handleDragStart}
-        onDragEnd={handleDragEnd}
-      >
-        <SortableContext items={allSortableIds} strategy={verticalListSortingStrategy}>
-          {/* Categories with their items */}
-          {categories.map(category => {
-            const items = getCategoryItems(category);
-            return (
-              <DraggableCategoryWrapper
-                key={category.id}
-                category={category}
-                sortableId={`icat-${category.id}`}
-                droppableId={`item-category-${category.id}`}
-                droppableData={{ type: 'item-category', categoryId: category.id }}
-                onUpdateCategory={updateItemCategory}
-                onDeleteCategory={deleteItemCategory}
-                onAddItem={handleAddItemToCategory}
-                deleteConfirmMessage={`Delete category "${category.name}"? Items will be moved to uncategorized.`}
-                emptyMessage="No items in this category"
-                itemCount={getNonCompletedCount(items)}
-              >
-                {renderItems(items)}
-              </DraggableCategoryWrapper>
-            );
-          })}
-
-          {/* Uncategorized items */}
-          {(uncategorizedItems.length > 0 || categories.length > 0) && (
-            <DroppableUncategorizedZone
-              droppableId="uncategorized-items"
-              droppableData={{ type: 'item-category', categoryId: null }}
-              showHeader={categories.length > 0}
-              headerLabel="Uncategorized"
-              itemCount={getNonCompletedCount(uncategorizedItems)}
-              emptyMessage="Drop items here to uncategorize"
-            >
-              {renderItems(uncategorizedItems)}
-            </DroppableUncategorizedZone>
-          )}
-        </SortableContext>
-
-        <DragOverlay dropAnimation={null}>
-          {activeDragId && activeDragType === 'item' && (
-            <div style={{
-              padding: '8px 12px',
-              background: shiftHeld ? 'var(--accent)' : 'var(--bg-secondary)',
-              color: shiftHeld ? 'white' : 'var(--text-secondary)',
-              borderRadius: '6px',
-              fontSize: '12px',
-              boxShadow: 'var(--shadow-lg)',
-              whiteSpace: 'nowrap',
-              transform: 'translate(20px, 20px)',
-              pointerEvents: 'none'
-            }}>
-              {shiftHeld ? '✓ Drop to convert to task' : 'Hold Shift to convert to task'}
-            </div>
-          )}
-        </DragOverlay>
-      </DndContext>
-    </div>
+    <CategorizedList
+      sensors={sensors}
+      allSortableIds={allSortableIds}
+      categories={categories}
+      uncategorizedItems={uncategorizedItems}
+      getCategoryItems={getCategoryItems}
+      getNonCompletedCount={getNonCompletedCount}
+      renderItem={renderItem}
+      onDragStart={handleDragStart}
+      onDragEnd={wrappedDragEnd}
+      categoryIdPrefix="icat-"
+      droppableType="item-category"
+      droppableIdPrefix="item-category-"
+      uncategorizedDroppableId="uncategorized-items"
+      onUpdateCategory={updateItemCategory}
+      onDeleteCategory={deleteItemCategory}
+      onAddToCategory={handleAddItemToCategory}
+      itemLabel="item"
+      dragOverlay={
+        activeDragId && activeDragType === 'item' ? (
+          <div style={{
+            padding: '8px 12px',
+            background: shiftHeld ? 'var(--accent)' : 'var(--bg-secondary)',
+            color: shiftHeld ? 'white' : 'var(--text-secondary)',
+            borderRadius: '6px',
+            fontSize: '12px',
+            boxShadow: 'var(--shadow-lg)',
+            whiteSpace: 'nowrap',
+            transform: 'translate(20px, 20px)',
+            pointerEvents: 'none'
+          }}>
+            {shiftHeld ? '✓ Drop to convert to task' : 'Hold Shift to convert to task'}
+          </div>
+        ) : null
+      }
+      emptyState={
+        <div className="empty-state">
+          <div className="empty-state-title">No items yet</div>
+          <div className="empty-state-text">Click "Add" in the header to create one</div>
+        </div>
+      }
+    />
   );
 }
 

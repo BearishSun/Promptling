@@ -1,6 +1,6 @@
 {
   "version": 4,
-  "lastModified": "2025-12-14T20:24:48.058Z",
+  "lastModified": "2025-12-14T20:54:45.503Z",
   "sections": {
     "sect-features": {
       "id": "sect-features",
@@ -239,13 +239,10 @@
         "task-GrJf2HS1",
         "task-5Mvue2Nl",
         "task-3wCgIw1F",
-        "task-jdclxyv7"
+        "task-jdclxyv7",
+        "task-hyCsz7vl"
       ],
       "categoryOrder": [
-        "cat-hiMxMQPa",
-        "cat-NUdmKIBo",
-        "cat-Te0oKGIw",
-        "cat-Fog02kjy",
         "cat-LudBjCrk",
         "cat-5CO2vBJD"
       ],
@@ -1646,7 +1643,7 @@
     "task-yUsnO6Yv": {
       "id": "task-yUsnO6Yv",
       "itemId": "feat-krCBsi6x",
-      "categoryId": "cat-NUdmKIBo",
+      "categoryId": "cat-LudBjCrk",
       "title": "VulkanGpuDevice::GetQueueMask is confusing, can I remove it?",
       "description": "",
       "status": "open",
@@ -1659,7 +1656,7 @@
     "task-4XdkHZxU": {
       "id": "task-4XdkHZxU",
       "itemId": "feat-krCBsi6x",
-      "categoryId": "cat-hiMxMQPa",
+      "categoryId": "cat-LudBjCrk",
       "title": "BufferWriteType -> delete",
       "description": "",
       "status": "open",
@@ -2087,7 +2084,7 @@
     "task-hyCsz7vl": {
       "id": "task-hyCsz7vl",
       "itemId": "feat-krCBsi6x",
-      "categoryId": "cat-Te0oKGIw",
+      "categoryId": null,
       "title": "Test",
       "description": "",
       "status": "open",
@@ -2096,63 +2093,20 @@
       "promptHistory": [],
       "createdAt": "2025-12-14T18:27:43.363Z",
       "finishedAt": null
-    },
-    "task-FVjJo5g7": {
-      "id": "task-FVjJo5g7",
-      "itemId": "feat-krCBsi6x",
-      "categoryId": "cat-Fog02kjy",
-      "title": "Test",
-      "description": "",
-      "status": "open",
-      "tagIds": [],
-      "attachments": [],
-      "promptHistory": [],
-      "createdAt": "2025-12-14T18:30:41.536Z",
-      "finishedAt": null
     }
   },
   "taskCategories": {
-    "cat-hiMxMQPa": {
-      "id": "cat-hiMxMQPa",
-      "itemId": "feat-krCBsi6x",
-      "name": "Cleanup",
-      "taskOrder": [
-        "task-4XdkHZxU"
-      ],
-      "expanded": true
-    },
-    "cat-NUdmKIBo": {
-      "id": "cat-NUdmKIBo",
-      "itemId": "feat-krCBsi6x",
-      "name": "Cleanup",
-      "taskOrder": [
-        "task-yUsnO6Yv"
-      ]
-    },
-    "cat-Te0oKGIw": {
-      "id": "cat-Te0oKGIw",
-      "itemId": "feat-krCBsi6x",
-      "name": "Cleanup",
-      "taskOrder": [
-        "task-hyCsz7vl"
-      ]
-    },
-    "cat-Fog02kjy": {
-      "id": "cat-Fog02kjy",
-      "itemId": "feat-krCBsi6x",
-      "name": "Test",
-      "taskOrder": [
-        "task-FVjJo5g7"
-      ]
-    },
     "cat-LudBjCrk": {
       "id": "cat-LudBjCrk",
       "itemId": "feat-krCBsi6x",
       "name": "Cleanup",
       "taskOrder": [
         "task-S0QtCyqQ",
-        "task-cNvK18Jh"
-      ]
+        "task-cNvK18Jh",
+        "task-yUsnO6Yv",
+        "task-4XdkHZxU"
+      ],
+      "expanded": true
     },
     "cat-5CO2vBJD": {
       "id": "cat-5CO2vBJD",
@@ -2162,7 +2116,8 @@
         "task-rdrvnIWc",
         "task-tpY0FzVj",
         "task-HLVBoirw"
-      ]
+      ],
+      "expanded": true
     }
   },
   "tags": {
