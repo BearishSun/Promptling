@@ -24,13 +24,28 @@ fi
 # Check if dependencies are installed
 if [ ! -d "$SCRIPT_DIR/server/node_modules" ]; then
     echo ""
-    echo "  Installing dependencies for first-time setup..."
+    echo "  Installing server dependencies for first-time setup..."
     echo ""
-    cd "$SCRIPT_DIR"
+    cd "$SCRIPT_DIR/server"
     npm install
     if [ $? -ne 0 ]; then
         echo ""
-        echo "  ERROR: Failed to install dependencies."
+        echo "  ERROR: Failed to install server dependencies."
+        echo ""
+        read -p "Press Enter to exit..."
+        exit 1
+    fi
+fi
+
+if [ ! -d "$SCRIPT_DIR/client/node_modules" ]; then
+    echo ""
+    echo "  Installing client dependencies for first-time setup..."
+    echo ""
+    cd "$SCRIPT_DIR/client"
+    npm install
+    if [ $? -ne 0 ]; then
+        echo ""
+        echo "  ERROR: Failed to install client dependencies."
         echo ""
         read -p "Press Enter to exit..."
         exit 1

@@ -19,13 +19,28 @@ if %errorlevel% neq 0 (
 :: Check if dependencies are installed
 if not exist "%~dp0server\node_modules" (
     echo.
-    echo  Installing dependencies for first-time setup...
+    echo  Installing server dependencies for first-time setup...
     echo.
-    cd /d "%~dp0"
+    cd /d "%~dp0server"
     call npm install
     if %errorlevel% neq 0 (
         echo.
-        echo  ERROR: Failed to install dependencies.
+        echo  ERROR: Failed to install server dependencies.
+        echo.
+        pause
+        exit /b 1
+    )
+)
+
+if not exist "%~dp0client\node_modules" (
+    echo.
+    echo  Installing client dependencies for first-time setup...
+    echo.
+    cd /d "%~dp0client"
+    call npm install
+    if %errorlevel% neq 0 (
+        echo.
+        echo  ERROR: Failed to install client dependencies.
         echo.
         pause
         exit /b 1
