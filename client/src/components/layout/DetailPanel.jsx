@@ -3,7 +3,7 @@ import { useTaskData, useTaskActions, useUIState, SYSTEM_SECTIONS } from '../../
 import MarkdownEditor from '../detail/MarkdownEditor';
 import MarkdownViewer from '../detail/MarkdownViewer';
 import { formatDateTime } from '../../utils/dateFormat';
-import tasksApi, { TASK_STATUSES, PRIORITIES, COMPLEXITIES } from '../../services/api';
+import tasksApi, { TASK_STATUSES, COMPLEXITIES } from '../../services/api';
 
 const CloseIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -94,6 +94,12 @@ const PlanIcon = () => (
   </svg>
 );
 
+const PromoteIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M12 19V5M5 12l7-7 7 7" />
+  </svg>
+);
+
 // Default tag colors
 const TAG_COLORS = [
   '#ef4444', '#f97316', '#f59e0b', '#84cc16', '#22c55e',
@@ -123,7 +129,7 @@ const getItemTypeLabel = (type, item, data) => {
 
 function DetailPanel() {
   const { data } = useTaskData();
-  const { updateTask, deleteTask, updateItem, deleteItem, createTag, addTagToTask, removeTagFromTask, uploadAttachment, deleteAttachment, moveItemToCategory } = useTaskActions();
+  const { updateTask, deleteTask, updateItem, deleteItem, createTag, addTagToTask, removeTagFromTask, uploadAttachment, deleteAttachment, moveItemToCategory, promoteTask } = useTaskActions();
   const { selectedItemType, selectedItemId, clearSelection } = useUIState();
   const [editTitle, setEditTitle] = useState('');
   const [isEditingTitle, setIsEditingTitle] = useState(false);
@@ -217,14 +223,6 @@ function DetailPanel() {
       updateItem(selectedItemId, updates);
     }
   }, [item?.finishedAt, selectedItemType, selectedItemId, updateTask, updateItem]);
-
-  const handlePriorityChange = useCallback((newPriority) => {
-    if (selectedItemType === 'task') {
-      updateTask(selectedItemId, { priority: newPriority });
-    } else if (selectedItemType === 'item') {
-      updateItem(selectedItemId, { priority: newPriority });
-    }
-  }, [selectedItemType, selectedItemId, updateTask, updateItem]);
 
   const handleComplexityChange = useCallback((newComplexity) => {
     if (selectedItemType === 'task') {
@@ -419,6 +417,17 @@ function DetailPanel() {
     await moveItemToCategory(selectedItemId, null, targetSectionId);
   }, [item?.sectionId, selectedItemId, moveItemToCategory]);
 
+  const handlePromoteTask = useCallback(async (targetSectionId) => {
+    if (selectedItemType !== 'task') return;
+    try {
+      await promoteTask(selectedItemId, targetSectionId);
+      clearSelection();
+    } catch (error) {
+      console.error('Failed to promote task:', error);
+      alert('Failed to promote task');
+    }
+  }, [selectedItemType, selectedItemId, promoteTask, clearSelection]);
+
   if (!item) {
     return null;
   }
@@ -509,6 +518,37 @@ function DetailPanel() {
           </div>
         )}
 
+        {/* Promote task to item - only for tasks */}
+        {isTask && (
+          <div className="detail-section">
+            <div className="detail-section-title">Promote to Item</div>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              <select
+                className="form-select"
+                style={{ flex: 1 }}
+                defaultValue=""
+                onChange={(e) => {
+                  if (e.target.value) {
+                    handlePromoteTask(e.target.value);
+                    e.target.value = '';
+                  }
+                }}
+              >
+                <option value="" disabled>Select section...</option>
+                {Object.values(data.sections || {}).map(section => (
+                  <option key={section.id} value={section.id}>
+                    {section.name}
+                  </option>
+                ))}
+              </select>
+              <PromoteIcon />
+            </div>
+            <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '6px', marginBottom: 0 }}>
+              Convert this task into a standalone feature or bug
+            </p>
+          </div>
+        )}
+
         {/* Status */}
         <div className="detail-section">
           <div className="detail-section-title">Status</div>
@@ -521,29 +561,6 @@ function DetailPanel() {
               >
                 <span className={`status-dot ${status.value}`} />
                 {status.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Priority */}
-        <div className="detail-section">
-          <div className="detail-section-title">Priority</div>
-          <div className="priority-select">
-            {PRIORITIES.map(priority => (
-              <button
-                key={priority.value}
-                className={`priority-option ${item.priority === priority.value ? 'selected' : ''}`}
-                onClick={() => handlePriorityChange(priority.value)}
-                style={{
-                  '--priority-color': priority.color,
-                  borderColor: item.priority === priority.value ? priority.color : undefined,
-                  background: item.priority === priority.value ? `${priority.color}15` : undefined
-                }}
-                title={priority.label}
-              >
-                <span className="priority-icon" style={{ color: priority.color }}>{priority.icon}</span>
-                {priority.label}
               </button>
             ))}
           </div>

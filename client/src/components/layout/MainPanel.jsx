@@ -6,7 +6,7 @@ import { useDragHandlers } from '../../hooks/useDragHandlers';
 import { CategorizedList, SortableItemWrapper } from '../shared/CategoryList';
 import { DragIcon, PlusIcon } from '../shared/icons';
 import TaskList from '../tasks/TaskList';
-import { PRIORITIES, COMPLEXITIES } from '../../services/api';
+import { COMPLEXITIES } from '../../services/api';
 
 // Icons specific to MainPanel
 const FolderIcon = () => (
@@ -246,7 +246,6 @@ const StatusBadge = ({ status }) => {
 function ItemContent({ item, data, onOpenDetails, onViewTasks, dragHandleProps }) {
   const { showToast } = useToast();
   const status = item.status || 'open';
-  const priorityInfo = PRIORITIES.find(p => p.value === item.priority);
   const complexityInfo = COMPLEXITIES.find(c => c.value === item.complexity);
   const taskCount = item.taskOrder?.length || 0;
   const completedCount = (item.taskOrder || []).filter(tid =>
@@ -270,12 +269,6 @@ function ItemContent({ item, data, onOpenDetails, onViewTasks, dragHandleProps }
         {item.description && <div className="task-description-preview">{item.description}</div>}
         <div className="task-meta">
           <StatusBadge status={status} />
-          {priorityInfo && (
-            <span className={`priority-badge ${item.priority}`}>
-              <span style={{ color: priorityInfo.color }}>{priorityInfo.icon}</span>
-              {priorityInfo.label}
-            </span>
-          )}
           {complexityInfo && (
             <span className="complexity-badge" style={{ background: complexityInfo.color, color: 'white' }}>
               <span className="complexity-icon">{complexityInfo.icon}</span>

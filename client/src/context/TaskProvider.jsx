@@ -805,7 +805,23 @@ export function TaskProvider({ children }) {
     },
 
     // Reload data
-    reload: loadData
+    reload: loadData,
+
+    // Promote task to item
+    promoteTask: async (taskId, targetSectionId) => {
+      const result = await tasksApi.promoteTask(taskId, targetSectionId);
+      // Reload to get the updated data structure
+      await loadData();
+      return result;
+    },
+
+    // Convert item to task (demote) - used for shift+drag
+    convertToTask: async (parentType, itemId, targetItemId) => {
+      const result = await tasksApi.convertToTask(itemId, targetItemId);
+      // Reload to get the updated data structure
+      await loadData();
+      return result;
+    }
   }), [data, optimisticUpdate]);
 
   // UI Actions

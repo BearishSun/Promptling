@@ -110,7 +110,15 @@ export const tasksApi = {
     const url = version ? `/tasks/${type}/${id}/plan?version=${version}` : `/tasks/${type}/${id}/plan`;
     return api.get(url).then(res => res.data);
   },
-  getPlanVersions: (type, id) => api.get(`/tasks/${type}/${id}/plan/versions`).then(res => res.data)
+  getPlanVersions: (type, id) => api.get(`/tasks/${type}/${id}/plan/versions`).then(res => res.data),
+
+  // Promote task to item
+  promoteTask: (taskId, targetSectionId) =>
+    api.post('/tasks/promote-task', { taskId, targetSectionId }).then(res => res.data),
+
+  // Convert item to task (demote)
+  convertToTask: (itemId, targetItemId) =>
+    api.post('/tasks/convert-to-task', { itemId, targetItemId }).then(res => res.data)
 };
 
 // Status options for tasks

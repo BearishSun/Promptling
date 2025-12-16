@@ -1,6 +1,6 @@
 import { memo, useCallback } from 'react';
 import { formatDate } from '../../utils/dateFormat';
-import { TASK_STATUSES, PRIORITIES, COMPLEXITIES } from '../../services/api';
+import { TASK_STATUSES, COMPLEXITIES } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 
 // Drag handle icon
@@ -28,7 +28,6 @@ function TaskItem({ task, tags, isSelected, onSelect, onToggle, dragHandleProps 
   const statusInfo = TASK_STATUSES.find(s => s.value === status) || TASK_STATUSES[0];
   const isCompleted = status === 'done' || !!task.finishedAt;
   const taskTags = (task.tagIds || []).map(id => tags?.[id]).filter(Boolean);
-  const priorityInfo = PRIORITIES.find(p => p.value === task.priority);
   const complexityInfo = COMPLEXITIES.find(c => c.value === task.complexity);
 
   const handleCopyId = useCallback((e) => {
@@ -66,14 +65,6 @@ function TaskItem({ task, tags, isSelected, onSelect, onToggle, dragHandleProps 
             <span className={`status-dot ${status}`} />
             {statusInfo.label}
           </span>
-
-          {/* Priority indicator */}
-          {priorityInfo && (
-            <span className={`priority-badge ${task.priority}`}>
-              <span style={{ color: priorityInfo.color }}>{priorityInfo.icon}</span>
-              {priorityInfo.label}
-            </span>
-          )}
 
           {/* Complexity indicator */}
           {complexityInfo && (
@@ -121,7 +112,6 @@ export default memo(TaskItem, (prevProps, nextProps) => {
     prevProps.task.description === nextProps.task.description &&
     prevProps.task.status === nextProps.task.status &&
     prevProps.task.finishedAt === nextProps.task.finishedAt &&
-    prevProps.task.priority === nextProps.task.priority &&
     prevProps.task.complexity === nextProps.task.complexity &&
     JSON.stringify(prevProps.task.tagIds) === JSON.stringify(nextProps.task.tagIds) &&
     prevProps.isSelected === nextProps.isSelected &&

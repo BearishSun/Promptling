@@ -1,6 +1,6 @@
 {
   "version": 4,
-  "lastModified": "2025-12-14T20:54:45.503Z",
+  "lastModified": "2025-12-16T11:44:06.016Z",
   "sections": {
     "sect-features": {
       "id": "sect-features",
@@ -239,12 +239,11 @@
         "task-GrJf2HS1",
         "task-5Mvue2Nl",
         "task-3wCgIw1F",
-        "task-jdclxyv7",
-        "task-hyCsz7vl"
+        "task-jdclxyv7"
       ],
       "categoryOrder": [
-        "cat-LudBjCrk",
-        "cat-5CO2vBJD"
+        "cat-5CO2vBJD",
+        "cat-LudBjCrk"
       ],
       "attachments": [],
       "promptHistory": [],
@@ -1542,12 +1541,12 @@
       "categoryId": null,
       "title": "CreateGpuParticleVertexInputBuffer hould use StoreOnGPU",
       "description": "",
-      "status": "open",
+      "status": "done",
       "tagIds": [],
       "attachments": [],
       "promptHistory": [],
       "createdAt": "2025-12-12T16:39:49.122Z",
-      "finishedAt": null
+      "finishedAt": "2025-12-16T06:38:05.932Z"
     },
     "task-3wCgIw1F": {
       "id": "task-3wCgIw1F",
@@ -1620,12 +1619,12 @@
       "categoryId": null,
       "title": "GpuBuffer read async",
       "description": "",
-      "status": "open",
+      "status": "done",
       "tagIds": [],
       "attachments": [],
       "promptHistory": [],
       "createdAt": "2025-12-12T16:57:34.272Z",
-      "finishedAt": null
+      "finishedAt": "2025-12-14T21:26:23.464Z"
     },
     "task-jdclxyv7": {
       "id": "task-jdclxyv7",
@@ -2016,19 +2015,6 @@
       "createdAt": "2025-12-13T07:05:13.890Z",
       "finishedAt": null
     },
-    "task-HLVBoirw": {
-      "id": "task-HLVBoirw",
-      "itemId": "feat-krCBsi6x",
-      "categoryId": "cat-5CO2vBJD",
-      "title": "PerCamera buffer need to be re-created every frame",
-      "description": "Right now it's created once, and then updated during its lifetime. But this is incorrect as the buffer will be used on the GPU for the previous frame while we are updating it for the current frame.",
-      "status": "open",
-      "tagIds": [],
-      "attachments": [],
-      "promptHistory": [],
-      "createdAt": "2025-12-14T10:38:13.522Z",
-      "finishedAt": null
-    },
     "task-5Mvue2Nl": {
       "id": "task-5Mvue2Nl",
       "itemId": "feat-krCBsi6x",
@@ -2037,8 +2023,25 @@
       "description": "Shadows require a pipeline layout with stages Vertex|Fragment|Geometry, but currently the PerObject buffers are allocated only using stages Vertex|Fragment. That layout is still necessary for regular (non-shadow) rendering, so we need a different layout (and parameter set) for shadows. UniformBufferPool should probably be extended so it can return an additional GpuParameterSet for shadows only (likely I need a helper getter + enum, similar to how I have AllocationResult::GetSuballocation getter, but for parameter sets).",
       "status": "open",
       "tagIds": [],
-      "attachments": [],
-      "promptHistory": [],
+      "attachments": [
+        {
+          "id": "att-zi11Jy2E",
+          "filename": "PLAN-v1.md",
+          "storedName": "PLAN-v1.md",
+          "storedPath": "task/task-5Mvue2Nl/PLAN-v1.md",
+          "mimeType": "text/markdown",
+          "size": 4493,
+          "uploadedAt": "2025-12-16T06:46:36.233Z"
+        }
+      ],
+      "promptHistory": [
+        {
+          "id": "ph-NArfbwsH",
+          "timestamp": "2025-12-16T06:46:36.298Z",
+          "role": "assistant",
+          "content": "Created plan v1: Multi-layout parameter set support in UniformBufferPools to fix shadow validation error"
+        }
+      ],
       "createdAt": "2025-12-14T11:13:42.606Z",
       "finishedAt": null
     },
@@ -2048,12 +2051,12 @@
       "categoryId": "cat-5CO2vBJD",
       "title": "Update cached GpuBuffer calls",
       "description": "TGpuParameterPrimitive and TGpuParameterStruct\nTMaterialParameterAdapter<IsRenderProxy>::Update",
-      "status": "in-progress",
+      "status": "done",
       "tagIds": [],
       "attachments": [],
       "promptHistory": [],
       "createdAt": "2025-12-14T11:55:44.328Z",
-      "finishedAt": null
+      "finishedAt": "2025-12-15T14:52:53.821Z"
     },
     "task-tpY0FzVj": {
       "id": "task-tpY0FzVj",
@@ -2061,19 +2064,26 @@
       "categoryId": "cat-5CO2vBJD",
       "title": "Update documentation on new GpuBuffer locking approach",
       "description": "GpuBufferMappedScope and GpuBuffer::Map instead of old GpuBuffer::Lock/Unlock\nAlso WriteCached and related methods were removed, as was the GpuBufferFlag::AllowWriteCachingOnCPU flag.",
-      "status": "open",
+      "status": "done",
       "tagIds": [],
       "attachments": [],
-      "promptHistory": [],
+      "promptHistory": [
+        {
+          "id": "ph-b2kVNCtu",
+          "timestamp": "2025-12-15T15:01:56.367Z",
+          "role": "assistant",
+          "content": "Updated GpuBuffer documentation: replaced Lock/Unlock with Map/GpuBufferMappedScope RAII pattern, replaced WriteCached with Map approach. Modified 07_gpuBuffers.md, 11_lowLevelRenderingExample.md, and 05_geometry.md."
+        }
+      ],
       "createdAt": "2025-12-14T11:57:22.384Z",
-      "finishedAt": null
+      "finishedAt": "2025-12-15T15:01:51.080Z"
     },
     "task-cNvK18Jh": {
       "id": "task-cNvK18Jh",
       "itemId": "feat-krCBsi6x",
       "categoryId": "cat-LudBjCrk",
       "title": "Remove suballocation index from GpuBufferSuballocation",
-      "description": "",
+      "description": "Currently it only looks like it might be used in GpuBufferPool, and there it might be possible to deduce it from the offset.",
       "status": "open",
       "tagIds": [],
       "attachments": [],
@@ -2081,18 +2091,41 @@
       "createdAt": "2025-12-14T14:26:18.246Z",
       "finishedAt": null
     },
-    "task-hyCsz7vl": {
-      "id": "task-hyCsz7vl",
+    "task-1xQyWWCo": {
+      "id": "task-1xQyWWCo",
       "itemId": "feat-krCBsi6x",
-      "categoryId": null,
-      "title": "Test",
-      "description": "",
-      "status": "open",
+      "categoryId": "cat-5CO2vBJD",
+      "title": "PerCamera buffer need to be re-created every frame",
+      "description": "Right now it's created once, and then updated during its lifetime. But this is incorrect as the buffer will be used on the GPU for the previous frame while we are updating it for the current frame.",
+      "status": "done",
       "tagIds": [],
-      "attachments": [],
-      "promptHistory": [],
-      "createdAt": "2025-12-14T18:27:43.363Z",
-      "finishedAt": null
+      "attachments": [
+        {
+          "id": "att-n048rsSg",
+          "filename": "PLAN-v1.md",
+          "storedName": "PLAN-v1.md",
+          "storedPath": "task/task-HLVBoirw/PLAN-v1.md",
+          "mimeType": "text/markdown",
+          "size": 6098,
+          "uploadedAt": "2025-12-15T15:08:24.484Z"
+        }
+      ],
+      "promptHistory": [
+        {
+          "id": "ph-sJSw4dEd",
+          "timestamp": "2025-12-15T15:08:32.237Z",
+          "role": "assistant",
+          "content": "Created plan v1: Replace persistent PerCamera buffer with transient allocation to fix frame-in-flight race condition. Identified 13+ files needing updates."
+        },
+        {
+          "id": "ph-mfdwEcQL",
+          "timestamp": "2025-12-15T16:17:59.080Z",
+          "role": "assistant",
+          "content": "Implemented: Used GpuBufferPool for PerCamera buffer allocation instead of persistent SPtr<GpuBuffer>. Updated RendererView (header+cpp), SkyboxMaterial::Bind, and 15+ callers across B3DRenderCompositor, B3DRenderBeast, B3DPostProcessing, B3DStandardDeferred, B3DShadowRendering, and B3DGpuParticleSimulation files to use GpuBufferSuballocation."
+        }
+      ],
+      "createdAt": "2025-12-14T10:38:13.522Z",
+      "finishedAt": "2025-12-15T16:17:51.622Z"
     }
   },
   "taskCategories": {
@@ -2115,7 +2148,7 @@
       "taskOrder": [
         "task-rdrvnIWc",
         "task-tpY0FzVj",
-        "task-HLVBoirw"
+        "task-1xQyWWCo"
       ],
       "expanded": true
     }

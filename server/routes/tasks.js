@@ -14,6 +14,7 @@ const {
 } = require('./projects');
 
 const router = express.Router();
+
 // Get paths from config
 const paths = getDataPaths();
 const DATA_DIR = paths.dataDir;
@@ -1019,6 +1020,170 @@ router.delete('/attachment/:itemType/:itemId/:attachmentId', async (req, res) =>
   } catch (error) {
     console.error('Error deleting attachment:', error);
     res.status(500).json({ error: 'Failed to delete attachment' });
+  }
+});
+
+// ========== CONVERT ITEM TO TASK ENDPOINT ==========
+
+// POST /api/tasks/convert-to-task - Convert an item to a task under another item (demote)
+router.post('/convert-to-task', async (req, res) => {
+  try {
+    const data = await loadData(req);
+    const { itemId, targetItemId } = req.body;
+
+    if (!itemId || !targetItemId) {
+      return res.status(400).json({ error: 'itemId and targetItemId are required' });
+    }
+
+    const sourceItem = data.items[itemId];
+    if (!sourceItem) {
+      return res.status(404).json({ error: 'Source item not found' });
+    }
+
+    const targetItem = data.items[targetItemId];
+    if (!targetItem) {
+      return res.status(404).json({ error: 'Target item not found' });
+    }
+
+    const now = new Date().toISOString();
+    const newTaskId = generateId('task');
+
+    // Create new task from item data
+    const newTask = {
+      id: newTaskId,
+      itemId: targetItemId,
+      categoryId: null,
+      title: sourceItem.title,
+      description: sourceItem.description || '',
+      status: sourceItem.status || 'open',
+      tagIds: [...(sourceItem.tagIds || [])],
+      attachments: [...(sourceItem.attachments || [])],
+      promptHistory: [...(sourceItem.promptHistory || [])],
+      createdAt: sourceItem.createdAt || now,
+      finishedAt: sourceItem.finishedAt || null
+    };
+
+    // Add task to data
+    data.tasks[newTaskId] = newTask;
+
+    // Add to target item's taskOrder
+    targetItem.taskOrder.push(newTaskId);
+
+    // Remove item from its section
+    const sectionId = sourceItem.sectionId;
+    if (data.sections[sectionId]) {
+      data.sections[sectionId].itemOrder =
+        data.sections[sectionId].itemOrder.filter(id => id !== itemId);
+    }
+
+    // Remove from category if in one
+    if (sourceItem.categoryId && data.itemCategories[sourceItem.categoryId]) {
+      data.itemCategories[sourceItem.categoryId].itemOrder =
+        data.itemCategories[sourceItem.categoryId].itemOrder.filter(id => id !== itemId);
+    }
+
+    // Delete any tasks that were under this item (they become orphaned)
+    for (const taskId of sourceItem.taskOrder || []) {
+      delete data.tasks[taskId];
+    }
+
+    // Delete any task categories under this item
+    for (const catId of sourceItem.categoryOrder || []) {
+      if (data.taskCategories[catId]) {
+        for (const taskId of data.taskCategories[catId].taskOrder || []) {
+          delete data.tasks[taskId];
+        }
+        delete data.taskCategories[catId];
+      }
+    }
+
+    // Delete the source item
+    delete data.items[itemId];
+
+    await saveData(data, req);
+    res.json({
+      converted: true,
+      newTask,
+      deletedItemId: itemId
+    });
+  } catch (error) {
+    console.error('Error converting item to task:', error);
+    res.status(500).json({ error: 'Failed to convert item to task' });
+  }
+});
+
+// ========== PROMOTE TASK ENDPOINT ==========
+
+// POST /api/tasks/promote-task - Promote a task to an item (feature/bug)
+router.post('/promote-task', async (req, res) => {
+  try {
+    const data = await loadData(req);
+    const { taskId, targetSectionId } = req.body;
+
+    if (!taskId) {
+      return res.status(400).json({ error: 'taskId is required' });
+    }
+
+    const task = data.tasks[taskId];
+    if (!task) {
+      return res.status(404).json({ error: 'Task not found' });
+    }
+
+    // Default to Features section if no target specified
+    const sectionId = targetSectionId || SYSTEM_SECTIONS.FEATURES;
+    if (!data.sections[sectionId]) {
+      return res.status(400).json({ error: 'Target section not found' });
+    }
+
+    const now = new Date().toISOString();
+    const newItemId = generateId('item');
+
+    // Create new item from task data
+    const newItem = {
+      id: newItemId,
+      sectionId: sectionId,
+      title: task.title,
+      description: task.description || '',
+      status: task.status || 'open',
+      priority: 'medium',
+      complexity: null,
+      categoryId: null,
+      taskOrder: [],
+      categoryOrder: [],
+      attachments: [...(task.attachments || [])],
+      promptHistory: [...(task.promptHistory || [])],
+      tagIds: [...(task.tagIds || [])],
+      createdAt: task.createdAt || now,
+      finishedAt: task.finishedAt || null
+    };
+
+    // Add item to data
+    data.items[newItemId] = newItem;
+
+    // Add to section's itemOrder
+    data.sections[sectionId].itemOrder.push(newItemId);
+
+    // Remove task from its current location
+    if (task.categoryId && data.taskCategories[task.categoryId]) {
+      data.taskCategories[task.categoryId].taskOrder =
+        data.taskCategories[task.categoryId].taskOrder.filter(id => id !== taskId);
+    } else if (task.itemId && data.items[task.itemId]) {
+      data.items[task.itemId].taskOrder =
+        data.items[task.itemId].taskOrder.filter(id => id !== taskId);
+    }
+
+    // Delete the task
+    delete data.tasks[taskId];
+
+    await saveData(data, req);
+    res.json({
+      promoted: true,
+      newItem,
+      deletedTaskId: taskId
+    });
+  } catch (error) {
+    console.error('Error promoting task:', error);
+    res.status(500).json({ error: 'Failed to promote task' });
   }
 });
 
