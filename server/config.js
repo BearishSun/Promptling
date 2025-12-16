@@ -16,7 +16,7 @@ const CONFIG_FILE = path.join(APP_ROOT, 'promptling.config.json');
 // Default configuration values
 const DEFAULT_CONFIG = {
   // Directory where all data is stored (relative to config file or absolute)
-  dataDir: '.promptflow'
+  dataDir: '.promptling'
 };
 
 // Cached config - loaded once at startup

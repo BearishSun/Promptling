@@ -84,12 +84,6 @@ cp -r /path/to/promptling/.claude/commands ~/.claude/commands
 
 ---
 
-## Why I built this
-
-- I needed a way to organize tasks on my personal projects. Thus far I just used a text editor with a bunch of lists/notes to keep track, but it was messy and not manageable.	
-- Keeping track of all Claude prompts was also becoming messy, and I would often lose good prompts. This way I can always keep them around in the work items.
-- Keeping track of all the plan files was becoming messy, some were in .claude/plans folder with non-identifiable names, others were scattered over the project folder.
-
 ## Detailed Setup Guide
 
 Step-by-step instructions for setting up Promptling from scratch.
@@ -281,7 +275,7 @@ pm2 restart tasklist
 
 ## Data Storage
 
-All data is stored in the `.promptflow` directory by default:
+All data is stored in the `.promptling` directory by default:
 - `projects.json` - Project metadata
 - `settings.json` - Global settings
 - `projects/<project-id>/data.json` - Project data (items, tasks, categories)
@@ -291,16 +285,16 @@ All data is stored in the `.promptflow` directory by default:
 
 ### Data Directory Location
 
-By default, Promptling stores all data in the `.promptflow` directory within the project folder. You can customize this location by creating a `promptling.config.json` file in the project root:
+By default, Promptling stores all data in the `.promptling` directory within the project folder. You can customize this location by creating a `promptling.config.json` file in the project root:
 
 ```json
 {
-  "dataDir": ".promptflow"
+  "dataDir": ".promptling"
 }
 ```
 
 The `dataDir` can be:
-- **Relative path** (relative to the project root): `".promptflow"`, `"../my-data"`, `"data/promptling"`
+- **Relative path** (relative to the project root): `".promptling"`, `"../my-data"`, `"data/promptling"`
 - **Absolute path**: `"D:\\MyData\\promptling"`, `"/home/user/promptling-data"`
 
 This is useful when you want to:

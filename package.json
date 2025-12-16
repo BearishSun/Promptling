@@ -1,5 +1,5 @@
 {
-  "name": "promptflow",
+  "name": "promptling",
   "version": "1.0.0",
   "description": "AI-powered task management for software features and bugs",
   "scripts": {

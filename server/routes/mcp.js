@@ -875,7 +875,7 @@ router.post('/', async (req, res) => {
             tools: {}
           },
           serverInfo: {
-            name: 'promptflow-mcp',
+            name: 'promptling-mcp',
             version: '1.0.0'
           }
         };
@@ -947,7 +947,7 @@ router.post('/', async (req, res) => {
 // Health check for MCP endpoint
 router.get('/', (req, res) => {
   res.json({
-    name: 'promptflow-mcp',
+    name: 'promptling-mcp',
     version: '1.0.0',
     status: 'ok',
     toolCount: TOOLS.length,
