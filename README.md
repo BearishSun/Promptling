@@ -101,12 +101,12 @@ Step-by-step instructions for setting up Promptling from scratch.
 
 ### Step 2: Get the Project
 
-Either clone from git or copy the project folder to your desired location (e.g., `D:\Projects\TaskList`).
+Either clone from git or copy the project folder to your desired location (e.g., `D:\Projects\Promptling`).
 
 ### Step 3: Install Dependencies
 
 ```bash
-cd D:\Projects\TaskList
+cd D:\Projects\Promptling
 npm install
 ```
 
@@ -115,7 +115,7 @@ This installs dependencies for the root, client, and server.
 ### Step 4: Build the Client
 
 ```bash
-cd D:\Projects\TaskList\client
+cd D:\Projects\Promptling\client
 npm run build
 ```
 
@@ -123,7 +123,7 @@ npm run build
 
 **Option A: Simple start (stops when terminal closes)**
 ```bash
-cd D:\Projects\TaskList\server
+cd D:\Projects\Promptling\server
 node index.js
 ```
 
@@ -133,8 +133,8 @@ node index.js
 npm install -g pm2
 
 # Start the server
-cd D:\Projects\TaskList\server
-pm2 start index.js --name "tasklist"
+cd D:\Projects\Promptling\server
+pm2 start index.js --name "promptling"
 
 # Save process list so PM2 remembers it
 pm2 save
@@ -160,14 +160,14 @@ Open http://localhost:3001 in your browser.
 ## Project Structure
 
 ```
-TaskList/
+Promptling/
 ├── client/           # React frontend
 │   ├── src/
 │   └── dist/         # Built files (after npm run build)
 ├── server/           # Express backend
 │   ├── index.js
 │   └── routes/
-├── .tasklist/        # Data storage (created automatically)
+├── .promptling/      # Data storage (created automatically)
 │   ├── data.json
 │   └── attachments/
 └── package.json      # Root workspace
@@ -178,7 +178,7 @@ TaskList/
 For active development with hot reload:
 
 ```bash
-cd D:\Projects\TaskList
+cd D:\Projects\Promptling
 npm run dev
 ```
 
@@ -192,7 +192,7 @@ This starts both the client (port 5173) and server (port 3001) with hot reload.
 ### Build the Client
 
 ```bash
-cd D:\Projects\TaskList\client
+cd D:\Projects\Promptling\client
 npm run build
 ```
 
@@ -203,7 +203,7 @@ This creates optimized static files in `client/dist/`.
 The server serves both the API and the built React frontend.
 
 ```bash
-cd D:\Projects\TaskList\server
+cd D:\Projects\Promptling\server
 node index.js
 ```
 
@@ -218,8 +218,8 @@ Access the app at: http://localhost:3001
 npm install -g pm2
 
 # Start the server
-cd D:\Projects\TaskList\server
-pm2 start index.js --name "tasklist"
+cd D:\Projects\Promptling\server
+pm2 start index.js --name "promptling"
 pm2 save
 
 # Install as Windows service (run as Administrator)
@@ -232,31 +232,31 @@ pm2-startup install
 | Command | Description |
 |---------|-------------|
 | `pm2 list` | Show running processes |
-| `pm2 logs tasklist` | View logs |
-| `pm2 restart tasklist` | Restart server |
-| `pm2 stop tasklist` | Stop server |
-| `pm2 delete tasklist` | Remove from PM2 |
+| `pm2 logs promptling` | View logs |
+| `pm2 restart promptling` | Restart server |
+| `pm2 stop promptling` | Stop server |
+| `pm2 delete promptling` | Remove from PM2 |
 
 ### Alternative: Windows Task Scheduler
 
 1. Press `Win+R`, type `taskschd.msc`
-2. Create Basic Task → Name: "TaskList Server"
+2. Create Basic Task → Name: "Promptling Server"
 3. Trigger: "When the computer starts"
 4. Action: "Start a program"
    - Program: `C:\Program Files\nodejs\node.exe`
    - Arguments: `index.js`
-   - Start in: `D:\Projects\TaskList\server`
+   - Start in: `D:\Projects\Promptling\server`
 5. Enable "Run whether user is logged on or not"
 
 ## Updating After Code Changes
 
 ```bash
 # Rebuild client
-cd D:\Projects\TaskList\client
+cd D:\Projects\Promptling\client
 npm run build
 
 # Restart server
-pm2 restart tasklist
+pm2 restart promptling
 ```
 
 ## API Endpoints
@@ -345,6 +345,6 @@ refreshenv
 
 Make sure to run `npm install` in the project root:
 ```bash
-cd D:\Projects\TaskList
+cd D:\Projects\Promptling
 npm install
 ```

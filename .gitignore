@@ -14,7 +14,8 @@ logs/
 *.log
 npm-debug.log*
 
-# Config
+# User data
+.promptling/
 promptling.config.json
 
 # Editor directories

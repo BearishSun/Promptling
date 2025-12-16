@@ -34,5 +34,5 @@ app.get('/{*path}', (req, res) => {
 
 // Start server
 app.listen(PORT, () => {
-  console.log(`TaskList server running on http://localhost:${PORT}`);
+  console.log(`Promptling server running on http://localhost:${PORT}`);
 });
