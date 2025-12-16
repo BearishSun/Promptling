@@ -51,6 +51,22 @@ if [ ! -f "$SCRIPT_DIR/client/dist/index.html" ]; then
         read -p "Press Enter to exit..."
         exit 1
     fi
+else
+    # Check if source files are newer than build
+    if [ -n "$(find "$SCRIPT_DIR/client/src" -newer "$SCRIPT_DIR/client/dist/index.html" -type f 2>/dev/null)" ]; then
+        echo ""
+        echo "  Source files changed, rebuilding client..."
+        echo ""
+        cd "$SCRIPT_DIR/client"
+        npm run build
+        if [ $? -ne 0 ]; then
+            echo ""
+            echo "  ERROR: Failed to build client."
+            echo ""
+            read -p "Press Enter to exit..."
+            exit 1
+        fi
+    fi
 fi
 
 # Start the server

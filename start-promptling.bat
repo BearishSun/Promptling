@@ -46,6 +46,23 @@ if not exist "%~dp0client\dist\index.html" (
         pause
         exit /b 1
     )
+) else (
+    :: Check if source files are newer than build using PowerShell
+    powershell -NoProfile -Command "if ((Get-ChildItem -Path '%~dp0client\src' -Recurse -File | Where-Object { $_.LastWriteTime -gt (Get-Item '%~dp0client\dist\index.html').LastWriteTime }).Count -gt 0) { exit 1 } else { exit 0 }"
+    if %errorlevel% equ 1 (
+        echo.
+        echo  Source files changed, rebuilding client...
+        echo.
+        cd /d "%~dp0client"
+        call npm run build
+        if %errorlevel% neq 0 (
+            echo.
+            echo  ERROR: Failed to build client.
+            echo.
+            pause
+            exit /b 1
+        )
+    )
 )
 
 :: Start the server
