@@ -258,8 +258,32 @@ router.get('/', async (req, res) => {
       await migrateOldData();
     }
 
-    const projectsData = await loadProjects();
-    const settings = await loadSettings();
+    let projectsData = await loadProjects();
+    let settings = await loadSettings();
+
+    // Auto-create a default project if none exist
+    if (projectsData.order.length === 0) {
+      const projectId = generateId('proj');
+      const newProject = {
+        id: projectId,
+        name: 'My Project',
+        color: '#3b82f6',
+        createdAt: new Date().toISOString()
+      };
+
+      projectsData.projects[projectId] = newProject;
+      projectsData.order.push(projectId);
+      await saveProjects(projectsData);
+
+      // Set as active project
+      settings.activeProjectId = projectId;
+      await saveSettings(settings);
+
+      // Create initial data file for the project
+      await ensureProjectsDir();
+      const projectDir = path.join(PROJECTS_DIR, projectId);
+      await fs.mkdir(projectDir, { recursive: true });
+    }
 
     // Return ordered list of projects
     const projects = projectsData.order.map(id => projectsData.projects[id]).filter(Boolean);
