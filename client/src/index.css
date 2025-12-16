@@ -534,15 +534,30 @@ body {
   opacity: 1;
 }
 
-.item-edit-btn,
-.item-copy-btn {
-  opacity: 0;
-  transition: opacity 0.1s;
+.item-action-btn {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  padding: 5px 12px;
+  white-space: nowrap;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  color: var(--text-primary);
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
-.task-item:hover .item-edit-btn,
-.task-item:hover .item-copy-btn {
-  opacity: 1;
+.item-action-btn:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+.item-action-btn:active {
+  transform: translateY(1px);
+  box-shadow: none;
 }
 
 /* Toast Notification */

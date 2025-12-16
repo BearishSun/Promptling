@@ -34,18 +34,6 @@ const FeatureIcon = () => (
   </svg>
 );
 
-const CopyIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-    <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
-  </svg>
-);
-
-const ArrowRightIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M5 12h14M12 5l7 7-7 7" />
-  </svg>
-);
 
 function MainPanel() {
   const { data } = useTaskData();
@@ -279,12 +267,14 @@ function ItemContent({ item, data, onOpenDetails, onViewTasks, dragHandleProps }
           <span>{completedCount} done</span>
         </div>
       </div>
-      <button className="btn btn-icon btn-ghost btn-sm item-copy-btn" onClick={handleCopyId} title="Copy item ID">
-        <CopyIcon />
+      <button className="btn btn-sm item-action-btn" onClick={handleCopyId} title="Copy item ID">
+        COPY ID
       </button>
-      <button className="btn btn-icon btn-ghost btn-sm item-edit-btn" onClick={(e) => { e.stopPropagation(); onViewTasks(item.id); }} title="View tasks">
-        <ArrowRightIcon />
-      </button>
+      {taskCount > 0 && (
+        <button className="btn btn-sm item-action-btn" onClick={(e) => { e.stopPropagation(); onViewTasks(item.id); }} title="View tasks">
+          SHOW TASKS
+        </button>
+      )}
     </div>
   );
 }
