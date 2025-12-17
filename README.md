@@ -1,3 +1,5 @@
+![Promptling.gif](Promptling.gif)
+
 # Promptling - Task Management for Claude Code
 
 Lightweight task/project management app (think Jira, but simpler) designed to work with Claude Code via MCP (Model Context Protocol).
