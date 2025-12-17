@@ -56,7 +56,7 @@ cd server && node index.js
 
 Then open http://localhost:3001 in your browser.
 
-### Add MCP Tools to Claude Code
+### Add MCP Tools to Claude Code 
 
 Add the Promptling MCP server so Claude can interact with your tasks:
 
