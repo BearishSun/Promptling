@@ -270,11 +270,9 @@ function ItemContent({ item, data, onOpenDetails, onViewTasks, dragHandleProps }
       <button className="btn btn-sm item-action-btn" onClick={handleCopyId} title="Copy item ID">
         COPY ID
       </button>
-      {taskCount > 0 && (
-        <button className="btn btn-sm item-action-btn" onClick={(e) => { e.stopPropagation(); onViewTasks(item.id); }} title="View tasks">
-          SHOW TASKS
-        </button>
-      )}
+      <button className="btn btn-sm item-action-btn" onClick={(e) => { e.stopPropagation(); onViewTasks(item.id); }} title="View tasks">
+        SHOW TASKS
+      </button>
     </div>
   );
 }
