@@ -494,6 +494,7 @@ function DetailPanel() {
         <div className="detail-section">
           <div className="detail-section-title">Description</div>
           <MarkdownEditor
+            key={selectedItemId}
             value={item.description || ''}
             onChange={handleDescriptionChange}
             placeholder="Add a description... (supports Markdown)"

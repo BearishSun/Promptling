@@ -5,7 +5,7 @@ import { useDebouncedCallback } from '../../hooks/useDebounce';
 const ReactMarkdown = lazy(() => import('react-markdown'));
 
 function MarkdownEditor({ value, onChange, placeholder = 'Add a description...' }) {
-  const [isPreview, setIsPreview] = useState(false);
+  const [isPreview, setIsPreview] = useState(!!value);
   const [localValue, setLocalValue] = useState(value);
 
   // Debounced save

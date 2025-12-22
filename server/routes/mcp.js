@@ -344,6 +344,7 @@ const TOOLS = [
         action: { type: 'string', enum: ['delete', 'append_prompt', 'save_plan'], description: 'Special action' },
         promptEntry: { type: 'object', description: 'For append_prompt: {role, content}' },
         planContent: { type: 'string', description: 'For save_plan: markdown plan content' },
+        planPath: { type: 'string', description: 'For save_plan: local file path or URL to plan content (alternative to planContent)' },
         projectId: PROJECT_ID_PROP
       },
       required: ['type', 'id']
@@ -607,7 +608,7 @@ const toolHandlers = {
   },
 
   // 4. UPDATE (v4: includes delete, append_prompt, save_plan)
-  async update({ type, id, updates, action, promptEntry, planContent, projectId }, req) {
+  async update({ type, id, updates, action, promptEntry, planContent, planPath, projectId }, req) {
     const data = await loadData(projectId, req);
 
     // Helper to get item from v4 data
@@ -689,7 +690,24 @@ const toolHandlers = {
     if (action === 'save_plan') {
       const item = getItem();
       if (!item) throw new Error(`${type} with ID ${id} not found`);
-      if (!planContent) throw new Error('planContent required for save_plan action');
+
+      // Read content from path or use provided content
+      let content;
+      if (planPath) {
+        if (planPath.startsWith('http://') || planPath.startsWith('https://')) {
+          // Fetch from URL
+          const response = await fetch(planPath);
+          if (!response.ok) throw new Error(`Failed to fetch plan from URL: ${response.status} ${response.statusText}`);
+          content = await response.text();
+        } else {
+          // Read from local file
+          content = await fs.readFile(planPath, 'utf-8');
+        }
+      } else if (planContent) {
+        content = planContent;
+      } else {
+        throw new Error('Either planPath or planContent required for save_plan action');
+      }
 
       const existingPlans = (item.attachments || []).filter(a => a.filename?.startsWith('PLAN-v'));
       const version = existingPlans.length + 1;
@@ -700,14 +718,14 @@ const toolHandlers = {
       const attachmentsDir = await getAttachmentsDir(projectId, req);
       const itemDir = path.join(attachmentsDir, storageType, id);
       await fs.mkdir(itemDir, { recursive: true });
-      await fs.writeFile(path.join(itemDir, filename), planContent, 'utf-8');
+      await fs.writeFile(path.join(itemDir, filename), content, 'utf-8');
 
       const storedPath = `${storageType}/${id}/${filename}`;
       const fullPath = path.join(itemDir, filename);
       const attachment = {
         id: generateId('att'), filename, storedName: filename,
         storedPath, mimeType: 'text/markdown',
-        size: Buffer.byteLength(planContent, 'utf-8'), uploadedAt: new Date().toISOString()
+        size: Buffer.byteLength(content, 'utf-8'), uploadedAt: new Date().toISOString()
       };
       if (!item.attachments) item.attachments = [];
       item.attachments.push(attachment);

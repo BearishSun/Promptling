@@ -21,7 +21,7 @@ Create or iterate on an implementation plan for a feature, bug, or task from the
 4. If there are image attachments, use `read` with `contentType: 'image'` to analyze them
 5. If there are text attachments, use `read` with `contentType: 'attachment'` to read them
 6. Use `read` with `contentType: 'prompt_history'` to understand previous discussions
-7. Create/update the plan using `update` with `action: 'save_plan'` and `planContent` (returns file path)
+7. Save your plan to a temporary file using the Write tool, then call `update` with `action: 'save_plan'` and `planPath` pointing to the file
 8. Record this session using `update` with `action: 'append_prompt'` (keep to 1-2 lines, e.g., "Created plan v1 for X feature")
 
 ## MCP Tool Reference
@@ -43,7 +43,11 @@ read({ type: 'item', id: '<item-id>', contentType: 'image', attachmentId: 'att-x
 // Read prompt history
 read({ type: 'item', id: '<item-id>', contentType: 'prompt_history' })
 
-// Save plan (auto-versions)
+// Save plan (auto-versions) - pass file path instead of content
+update({ type: 'item', id: '<item-id>', action: 'save_plan', planPath: '/path/to/plan.md' })
+// Or with URL
+update({ type: 'item', id: '<item-id>', action: 'save_plan', planPath: 'https://example.com/plan.md' })
+// Legacy: planContent still supported for backwards compatibility
 update({ type: 'item', id: '<item-id>', action: 'save_plan', planContent: '# Plan...' })
 
 // Append to prompt history
