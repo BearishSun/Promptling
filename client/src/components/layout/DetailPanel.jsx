@@ -412,6 +412,10 @@ function DetailPanel() {
     return filename?.toLowerCase().endsWith('.md') || filename?.toLowerCase().endsWith('.markdown');
   }, []);
 
+  const isPlanFile = useCallback((filename) => {
+    return filename?.startsWith('PLAN-v');
+  }, []);
+
   const handleMoveToSection = useCallback(async (targetSectionId) => {
     if (targetSectionId === item?.sectionId) return;
     await moveItemToCategory(selectedItemId, null, targetSectionId);
@@ -685,24 +689,19 @@ function DetailPanel() {
           </div>
         )}
 
-        {/* Plans */}
+        {/* Plans - only show link to latest plan */}
         {planVersions.length > 0 && (
           <div className="detail-section">
             <div className="detail-section-title">Implementation Plan</div>
             <div className="plans-list">
-              {planVersions.map((planVersion, index) => (
-                <button
-                  key={planVersion.version}
-                  className="plan-item"
-                  onClick={() => handleOpenPlan(planVersion.version)}
-                >
-                  <PlanIcon />
-                  <span className="plan-name">
-                    {index === planVersions.length - 1 ? 'Current Plan' : `Plan v${planVersion.version}`}
-                  </span>
-                  <span className="plan-meta">v{planVersion.version}</span>
-                </button>
-              ))}
+              <button
+                className="plan-item"
+                onClick={() => handleOpenPlan(planVersions[0].version)}
+              >
+                <PlanIcon />
+                <span className="plan-name">Current Plan</span>
+                <span className="plan-meta">v{planVersions[0].version}</span>
+              </button>
             </div>
           </div>
         )}
@@ -711,10 +710,10 @@ function DetailPanel() {
         <div className="detail-section">
           <div className="detail-section-title">Attachments</div>
 
-          {/* Attachment list */}
-          {(item.attachments || []).length > 0 && (
+          {/* Attachment list - filter out plan files which are shown separately */}
+          {(item.attachments || []).filter(a => !isPlanFile(a.filename)).length > 0 && (
             <div className="attachments-list">
-              {item.attachments.map(attachment => (
+              {(item.attachments || []).filter(a => !isPlanFile(a.filename)).map(attachment => (
                 <div key={attachment.id} className="attachment-item">
                   {isImageFile(attachment.mimeType) ? (
                     <a
@@ -983,7 +982,7 @@ function DetailPanel() {
           >
             {markdownViewer.versions.map((v, i) => (
               <option key={v.version} value={v.version}>
-                {i === markdownViewer.versions.length - 1 ? `v${v.version} (Current)` : `v${v.version}`}
+                {i === 0 ? `v${v.version} (Current)` : `v${v.version}`}
               </option>
             ))}
           </select>

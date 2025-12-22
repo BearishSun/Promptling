@@ -20,6 +20,7 @@
       "Bash(node -e:*)",
       "mcp__promptling__search",
       "mcp__promptling__list",
+      "mcp__promptling__create",
       "Bash(netstat:*)",
       "Bash(findstr:*)"
     ]
