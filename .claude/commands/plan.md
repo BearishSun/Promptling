@@ -22,7 +22,13 @@ Create or iterate on an implementation plan for a feature, bug, or task from the
 5. If there are text attachments, use `read` with `contentType: 'attachment'` to read them
 6. Use `read` with `contentType: 'prompt_history'` to understand previous discussions
 7. Save your plan to a temporary file using the Write tool, then call `update` with `action: 'save_plan'` and `planPath` pointing to the file
-8. Record this session using `update` with `action: 'append_prompt'` (keep to 1-2 lines, e.g., "Created plan v1 for X feature")
+8. Record this session using `update` with `action: 'append_prompt'`:
+   - `title`: Short summary (e.g., "Created implementation plan v1")
+   - `description`: Detailed summary including:
+     - What was analyzed (requirements, attachments reviewed)
+     - Key decisions made in the plan
+     - Phases/sections created
+     - Any assumptions or open questions
 
 ## MCP Tool Reference
 
@@ -50,8 +56,17 @@ update({ type: 'item', id: '<item-id>', action: 'save_plan', planPath: 'https://
 // Legacy: planContent still supported for backwards compatibility
 update({ type: 'item', id: '<item-id>', action: 'save_plan', planContent: '# Plan...' })
 
-// Append to prompt history
-update({ type: 'item', id: '<item-id>', action: 'append_prompt', promptEntry: { role: 'assistant', content: 'Created plan v1' } })
+// Append to prompt history (verbose format)
+update({
+  type: 'item',
+  id: '<item-id>',
+  action: 'append_prompt',
+  promptEntry: {
+    role: 'assistant',
+    title: 'Created plan v1 for user authentication',
+    description: 'Analyzed feature requirements and 2 image attachments showing UI mockups. Created 3-phase plan: (1) Database schema with users/sessions tables, (2) Backend API with JWT auth, (3) React login/register components. Noted: Need to clarify OAuth requirements with user.'
+  }
+})
 ```
 
 ## Plan Format

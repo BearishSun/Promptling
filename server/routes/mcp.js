@@ -342,7 +342,7 @@ const TOOLS = [
         id: { type: 'string', description: 'ID of the item' },
         updates: { type: 'object', description: 'Properties to update: {title, description, status, ...}' },
         action: { type: 'string', enum: ['delete', 'append_prompt', 'save_plan'], description: 'Special action' },
-        promptEntry: { type: 'object', description: 'For append_prompt: {role, content}' },
+        promptEntry: { type: 'object', description: 'For append_prompt: {role, title, description} - title is short summary, description is verbose details' },
         planContent: { type: 'string', description: 'For save_plan: markdown plan content' },
         planPath: { type: 'string', description: 'For save_plan: local file path or URL to plan content (alternative to planContent)' },
         projectId: PROJECT_ID_PROP
@@ -676,11 +676,24 @@ const toolHandlers = {
     if (action === 'append_prompt') {
       const item = getItem();
       if (!item) throw new Error(`${type} with ID ${id} not found`);
-      if (!promptEntry?.role || !promptEntry?.content) {
-        throw new Error('promptEntry with role and content required');
+      if (!promptEntry?.role) {
+        throw new Error('promptEntry with role required');
+      }
+      // Support new format (title + description) or legacy format (content)
+      const hasNewFormat = promptEntry.title && promptEntry.description;
+      const hasLegacyFormat = promptEntry.content;
+      if (!hasNewFormat && !hasLegacyFormat) {
+        throw new Error('promptEntry requires either {title, description} or {content}');
       }
       if (!item.promptHistory) item.promptHistory = [];
-      const entry = { id: generateId('ph'), timestamp: new Date().toISOString(), role: promptEntry.role, content: promptEntry.content };
+      const entry = {
+        id: generateId('ph'),
+        timestamp: new Date().toISOString(),
+        entryType: 'prompt',
+        role: promptEntry.role,
+        title: promptEntry.title || (promptEntry.content?.substring(0, 80) + (promptEntry.content?.length > 80 ? '...' : '')),
+        description: promptEntry.description || promptEntry.content
+      };
       item.promptHistory.push(entry);
       await saveData(data, projectId, req);
       return { added: true, entryId: entry.id, totalCount: item.promptHistory.length };
@@ -843,7 +856,18 @@ const toolHandlers = {
 
     // Prompt history
     if (contentType === 'prompt_history') {
-      let history = item.promptHistory || [];
+      // Normalize legacy entries that have content instead of title/description
+      let history = (item.promptHistory || []).map(entry => {
+        if (!entry.title && entry.content) {
+          return {
+            ...entry,
+            entryType: entry.entryType || 'prompt',
+            title: entry.content.substring(0, 80) + (entry.content.length > 80 ? '...' : ''),
+            description: entry.content
+          };
+        }
+        return { ...entry, entryType: entry.entryType || 'prompt' };
+      });
       if (limit && limit > 0) history = history.slice(-limit);
       return { history, count: history.length, totalCount: item.promptHistory?.length || 0 };
     }

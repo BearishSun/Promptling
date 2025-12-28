@@ -39,8 +39,12 @@ Break a feature or bug into sub-tasks based on its title, description, and imple
    - `parentId: '<item-id>'`
    - `title: '<descriptive task title>'`
    - `description: '<relevant details from plan/description>'`
-7. Record this session using `update` with `action: 'append_prompt'`
-   - Example: "Broke down into 4 sub-tasks: Task 1, Task 2, Task 3, Task 4"
+7. Record this session using `update` with `action: 'append_prompt'`:
+   - `title`: "Broke down into N sub-tasks"
+   - `description`: Detailed breakdown including:
+     - How the feature was analyzed
+     - Rationale for task groupings
+     - List of created tasks with brief scope
 
 ## MCP Tool Reference
 
@@ -62,12 +66,16 @@ create({
   description: '## Scope\n- Detail 1\n- Detail 2'
 })
 
-// Record what was done
+// Record what was done (verbose format)
 update({
   type: 'item',
   id: '<item-id>',
   action: 'append_prompt',
-  promptEntry: { role: 'assistant', content: 'Broke down into N sub-tasks' }
+  promptEntry: {
+    role: 'assistant',
+    title: 'Broke down into 4 sub-tasks',
+    description: 'Analyzed feature description and implementation plan (v2). Grouped by architectural layers: (1) Database schema - users, sessions, password_resets tables; (2) Backend API - auth endpoints with JWT; (3) Frontend components - login form, register form, auth context; (4) Integration testing - E2E tests for auth flow. Tasks are sequentially dependent.'
+  }
 })
 ```
 

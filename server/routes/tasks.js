@@ -1268,7 +1268,19 @@ router.get('/:type/:id/prompt-history', async (req, res) => {
       return res.status(404).json({ error: `${type} not found` });
     }
 
-    let history = item.promptHistory || [];
+    // Normalize legacy entries that have content instead of title/description
+    let history = (item.promptHistory || []).map(entry => {
+      if (!entry.title && entry.content) {
+        return {
+          ...entry,
+          entryType: entry.entryType || 'prompt',
+          title: entry.content.substring(0, 80) + (entry.content.length > 80 ? '...' : ''),
+          description: entry.content
+        };
+      }
+      return { ...entry, entryType: entry.entryType || 'prompt' };
+    });
+
     if (limit && parseInt(limit) > 0) {
       history = history.slice(-parseInt(limit));
     }
@@ -1284,7 +1296,7 @@ router.get('/:type/:id/prompt-history', async (req, res) => {
 router.post('/:type/:id/prompt-history', async (req, res) => {
   try {
     const { type, id } = req.params;
-    const { role, content } = req.body;
+    const { role, title, description, content } = req.body;
     const data = await loadData(req);
 
     const item = getItemByType(data, type, id);
@@ -1294,11 +1306,14 @@ router.post('/:type/:id/prompt-history', async (req, res) => {
 
     if (!item.promptHistory) item.promptHistory = [];
 
+    // Support new format (title + description) or legacy format (content)
     const entry = {
       id: generateId('ph'),
       timestamp: new Date().toISOString(),
+      entryType: 'prompt',
       role: role || 'user',
-      content: content || ''
+      title: title || (content?.substring(0, 80) + (content?.length > 80 ? '...' : '')) || '',
+      description: description || content || ''
     };
 
     item.promptHistory.push(entry);

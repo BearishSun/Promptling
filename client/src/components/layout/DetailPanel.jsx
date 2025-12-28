@@ -2,6 +2,7 @@ import { memo, useState, useCallback, useEffect, useRef } from 'react';
 import { useTaskData, useTaskActions, useUIState, SYSTEM_SECTIONS } from '../../context/TaskProvider';
 import MarkdownEditor from '../detail/MarkdownEditor';
 import MarkdownViewer from '../detail/MarkdownViewer';
+import PromptHistoryViewer from '../detail/PromptHistoryViewer';
 import { formatDateTime } from '../../utils/dateFormat';
 import tasksApi, { TASK_STATUSES, COMPLEXITIES } from '../../services/api';
 
@@ -137,7 +138,7 @@ function DetailPanel() {
   const [newTagName, setNewTagName] = useState('');
   const [newTagColor, setNewTagColor] = useState(TAG_COLORS[0]);
   const [isUploading, setIsUploading] = useState(false);
-  const [showPromptHistory, setShowPromptHistory] = useState(false);
+  const [showPromptHistoryModal, setShowPromptHistoryModal] = useState(false);
   const [promptHistory, setPromptHistory] = useState([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [planVersions, setPlanVersions] = useState([]);
@@ -310,25 +311,22 @@ function DetailPanel() {
     return tasksApi.getAttachmentUrl(storedPath);
   }, []);
 
-  // Fetch prompt history when toggled open
-  const handleTogglePromptHistory = useCallback(async () => {
-    if (!showPromptHistory) {
-      setIsLoadingHistory(true);
-      try {
-        const response = await tasksApi.getPromptHistory(selectedItemType, selectedItemId);
-        setPromptHistory(response.history || []);
-      } catch (error) {
-        console.error('Failed to fetch prompt history:', error);
-        setPromptHistory([]);
-      } finally {
-        setIsLoadingHistory(false);
-      }
+  // Open prompt history modal and fetch data
+  const handleOpenPromptHistoryModal = useCallback(async () => {
+    setShowPromptHistoryModal(true);
+    setIsLoadingHistory(true);
+    try {
+      const response = await tasksApi.getPromptHistory(selectedItemType, selectedItemId);
+      setPromptHistory(response.history || []);
+    } catch (error) {
+      console.error('Failed to fetch prompt history:', error);
+      setPromptHistory([]);
+    } finally {
+      setIsLoadingHistory(false);
     }
-    setShowPromptHistory(!showPromptHistory);
-  }, [showPromptHistory, selectedItemType, selectedItemId]);
+  }, [selectedItemType, selectedItemId]);
 
   const handleClearPromptHistory = useCallback(async () => {
-    if (!confirm('Clear all prompt history for this item?')) return;
     try {
       await tasksApi.clearPromptHistory(selectedItemType, selectedItemId);
       setPromptHistory([]);
@@ -340,7 +338,7 @@ function DetailPanel() {
 
   // Reset prompt history state when item changes
   useEffect(() => {
-    setShowPromptHistory(false);
+    setShowPromptHistoryModal(false);
     setPromptHistory([]);
   }, [selectedItemId]);
 
@@ -881,89 +879,20 @@ function DetailPanel() {
           </div>
         </div>
 
-        {/* Prompt History (Claude Code Integration) */}
+        {/* Prompt History (Claude Code Integration) - Button to open modal */}
         <div className="detail-section">
           <button
-            className="prompt-history-toggle"
-            onClick={handleTogglePromptHistory}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              background: 'none',
-              border: 'none',
-              padding: '0',
-              cursor: 'pointer',
-              color: 'var(--text-secondary)',
-              fontSize: '12px',
-              fontWeight: '600',
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px',
-              width: '100%',
-            }}
+            className="prompt-history-open-btn"
+            onClick={handleOpenPromptHistoryModal}
           >
-            <ChevronIcon expanded={showPromptHistory} />
             <HistoryIcon />
-            Claude Prompt History
-            {isLoadingHistory && <span style={{ marginLeft: 'auto', fontSize: '11px' }}>Loading...</span>}
+            <span>Claude Prompt History</span>
+            {item?.promptHistory?.length > 0 && (
+              <span className="prompt-history-badge">
+                {item.promptHistory.length}
+              </span>
+            )}
           </button>
-
-          {showPromptHistory && (
-            <div className="prompt-history-content" style={{ marginTop: '12px' }}>
-              {promptHistory.length === 0 ? (
-                <p style={{ color: 'var(--text-muted)', fontSize: '13px', margin: 0 }}>
-                  No prompt history yet. Use Claude Code with this item to see conversation history here.
-                </p>
-              ) : (
-                <>
-                  <div className="prompt-history-list" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    {promptHistory.map((entry) => (
-                      <div
-                        key={entry.id}
-                        className="prompt-history-entry"
-                        style={{
-                          padding: '10px 12px',
-                          borderRadius: '6px',
-                          background: entry.role === 'user' ? 'var(--bg-tertiary)' : 'var(--bg-secondary)',
-                          borderLeft: `3px solid ${entry.role === 'user' ? 'var(--accent-color)' : '#22c55e'}`,
-                        }}
-                      >
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                          <span style={{
-                            fontSize: '11px',
-                            fontWeight: '600',
-                            color: entry.role === 'user' ? 'var(--accent-color)' : '#22c55e',
-                            textTransform: 'uppercase',
-                          }}>
-                            {entry.role === 'user' ? 'User' : 'Claude'}
-                          </span>
-                          <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                            {formatDateTime(entry.timestamp)}
-                          </span>
-                        </div>
-                        <p style={{
-                          margin: 0,
-                          fontSize: '13px',
-                          color: 'var(--text-primary)',
-                          whiteSpace: 'pre-wrap',
-                          lineHeight: '1.5',
-                        }}>
-                          {entry.content}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                  <button
-                    className="btn btn-ghost btn-sm"
-                    onClick={handleClearPromptHistory}
-                    style={{ marginTop: '12px', color: 'var(--text-muted)' }}
-                  >
-                    <TrashIcon /> Clear History
-                  </button>
-                </>
-              )}
-            </div>
-          )}
         </div>
       </div>
     </aside>
@@ -987,6 +916,17 @@ function DetailPanel() {
             ))}
           </select>
         ) : null}
+      />
+    )}
+
+    {/* Prompt History Viewer Modal */}
+    {showPromptHistoryModal && (
+      <PromptHistoryViewer
+        history={promptHistory}
+        onClose={() => setShowPromptHistoryModal(false)}
+        onClear={handleClearPromptHistory}
+        isLoading={isLoadingHistory}
+        itemTitle={item?.title}
       />
     )}
     </div>
