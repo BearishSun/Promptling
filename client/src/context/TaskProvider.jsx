@@ -36,7 +36,7 @@ export function TaskProvider({ children }) {
     loadData();
   }, []);
 
-  const loadData = async () => {
+  const loadData = async (restoreUIState = true) => {
     try {
       setLoading(true);
       setError(null);
@@ -50,8 +50,8 @@ export function TaskProvider({ children }) {
       if (!loadedData.taskCategories) loadedData.taskCategories = {};
       if (!loadedData.tags) loadedData.tags = {};
       setData(loadedData);
-      // Restore UI state from settings
-      if (loadedData.settings) {
+      // Restore UI state from settings (only on initial load, not on refresh)
+      if (restoreUIState && loadedData.settings) {
         // Map legacy activeView values to new values
         let activeView = loadedData.settings.activeView || 'section';
         let activeSectionId = loadedData.settings.activeSectionId || SYSTEM_SECTIONS.FEATURES;
@@ -298,12 +298,12 @@ export function TaskProvider({ children }) {
 
     deleteItemCategory: async (id) => {
       await tasksApi.deleteItemCategory(id);
-      await loadData(); // Reload to get proper item reassignment
+      await loadData(false); // Reload to get proper item reassignment, preserve UI state
     },
 
     moveItemToCategory: async (itemId, targetCategoryId, targetSectionId = null) => {
       await tasksApi.moveItem({ itemId, targetCategoryId, targetSectionId });
-      await loadData();
+      await loadData(false); // Preserve UI state
     },
 
     // Reorder items in a section (uncategorized items)
@@ -759,7 +759,7 @@ export function TaskProvider({ children }) {
       } else {
         await tasksApi.importData(jsonData);
       }
-      await loadData();
+      await loadData(false); // Preserve UI state
     },
 
     // Attachments
@@ -810,16 +810,16 @@ export function TaskProvider({ children }) {
     // Promote task to item
     promoteTask: async (taskId, targetSectionId) => {
       const result = await tasksApi.promoteTask(taskId, targetSectionId);
-      // Reload to get the updated data structure
-      await loadData();
+      // Reload to get the updated data structure, preserve UI state
+      await loadData(false);
       return result;
     },
 
     // Convert item to task (demote) - used for shift+drag
     convertToTask: async (parentType, itemId, targetItemId) => {
       const result = await tasksApi.convertToTask(itemId, targetItemId);
-      // Reload to get the updated data structure
-      await loadData();
+      // Reload to get the updated data structure, preserve UI state
+      await loadData(false);
       return result;
     }
   }), [data, optimisticUpdate]);
