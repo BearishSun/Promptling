@@ -1,6 +1,14 @@
 const express = require('express');
+const { randomUUID } = require('crypto');
 const fs = require('fs').promises;
 const path = require('path');
+const { Server } = require('@modelcontextprotocol/sdk/server/index.js');
+const { StreamableHTTPServerTransport } = require('@modelcontextprotocol/sdk/server/streamableHttp.js');
+const {
+  CallToolRequestSchema,
+  ListToolsRequestSchema,
+  isInitializeRequest
+} = require('@modelcontextprotocol/sdk/types.js');
 const { getDataPaths } = require('../config');
 const {
   loadSettings,
@@ -893,8 +901,107 @@ const toolHandlers = {
   }
 };
 
-// MCP JSON-RPC Handler
-router.post('/', async (req, res) => {
+function toolResponseToTextContent(toolResult) {
+  return {
+    content: [
+      {
+        type: 'text',
+        text: typeof toolResult === 'string' ? toolResult : JSON.stringify(toolResult, null, 2)
+      }
+    ]
+  };
+}
+
+function toolErrorToTextContent(error) {
+  const message = error?.message || String(error);
+  return {
+    isError: true,
+    content: [
+      {
+        type: 'text',
+        text: `Error: ${message}`
+      }
+    ]
+  };
+}
+
+function normalizeHeaders(headers = {}) {
+  const normalized = {};
+  for (const [rawKey, rawValue] of Object.entries(headers)) {
+    if (rawValue === undefined) continue;
+    const key = rawKey.toLowerCase();
+    normalized[key] = Array.isArray(rawValue) ? rawValue[0] : rawValue;
+  }
+  return normalized;
+}
+
+function getSessionIdFromReq(req) {
+  const header = req.headers['mcp-session-id'];
+  return Array.isArray(header) ? header[0] : header;
+}
+
+async function callTool(name, args, reqLike) {
+  const handler = toolHandlers[name];
+  if (!handler) {
+    throw new Error(`Unknown tool: ${name}`);
+  }
+  return handler(args || {}, reqLike);
+}
+
+function createStreamableMcpServer() {
+  const server = new Server(
+    {
+      name: 'promptling-mcp',
+      version: '1.0.0'
+    },
+    {
+      capabilities: {
+        tools: {}
+      }
+    }
+  );
+
+  server.setRequestHandler(ListToolsRequestSchema, async () => {
+    return { tools: TOOLS };
+  });
+
+  server.setRequestHandler(CallToolRequestSchema, async (request, extra) => {
+    const { name, arguments: args } = request.params;
+    const reqLike = { headers: normalizeHeaders(extra?.requestInfo?.headers || {}) };
+
+    try {
+      const toolResult = await callTool(name, args, reqLike);
+      return toolResponseToTextContent(toolResult);
+    } catch (error) {
+      return toolErrorToTextContent(error);
+    }
+  });
+
+  return server;
+}
+
+const streamableSessions = new Map();
+
+function shouldUseStreamableTransport(req) {
+  const sessionId = getSessionIdFromReq(req);
+
+  if (req.method === 'GET') {
+    return !!sessionId;
+  }
+  if (req.method === 'DELETE') {
+    return true;
+  }
+  if (req.method === 'POST') {
+    if (sessionId) return true;
+    // Streamable HTTP clients may still request older protocol versions at initialize.
+    // Route all initialize calls through Streamable transport to avoid handshake split-brain.
+    return !!req.body && isInitializeRequest(req.body);
+  }
+
+  return false;
+}
+
+async function handleLegacyJsonRpc(req, res) {
   const { jsonrpc, id, method, params } = req.body;
 
   // Validate JSON-RPC format
@@ -929,8 +1036,7 @@ router.post('/', async (req, res) => {
 
       case 'tools/call':
         const { name, arguments: args } = params;
-        const handler = toolHandlers[name];
-        if (!handler) {
+        if (!toolHandlers[name]) {
           return res.json({
             jsonrpc: '2.0',
             id,
@@ -940,25 +1046,10 @@ router.post('/', async (req, res) => {
 
         try {
           // Pass req as second argument to handlers for project-scoped data
-          const toolResult = await handler(args || {}, req);
-          result = {
-            content: [
-              {
-                type: 'text',
-                text: typeof toolResult === 'string' ? toolResult : JSON.stringify(toolResult, null, 2)
-              }
-            ]
-          };
+          const toolResult = await callTool(name, args, req);
+          result = toolResponseToTextContent(toolResult);
         } catch (toolError) {
-          result = {
-            isError: true,
-            content: [
-              {
-                type: 'text',
-                text: `Error: ${toolError.message}`
-              }
-            ]
-          };
+          result = toolErrorToTextContent(toolError);
         }
         break;
 
@@ -984,17 +1075,111 @@ router.post('/', async (req, res) => {
       error: { code: -32603, message: error.message }
     });
   }
-});
+}
 
-// Health check for MCP endpoint
-router.get('/', (req, res) => {
+async function handleStreamableHttp(req, res) {
+  const sessionId = getSessionIdFromReq(req);
+  const existingSession = sessionId ? streamableSessions.get(sessionId) : undefined;
+  let transport = existingSession?.transport;
+
+  if (!transport) {
+    const isNewInitialize = req.method === 'POST' && !sessionId && isInitializeRequest(req.body);
+
+    if (!isNewInitialize) {
+      return res.status(400).json({
+        jsonrpc: '2.0',
+        error: {
+          code: -32000,
+          message: 'Bad Request: No valid session ID provided'
+        },
+        id: null
+      });
+    }
+
+    const server = createStreamableMcpServer();
+
+    transport = new StreamableHTTPServerTransport({
+      sessionIdGenerator: () => randomUUID(),
+      onsessioninitialized: newSessionId => {
+        streamableSessions.set(newSessionId, { transport, server });
+      }
+    });
+
+    transport.onclose = async () => {
+      const closedSessionId = transport.sessionId;
+      if (closedSessionId && streamableSessions.has(closedSessionId)) {
+        streamableSessions.delete(closedSessionId);
+      }
+
+      try {
+        await server.close();
+      } catch (error) {
+        console.error('Error closing MCP server session:', error);
+      }
+    };
+
+    await server.connect(transport);
+  }
+
+  // Some older HTTP clients omit Accept; Streamable HTTP requires either
+  // application/json or text/event-stream to be accepted.
+  if (!req.headers.accept) {
+    req.headers.accept = 'application/json, text/event-stream';
+  }
+
+  if (req.method === 'POST') {
+    await transport.handleRequest(req, res, req.body);
+    return;
+  }
+
+  await transport.handleRequest(req, res);
+}
+
+router.get('/', (req, res, next) => {
+  // GET with a session ID is used by Streamable HTTP for SSE streams.
+  if (getSessionIdFromReq(req)) {
+    return next();
+  }
+
   res.json({
     name: 'promptling-mcp',
     version: '1.0.0',
     status: 'ok',
     toolCount: TOOLS.length,
-    endpoint: 'POST /api/mcp'
+    endpoint: '/api/mcp',
+    protocols: [
+      'MCP Streamable HTTP (stateful, SDK transport)',
+      'Legacy JSON-RPC POST compatibility'
+    ]
   });
+});
+
+router.all('/', async (req, res) => {
+  try {
+    if (shouldUseStreamableTransport(req)) {
+      await handleStreamableHttp(req, res);
+      return;
+    }
+
+    if (req.method !== 'POST') {
+      return res.status(405).json({
+        jsonrpc: '2.0',
+        id: null,
+        error: { code: -32600, message: 'Invalid Request - legacy JSON-RPC accepts POST only' }
+      });
+    }
+
+    await handleLegacyJsonRpc(req, res);
+  } catch (error) {
+    console.error('MCP transport error:', error);
+    if (!res.headersSent) {
+      res.status(500).json({
+        jsonrpc: '2.0',
+        id: req.body?.id ?? null,
+        error: { code: -32603, message: error.message }
+      });
+    }
+  }
 });
 
 module.exports = router;

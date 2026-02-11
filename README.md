@@ -58,6 +58,24 @@ cd server && node index.js
 
 Then open http://localhost:3001 in your browser.
 
+### Rebuild Script (PM2 Workflow)
+
+If you're running Promptling under PM2 and want to rebuild everything first:
+
+```bash
+# Windows
+rebuild-promptling.bat
+
+# Or via npm
+npm run rebuild
+```
+
+Then restart PM2:
+
+```bash
+pm2 restart promptling
+```
+
 ### Add MCP Tools to Claude Code 
 
 Add the Promptling MCP server so Claude can interact with your tasks:
@@ -65,6 +83,9 @@ Add the Promptling MCP server so Claude can interact with your tasks:
 ```bash
 claude mcp add --transport http promptling http://localhost:3001/api/mcp
 ```
+
+Promptling uses a single MCP endpoint (`/api/mcp`) with Streamable HTTP support and legacy JSON-RPC POST compatibility.
+If Claude is already configured to `http://localhost:3001/api/mcp`, no endpoint change is required after updates.
 
 Restart Claude Code. You'll now have access to tools like `search`, `get`, `create`, `update`, `list`, and `read` for managing items.
 

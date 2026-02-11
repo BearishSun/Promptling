@@ -57,5 +57,6 @@ app.listen(PORT, () => {
   console.log(`Promptling server running on http://localhost:${PORT}`);
   console.log(`  - API: http://localhost:${PORT}/api`);
   console.log(`  - MCP: http://localhost:${PORT}/api/mcp`);
+  console.log('  - MCP protocol support: Streamable HTTP (preferred) + legacy JSON-RPC POST fallback');
   console.log(`  - UI:  ${clientBuildExists ? 'http://localhost:' + PORT : 'Not built (run: cd client && npm run build)'}`);
 });

@@ -6,7 +6,8 @@
     "client": "cd client && npm run dev",
     "server": "cd server && npm run dev",
     "dev": "npx concurrently \"npm run server\" \"npm run client\"",
-    "install:all": "npm install && cd client && npm install && cd ../server && npm install"
+    "install:all": "npm install && cd client && npm install && cd ../server && npm install",
+    "rebuild": "rebuild-promptling.bat"
   },
   "keywords": ["task", "todo", "features", "bugs", "project-management"],
   "author": "",
