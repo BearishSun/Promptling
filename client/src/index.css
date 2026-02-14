@@ -30,6 +30,10 @@
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
   --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
   --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+  --diff-add-bg: #dcfce7;
+  --diff-remove-bg: #fee2e2;
+  --diff-add-prefix: #16a34a;
+  --diff-remove-prefix: #dc2626;
 }
 
 /* Dark theme */
@@ -53,6 +57,10 @@
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
   --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4);
   --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.5);
+  --diff-add-bg: #0d3321;
+  --diff-remove-bg: #3c1618;
+  --diff-add-prefix: #4ade80;
+  --diff-remove-prefix: #f87171;
 }
 
 /* System preference detection */
@@ -77,6 +85,10 @@
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
     --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4);
     --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.5);
+    --diff-add-bg: #0d3321;
+    --diff-remove-bg: #3c1618;
+    --diff-add-prefix: #4ade80;
+    --diff-remove-prefix: #f87171;
   }
 }
 
@@ -1547,6 +1559,194 @@ body {
 
 .markdown-viewer-content input[type="checkbox"] {
   margin-right: 8px;
+}
+
+/* Expanded modal for split diff view */
+.markdown-viewer--split {
+  max-width: 1600px;
+  transition: max-width 0.2s ease;
+}
+
+/* Diff Controls */
+.diff-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.btn-diff-active {
+  background: var(--accent) !important;
+  color: white !important;
+  border-color: var(--accent) !important;
+}
+
+.diff-view-toggle {
+  display: flex;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.diff-view-toggle .btn {
+  border: none;
+  border-radius: 0;
+  padding: 4px 10px;
+  font-size: 12px;
+}
+
+.diff-view-toggle .btn + .btn {
+  border-left: 1px solid var(--border-color);
+}
+
+.diff-loading {
+  font-size: 12px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+/* Diff Viewer */
+.diff-viewer {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-primary);
+  padding: 4px 0;
+}
+
+.diff-header-labels {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  margin-bottom: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.diff-header-label {
+  padding: 6px 12px;
+  background: var(--bg-secondary);
+  border-radius: 6px;
+}
+
+.diff-hunk {
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 4px;
+}
+
+.diff-split-hunk {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+
+.diff-split-side {
+  overflow-x: auto;
+}
+
+.diff-split-side + .diff-split-side {
+  border-left: 1px solid var(--border-color);
+}
+
+.diff-line {
+  display: flex;
+  align-items: stretch;
+  min-height: 22px;
+}
+
+.diff-line-num {
+  width: 44px;
+  min-width: 44px;
+  padding: 0 8px;
+  text-align: right;
+  color: var(--text-muted);
+  user-select: none;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-shrink: 0;
+}
+
+.diff-line-num-old {
+  border-right: 1px solid var(--border-color);
+}
+
+.diff-line-prefix {
+  width: 20px;
+  min-width: 20px;
+  padding: 0 4px;
+  text-align: center;
+  color: var(--text-muted);
+  user-select: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-weight: 600;
+}
+
+.diff-line-content {
+  flex: 1;
+  padding: 0 8px;
+  white-space: pre-wrap;
+  word-break: break-all;
+  display: flex;
+  align-items: center;
+}
+
+.diff-line-add {
+  background: var(--diff-add-bg);
+}
+
+.diff-line-add .diff-line-prefix {
+  color: var(--diff-add-prefix);
+}
+
+.diff-line-add .diff-line-content {
+  color: var(--text-primary);
+}
+
+.diff-line-remove {
+  background: var(--diff-remove-bg);
+}
+
+.diff-line-remove .diff-line-prefix {
+  color: var(--diff-remove-prefix);
+}
+
+.diff-line-remove .diff-line-content {
+  color: var(--text-primary);
+}
+
+.diff-line-context {
+  background: transparent;
+}
+
+.diff-line-pad {
+  background: var(--bg-secondary);
+  opacity: 0.5;
+}
+
+.diff-separator {
+  padding: 24px 16px;
+  font-size: 12px;
+  color: var(--text-muted);
+  text-align: center;
+  background: var(--bg-hover);
+  border: 1px dashed var(--border-color);
+  border-radius: 6px;
+  margin-bottom: 4px;
+}
+
+.diff-empty-message {
+  text-align: center;
+  padding: 48px 24px;
+  color: var(--text-muted);
+  font-size: 14px;
+  font-family: var(--font-sans);
 }
 
 /* Prompt History Viewer Modal */

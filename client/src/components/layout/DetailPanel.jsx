@@ -143,6 +143,11 @@ function DetailPanel() {
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [planVersions, setPlanVersions] = useState([]);
   const [markdownViewer, setMarkdownViewer] = useState(null); // { title, content, versions?, selectedVersion? }
+  const [diffMode, setDiffMode] = useState(false);
+  const [diffViewMode, setDiffViewMode] = useState('unified');
+  const [compareVersion, setCompareVersion] = useState(null);
+  const [compareContent, setCompareContent] = useState(null);
+  const [isLoadingCompare, setIsLoadingCompare] = useState(false);
   const fileInputRef = useRef(null);
 
   // Get the selected item based on type
@@ -401,10 +406,51 @@ function DetailPanel() {
         content: response.content,
         selectedVersion: version
       }));
+      // Reset diff state when main version changes
+      setDiffMode(false);
+      setCompareVersion(null);
+      setCompareContent(null);
     } catch (error) {
       console.error('Failed to fetch plan version:', error);
     }
   }, [selectedItemType, selectedItemId]);
+
+  // Fetch compare version content
+  const fetchCompareContent = useCallback(async (version) => {
+    setIsLoadingCompare(true);
+    try {
+      const response = await tasksApi.getPlan(selectedItemType, selectedItemId, version);
+      setCompareVersion(version);
+      setCompareContent(response.content);
+    } catch (error) {
+      console.error('Failed to fetch compare version:', error);
+      setDiffMode(false);
+      setCompareVersion(null);
+      setCompareContent(null);
+    } finally {
+      setIsLoadingCompare(false);
+    }
+  }, [selectedItemType, selectedItemId]);
+
+  // Toggle diff mode
+  const handleToggleDiff = useCallback(() => {
+    if (diffMode) {
+      setDiffMode(false);
+      setCompareVersion(null);
+      setCompareContent(null);
+    } else {
+      const selectedVer = markdownViewer?.selectedVersion;
+      if (selectedVer && selectedVer > 1) {
+        setDiffMode(true);
+        fetchCompareContent(selectedVer - 1);
+      }
+    }
+  }, [diffMode, markdownViewer?.selectedVersion, fetchCompareContent]);
+
+  // Change compare version
+  const handleCompareVersionChange = useCallback((version) => {
+    fetchCompareContent(version);
+  }, [fetchCompareContent]);
 
   const isMarkdownFile = useCallback((filename) => {
     return filename?.toLowerCase().endsWith('.md') || filename?.toLowerCase().endsWith('.markdown');
@@ -902,7 +948,13 @@ function DetailPanel() {
       <MarkdownViewer
         title={markdownViewer.title}
         content={markdownViewer.content}
-        onClose={() => setMarkdownViewer(null)}
+        onClose={() => {
+          setMarkdownViewer(null);
+          setDiffMode(false);
+          setDiffViewMode('unified');
+          setCompareVersion(null);
+          setCompareContent(null);
+        }}
         versionSelector={markdownViewer.type === 'plan' && markdownViewer.versions?.length > 1 ? (
           <select
             className="plan-version-select"
@@ -915,6 +967,58 @@ function DetailPanel() {
               </option>
             ))}
           </select>
+        ) : null}
+        diffMode={diffMode}
+        diffContent={diffMode && compareContent != null ? {
+          oldContent: compareContent,
+          oldVersion: compareVersion,
+          newVersion: markdownViewer.selectedVersion
+        } : null}
+        diffViewMode={diffViewMode}
+        diffControls={markdownViewer.type === 'plan' && markdownViewer.versions?.length > 1 ? (
+          <div className="diff-controls">
+            <button
+              className={`btn btn-sm btn-secondary${diffMode ? ' btn-diff-active' : ''}`}
+              onClick={handleToggleDiff}
+              disabled={markdownViewer.selectedVersion <= 1}
+              title={markdownViewer.selectedVersion <= 1 ? 'No previous version to compare against' : (diffMode ? 'Hide diff' : 'Show diff')}
+            >
+              {diffMode ? 'Hide diff' : 'Show diff'}
+            </button>
+            {diffMode && (
+              <>
+                <select
+                  className="plan-version-select"
+                  value={compareVersion || ''}
+                  onChange={(e) => handleCompareVersionChange(Number(e.target.value))}
+                  disabled={isLoadingCompare}
+                >
+                  {markdownViewer.versions
+                    .filter(v => v.version < markdownViewer.selectedVersion)
+                    .map(v => (
+                      <option key={v.version} value={v.version}>
+                        vs v{v.version}
+                      </option>
+                    ))}
+                </select>
+                <div className="diff-view-toggle">
+                  <button
+                    className={`btn btn-sm${diffViewMode === 'unified' ? ' btn-diff-active' : ' btn-secondary'}`}
+                    onClick={() => setDiffViewMode('unified')}
+                  >
+                    Unified
+                  </button>
+                  <button
+                    className={`btn btn-sm${diffViewMode === 'split' ? ' btn-diff-active' : ' btn-secondary'}`}
+                    onClick={() => setDiffViewMode('split')}
+                  >
+                    Split
+                  </button>
+                </div>
+                {isLoadingCompare && <span className="diff-loading">Loading...</span>}
+              </>
+            )}
+          </div>
         ) : null}
       />
     )}
