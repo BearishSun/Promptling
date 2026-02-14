@@ -2,6 +2,7 @@ import { memo, useState, useEffect, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import DiffViewer from './DiffViewer';
+import RenderedDiffViewer from './RenderedDiffViewer';
 import PlanCommentViewer from './PlanCommentViewer';
 import CommentPanel from './CommentPanel';
 
@@ -64,7 +65,7 @@ function MarkdownViewer({ title, content, onClose, versionSelector, diffMode, di
     setTimeout(() => setShowToast(false), 2000);
   }, []);
 
-  const splitClass = diffMode && diffViewMode === 'split' ? ' markdown-viewer--split' : '';
+  const splitClass = diffMode && (diffViewMode === 'split' || diffViewMode === 'rendered') ? ' markdown-viewer--split' : '';
   const commentClass = commentMode ? ' markdown-viewer--commenting' : '';
 
   const renderContent = () => {
@@ -105,6 +106,16 @@ function MarkdownViewer({ title, content, onClose, versionSelector, diffMode, di
     }
 
     if (diffMode && diffContent) {
+      if (diffViewMode === 'rendered') {
+        return (
+          <RenderedDiffViewer
+            oldContent={diffContent.oldContent}
+            newContent={content}
+            oldLabel={`v${diffContent.oldVersion}`}
+            newLabel={`v${diffContent.newVersion}`}
+          />
+        );
+      }
       return (
         <DiffViewer
           oldContent={diffContent.oldContent}

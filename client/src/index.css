@@ -2785,3 +2785,226 @@ body {
   border-color: var(--text-primary);
   box-shadow: 0 0 0 2px var(--bg-primary);
 }
+
+/* Rendered Diff Viewer */
+.rendered-diff-viewer {
+  display: flex;
+  height: 100%;
+  gap: 0;
+}
+
+.rendered-diff-toc {
+  width: 240px;
+  min-width: 200px;
+  border-right: 1px solid var(--border-color);
+  padding: 16px 0;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+
+.rendered-diff-toc-title {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
+  padding: 0 16px 12px;
+}
+
+.rendered-diff-toc-entry {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 16px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  text-align: left;
+  font-size: 13px;
+  color: var(--text-primary);
+  transition: background 0.15s;
+}
+
+.rendered-diff-toc-entry:hover {
+  background: var(--bg-hover);
+}
+
+.rendered-diff-toc-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.rendered-diff-toc-dot--added {
+  background: var(--diff-add-prefix);
+}
+
+.rendered-diff-toc-dot--removed {
+  background: var(--diff-remove-prefix);
+}
+
+.rendered-diff-toc-dot--modified {
+  background: linear-gradient(135deg, var(--diff-remove-prefix) 50%, var(--diff-add-prefix) 50%);
+}
+
+.rendered-diff-toc-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rendered-diff-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+  min-width: 0;
+}
+
+.rendered-diff-section {
+  border-radius: 6px;
+  margin-bottom: 2px;
+}
+
+.rendered-diff-section-added {
+  background: var(--diff-add-bg);
+  border-left: 3px solid var(--diff-add-prefix);
+  padding: 8px 16px;
+}
+
+.rendered-diff-section-removed {
+  background: var(--diff-remove-bg);
+  border-left: 3px solid var(--diff-remove-prefix);
+  padding: 8px 16px;
+  text-decoration: line-through;
+  text-decoration-color: var(--diff-remove-prefix);
+}
+
+.rendered-diff-section-modified {
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.rendered-diff-section-modified > .rendered-diff-section {
+  border-radius: 0;
+  margin-bottom: 0;
+}
+
+.rendered-diff-section-context {
+  padding: 0 16px;
+}
+
+/* Inherit markdown content styles inside rendered diff */
+.rendered-diff-section h1,
+.rendered-diff-section h2,
+.rendered-diff-section h3 {
+  margin-top: 8px;
+}
+
+.rendered-diff-section h1:first-child,
+.rendered-diff-section h2:first-child,
+.rendered-diff-section h3:first-child {
+  margin-top: 0;
+}
+
+.rendered-diff-section p:last-child,
+.rendered-diff-section ul:last-child,
+.rendered-diff-section ol:last-child {
+  margin-bottom: 0;
+}
+
+.rendered-diff-section table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 8px 0;
+}
+
+.rendered-diff-section th,
+.rendered-diff-section td {
+  border: 1px solid var(--border-color);
+  padding: 8px 10px;
+  text-align: left;
+}
+
+.rendered-diff-section th {
+  background: var(--bg-secondary);
+  font-weight: 600;
+}
+
+.rendered-diff-section pre {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 12px;
+  overflow-x: auto;
+}
+
+.rendered-diff-section-added pre {
+  background: var(--diff-add-bg);
+  border-color: var(--diff-add-prefix);
+}
+
+.rendered-diff-section-removed pre {
+  background: var(--diff-remove-bg);
+  border-color: var(--diff-remove-prefix);
+}
+
+.rendered-diff-section code {
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+
+.rendered-diff-section pre code {
+  background: none;
+  padding: 0;
+}
+
+/* Code blocks with per-line diff coloring */
+.rendered-diff-codeblock {
+  margin-bottom: 2px;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.rendered-diff-codeblock pre {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  margin: 0;
+  padding: 12px 0;
+  overflow-x: auto;
+}
+
+.rendered-diff-codeblock code {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  background: none;
+  padding: 0;
+}
+
+.rendered-diff-codeline {
+  display: block;
+  padding: 1px 16px;
+  min-height: 1.4em;
+  white-space: pre;
+}
+
+.rendered-diff-codeline--added {
+  background: var(--diff-add-bg);
+  border-left: 3px solid var(--diff-add-prefix);
+  padding-left: 13px;
+}
+
+.rendered-diff-codeline--removed {
+  background: var(--diff-remove-bg);
+  border-left: 3px solid var(--diff-remove-prefix);
+  padding-left: 13px;
+  text-decoration: line-through;
+  text-decoration-color: var(--diff-remove-prefix);
+  opacity: 0.7;
+}
+
+.rendered-diff-codeline--context {
+  /* Normal code line - no special styling */
+}
