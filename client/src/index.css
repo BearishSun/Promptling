@@ -1749,6 +1749,359 @@ body {
   font-family: var(--font-sans);
 }
 
+/* Expanded modal for comment mode */
+.markdown-viewer--commenting {
+  max-width: 1400px;
+  transition: max-width 0.2s ease;
+}
+
+/* When both split diff and commenting are active */
+.markdown-viewer--split.markdown-viewer--commenting {
+  max-width: 1600px;
+}
+
+/* Remove padding, disable parent scroll, become flex column so children size properly */
+.markdown-viewer-content--commenting {
+  padding: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Comment mode layout: left content + right panel */
+.markdown-viewer-comment-layout {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.markdown-viewer-comment-lines {
+  flex: 3;
+  overflow-y: auto;
+  border-right: 1px solid var(--border-color);
+}
+
+.markdown-viewer-comment-panel {
+  flex: 2;
+  min-width: 280px;
+  max-width: 400px;
+  overflow-y: auto;
+}
+
+/* Plan Comment Viewer — rendered markdown with annotatable blocks */
+.plan-comment-viewer--rendered {
+  position: relative;
+  padding: 24px 32px 24px 56px;
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--text-primary);
+}
+
+/* All annotatable elements: clickable with hover feedback */
+.plan-comment-viewer--rendered [data-source-line] {
+  position: relative;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background 0.1s;
+}
+
+.plan-comment-viewer--rendered [data-source-line]:hover {
+  background: var(--bg-hover);
+}
+
+/* Line number gutter — visible on hover or when commented (top-level blocks only) */
+.plan-comment-viewer--rendered [data-source-line]::before {
+  content: attr(data-source-line);
+  position: absolute;
+  right: calc(100% + 8px);
+  top: 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+  opacity: 0;
+  transition: opacity 0.15s;
+  user-select: none;
+  pointer-events: none;
+  white-space: nowrap;
+  line-height: inherit;
+}
+
+.plan-comment-viewer--rendered [data-source-line]:hover::before,
+.plan-comment-viewer--rendered [data-source-line].plan-line-commented::before {
+  opacity: 0.6;
+}
+
+/* Don't show pseudo-element line numbers on table internals (they become table cells) */
+.plan-comment-viewer--rendered table[data-source-line]::before,
+.plan-comment-viewer--rendered tr[data-source-line]::before,
+.plan-comment-viewer--rendered table[data-source-line]::after,
+.plan-comment-viewer--rendered tr[data-source-line]::after {
+  display: none;
+}
+
+/* Highlighted background + left accent for commented blocks */
+.plan-line-commented {
+  background: rgba(59, 130, 246, 0.12) !important;
+  border-left: 3px solid var(--accent) !important;
+}
+
+.plan-line-commented:hover {
+  background: rgba(59, 130, 246, 0.18) !important;
+}
+
+[data-theme="dark"] .plan-line-commented,
+[data-theme="system"] .plan-line-commented {
+  background: rgba(96, 165, 250, 0.14) !important;
+}
+
+[data-theme="dark"] .plan-line-commented:hover,
+[data-theme="system"] .plan-line-commented:hover {
+  background: rgba(96, 165, 250, 0.2) !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  [data-theme="system"] .plan-line-commented {
+    background: rgba(96, 165, 250, 0.14) !important;
+  }
+  [data-theme="system"] .plan-line-commented:hover {
+    background: rgba(96, 165, 250, 0.2) !important;
+  }
+}
+
+/* Floating input that appears below the clicked block */
+.plan-rendered-input-row {
+  z-index: 5;
+  padding: 4px 8px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  box-shadow: var(--shadow-sm);
+}
+
+
+/* Inline comment input row */
+.plan-line-input-row {
+  display: flex;
+  align-items: center;
+  min-height: 32px;
+  background: var(--bg-secondary);
+  border-top: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.plan-line-input {
+  flex: 1;
+  padding: 6px 10px;
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  font-size: 13px;
+  font-family: var(--font-sans);
+  background: var(--bg-input);
+  color: var(--text-primary);
+  outline: none;
+  margin: 4px 8px;
+}
+
+.plan-line-input:focus {
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.plan-line-input::placeholder {
+  color: var(--text-muted);
+}
+
+/* Diff comment input row */
+.diff-comment-input-row {
+  padding-left: 0;
+}
+
+.diff-comment-input-row .diff-line-num {
+  background: var(--bg-secondary);
+}
+
+/* Clickable diff lines in comment mode */
+.diff-line-clickable {
+  cursor: pointer;
+}
+
+.diff-line-clickable:hover {
+  filter: brightness(0.95);
+}
+
+[data-theme="dark"] .diff-line-clickable:hover,
+[data-theme="system"] .diff-line-clickable:hover {
+  filter: brightness(1.15);
+}
+
+@media (prefers-color-scheme: dark) {
+  [data-theme="system"] .diff-line-clickable:hover {
+    filter: brightness(1.15);
+  }
+}
+
+/* Highlighted diff lines with comments */
+.diff-line.plan-line-commented {
+  background: rgba(59, 130, 246, 0.08);
+}
+
+.diff-line.diff-line-add.plan-line-commented {
+  background: color-mix(in srgb, var(--diff-add-bg), rgba(59, 130, 246, 0.15));
+}
+
+.diff-line.diff-line-remove.plan-line-commented {
+  background: color-mix(in srgb, var(--diff-remove-bg), rgba(59, 130, 246, 0.15));
+}
+
+/* Comment Panel */
+.comment-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  font-family: var(--font-sans);
+}
+
+.comment-panel-header {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border-color);
+  flex-shrink: 0;
+}
+
+.comment-panel-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.comment-panel-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+}
+
+.comment-panel-empty {
+  color: var(--text-muted);
+  font-size: 13px;
+  text-align: center;
+  padding: 32px 16px;
+}
+
+.comment-panel-item {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+}
+
+.comment-panel-item:last-child {
+  margin-bottom: 0;
+}
+
+.comment-panel-item-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.comment-panel-item-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.comment-panel-item-remove {
+  width: 22px;
+  height: 22px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.comment-panel-item-remove:hover {
+  background: var(--bg-hover);
+  color: var(--danger);
+}
+
+.comment-panel-item-line {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-secondary);
+  padding: 4px 6px;
+  background: var(--bg-hover);
+  border-radius: 4px;
+  margin-bottom: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.comment-panel-item-comment {
+  font-size: 13px;
+  color: var(--text-primary);
+  line-height: 1.4;
+}
+
+.comment-panel-footer {
+  padding: 12px;
+  border-top: 1px solid var(--border-color);
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.comment-panel-preview-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.comment-panel-preview {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 10px;
+  margin: 0;
+  max-height: 200px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.comment-panel-copy-btn {
+  width: 100%;
+  justify-content: center;
+}
+
+.comment-panel-copy-btn--copied {
+  background: var(--success);
+  color: white;
+  border-color: var(--success);
+}
+
+/* Comment toggle button active state */
+.btn-comment-active {
+  background: var(--accent) !important;
+  color: white !important;
+  border-color: var(--accent) !important;
+}
+
 /* Prompt History Viewer Modal */
 .prompt-history-viewer-overlay {
   position: fixed;

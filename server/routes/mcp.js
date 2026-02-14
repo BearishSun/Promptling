@@ -1083,14 +1083,15 @@ async function handleStreamableHttp(req, res) {
   let transport = existingSession?.transport;
 
   if (!transport) {
-    const isNewInitialize = req.method === 'POST' && !sessionId && isInitializeRequest(req.body);
+    const isInitialize = req.method === 'POST' && isInitializeRequest(req.body);
 
-    if (!isNewInitialize) {
-      return res.status(400).json({
+    if (!isInitialize) {
+      // Session expired or server restarted — return 404 so the client re-initializes.
+      return res.status(404).json({
         jsonrpc: '2.0',
         error: {
           code: -32000,
-          message: 'Bad Request: No valid session ID provided'
+          message: 'Session not found. The session may have expired or the server may have restarted. Please reconnect.'
         },
         id: null
       });

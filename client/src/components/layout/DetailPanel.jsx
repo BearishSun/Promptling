@@ -148,6 +148,7 @@ function DetailPanel() {
   const [compareVersion, setCompareVersion] = useState(null);
   const [compareContent, setCompareContent] = useState(null);
   const [isLoadingCompare, setIsLoadingCompare] = useState(false);
+  const [commentMode, setCommentMode] = useState(false);
   const fileInputRef = useRef(null);
 
   // Get the selected item based on type
@@ -446,6 +447,11 @@ function DetailPanel() {
       }
     }
   }, [diffMode, markdownViewer?.selectedVersion, fetchCompareContent]);
+
+  // Toggle comment mode
+  const handleToggleComment = useCallback(() => {
+    setCommentMode(prev => !prev);
+  }, []);
 
   // Change compare version
   const handleCompareVersionChange = useCallback((version) => {
@@ -954,6 +960,7 @@ function DetailPanel() {
           setDiffViewMode('unified');
           setCompareVersion(null);
           setCompareContent(null);
+          setCommentMode(false);
         }}
         versionSelector={markdownViewer.type === 'plan' && markdownViewer.versions?.length > 1 ? (
           <select
@@ -975,6 +982,16 @@ function DetailPanel() {
           newVersion: markdownViewer.selectedVersion
         } : null}
         diffViewMode={diffViewMode}
+        commentMode={commentMode}
+        commentControls={markdownViewer.type === 'plan' ? (
+          <button
+            className={`btn btn-sm btn-secondary${commentMode ? ' btn-comment-active' : ''}`}
+            onClick={handleToggleComment}
+            title={commentMode ? 'Hide comments' : 'Comment on lines'}
+          >
+            {commentMode ? 'Hide comments' : 'Comment'}
+          </button>
+        ) : null}
         diffControls={markdownViewer.type === 'plan' && markdownViewer.versions?.length > 1 ? (
           <div className="diff-controls">
             <button

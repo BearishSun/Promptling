@@ -24,7 +24,8 @@ if (!fs.existsSync(projectsDir)) {
 app.use(cors({
   origin: '*',
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Project-Id']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Project-Id', 'mcp-session-id'],
+  exposedHeaders: ['mcp-session-id']
 }));
 app.use(express.json());
 
