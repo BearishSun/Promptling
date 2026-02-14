@@ -1,7 +1,6 @@
 import { memo, useState, useEffect, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import DiffViewer from './DiffViewer';
 import RenderedDiffViewer from './RenderedDiffViewer';
 import PlanCommentViewer from './PlanCommentViewer';
 import CommentPanel from './CommentPanel';
@@ -65,33 +64,48 @@ function MarkdownViewer({ title, content, onClose, versionSelector, diffMode, di
     setTimeout(() => setShowToast(false), 2000);
   }, []);
 
-  const splitClass = diffMode && (diffViewMode === 'split' || diffViewMode === 'rendered') ? ' markdown-viewer--split' : '';
+  const splitClass = diffMode && diffViewMode === 'split' ? ' markdown-viewer--split' : '';
   const commentClass = commentMode ? ' markdown-viewer--commenting' : '';
 
   const renderContent = () => {
+    if (commentMode && diffMode && diffContent) {
+      return (
+        <div className="markdown-viewer-comment-layout">
+          <div className="markdown-viewer-comment-lines">
+            <RenderedDiffViewer
+              oldContent={diffContent.oldContent}
+              newContent={content}
+              oldLabel={`v${diffContent.oldVersion}`}
+              newLabel={`v${diffContent.newVersion}`}
+              viewMode={diffViewMode}
+              commentMode={true}
+              comments={comments}
+              onAddComment={handleAddComment}
+              onRemoveComment={handleRemoveComment}
+            />
+          </div>
+          <div className="markdown-viewer-comment-panel">
+            <CommentPanel
+              comments={comments}
+              onRemoveComment={handleRemoveComment}
+              diffMode={diffMode}
+              onCopied={handleCopied}
+            />
+          </div>
+        </div>
+      );
+    }
+
     if (commentMode) {
       return (
         <div className="markdown-viewer-comment-layout">
           <div className="markdown-viewer-comment-lines">
-            {diffMode && diffContent ? (
-              <DiffViewer
-                oldContent={diffContent.oldContent}
-                newContent={content}
-                oldLabel={`v${diffContent.oldVersion}`}
-                newLabel={`v${diffContent.newVersion}`}
-                viewMode={diffViewMode}
-                commentMode={true}
-                comments={comments}
-                onAddComment={handleAddComment}
-              />
-            ) : (
-              <PlanCommentViewer
-                content={content}
-                comments={comments}
-                onAddComment={handleAddComment}
-                onRemoveComment={handleRemoveComment}
-              />
-            )}
+            <PlanCommentViewer
+              content={content}
+              comments={comments}
+              onAddComment={handleAddComment}
+              onRemoveComment={handleRemoveComment}
+            />
           </div>
           <div className="markdown-viewer-comment-panel">
             <CommentPanel
@@ -106,18 +120,8 @@ function MarkdownViewer({ title, content, onClose, versionSelector, diffMode, di
     }
 
     if (diffMode && diffContent) {
-      if (diffViewMode === 'rendered') {
-        return (
-          <RenderedDiffViewer
-            oldContent={diffContent.oldContent}
-            newContent={content}
-            oldLabel={`v${diffContent.oldVersion}`}
-            newLabel={`v${diffContent.newVersion}`}
-          />
-        );
-      }
       return (
-        <DiffViewer
+        <RenderedDiffViewer
           oldContent={diffContent.oldContent}
           newContent={content}
           oldLabel={`v${diffContent.oldVersion}`}

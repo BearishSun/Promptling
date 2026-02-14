@@ -987,8 +987,7 @@ function DetailPanel() {
           <button
             className={`btn btn-sm btn-secondary${commentMode ? ' btn-comment-active' : ''}`}
             onClick={handleToggleComment}
-            disabled={diffMode && diffViewMode === 'rendered'}
-            title={diffMode && diffViewMode === 'rendered' ? 'Commenting not available in rendered view' : (commentMode ? 'Hide comments' : 'Comment on lines')}
+            title={commentMode ? 'Hide comments' : 'Comment on lines'}
           >
             {commentMode ? 'Hide comments' : 'Comment'}
           </button>
@@ -1031,12 +1030,6 @@ function DetailPanel() {
                     onClick={() => setDiffViewMode('split')}
                   >
                     Split
-                  </button>
-                  <button
-                    className={`btn btn-sm${diffViewMode === 'rendered' ? ' btn-diff-active' : ' btn-secondary'}`}
-                    onClick={() => { setDiffViewMode('rendered'); setCommentMode(false); }}
-                  >
-                    Rendered
                   </button>
                 </div>
                 {isLoadingCompare && <span className="diff-loading">Loading...</span>}

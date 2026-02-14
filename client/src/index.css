@@ -1561,9 +1561,9 @@ body {
   margin-right: 8px;
 }
 
-/* Expanded modal for split diff view */
+/* Expanded modal for split diff view (2x normal 900px width) */
 .markdown-viewer--split {
-  max-width: 1600px;
+  max-width: 1800px;
   transition: max-width 0.2s ease;
 }
 
@@ -1605,142 +1605,6 @@ body {
   white-space: nowrap;
 }
 
-/* Diff Viewer */
-.diff-viewer {
-  font-family: var(--font-mono);
-  font-size: 13px;
-  line-height: 1.5;
-  color: var(--text-primary);
-  padding: 4px 0;
-}
-
-.diff-header-labels {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1px;
-  margin-bottom: 8px;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text-secondary);
-}
-
-.diff-header-label {
-  padding: 6px 12px;
-  background: var(--bg-secondary);
-  border-radius: 6px;
-}
-
-.diff-hunk {
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  overflow: hidden;
-  margin-bottom: 4px;
-}
-
-.diff-split-hunk {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-}
-
-.diff-split-side {
-  overflow-x: auto;
-}
-
-.diff-split-side + .diff-split-side {
-  border-left: 1px solid var(--border-color);
-}
-
-.diff-line {
-  display: flex;
-  align-items: stretch;
-  min-height: 22px;
-}
-
-.diff-line-num {
-  width: 44px;
-  min-width: 44px;
-  padding: 0 8px;
-  text-align: right;
-  color: var(--text-muted);
-  user-select: none;
-  font-size: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  flex-shrink: 0;
-}
-
-.diff-line-num-old {
-  border-right: 1px solid var(--border-color);
-}
-
-.diff-line-prefix {
-  width: 20px;
-  min-width: 20px;
-  padding: 0 4px;
-  text-align: center;
-  color: var(--text-muted);
-  user-select: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  font-weight: 600;
-}
-
-.diff-line-content {
-  flex: 1;
-  padding: 0 8px;
-  white-space: pre-wrap;
-  word-break: break-all;
-  display: flex;
-  align-items: center;
-}
-
-.diff-line-add {
-  background: var(--diff-add-bg);
-}
-
-.diff-line-add .diff-line-prefix {
-  color: var(--diff-add-prefix);
-}
-
-.diff-line-add .diff-line-content {
-  color: var(--text-primary);
-}
-
-.diff-line-remove {
-  background: var(--diff-remove-bg);
-}
-
-.diff-line-remove .diff-line-prefix {
-  color: var(--diff-remove-prefix);
-}
-
-.diff-line-remove .diff-line-content {
-  color: var(--text-primary);
-}
-
-.diff-line-context {
-  background: transparent;
-}
-
-.diff-line-pad {
-  background: var(--bg-secondary);
-  opacity: 0.5;
-}
-
-.diff-separator {
-  padding: 24px 16px;
-  font-size: 12px;
-  color: var(--text-muted);
-  text-align: center;
-  background: var(--bg-hover);
-  border: 1px dashed var(--border-color);
-  border-radius: 6px;
-  margin-bottom: 4px;
-}
-
 .diff-empty-message {
   text-align: center;
   padding: 48px 24px;
@@ -1757,7 +1621,7 @@ body {
 
 /* When both split diff and commenting are active */
 .markdown-viewer--split.markdown-viewer--commenting {
-  max-width: 1600px;
+  max-width: 1800px;
 }
 
 /* Remove padding, disable parent scroll, become flex column so children size properly */
@@ -1909,48 +1773,6 @@ body {
 
 .plan-line-input::placeholder {
   color: var(--text-muted);
-}
-
-/* Diff comment input row */
-.diff-comment-input-row {
-  padding-left: 0;
-}
-
-.diff-comment-input-row .diff-line-num {
-  background: var(--bg-secondary);
-}
-
-/* Clickable diff lines in comment mode */
-.diff-line-clickable {
-  cursor: pointer;
-}
-
-.diff-line-clickable:hover {
-  filter: brightness(0.95);
-}
-
-[data-theme="dark"] .diff-line-clickable:hover,
-[data-theme="system"] .diff-line-clickable:hover {
-  filter: brightness(1.15);
-}
-
-@media (prefers-color-scheme: dark) {
-  [data-theme="system"] .diff-line-clickable:hover {
-    filter: brightness(1.15);
-  }
-}
-
-/* Highlighted diff lines with comments */
-.diff-line.plan-line-commented {
-  background: rgba(59, 130, 246, 0.08);
-}
-
-.diff-line.diff-line-add.plan-line-commented {
-  background: color-mix(in srgb, var(--diff-add-bg), rgba(59, 130, 246, 0.15));
-}
-
-.diff-line.diff-line-remove.plan-line-commented {
-  background: color-mix(in srgb, var(--diff-remove-bg), rgba(59, 130, 246, 0.15));
 }
 
 /* Comment Panel */
@@ -2788,78 +2610,20 @@ body {
 
 /* Rendered Diff Viewer */
 .rendered-diff-viewer {
-  display: flex;
   height: 100%;
-  gap: 0;
-}
-
-.rendered-diff-toc {
-  width: 240px;
-  min-width: 200px;
-  border-right: 1px solid var(--border-color);
-  padding: 16px 0;
-  overflow-y: auto;
-  flex-shrink: 0;
-}
-
-.rendered-diff-toc-title {
-  font-size: 12px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--text-secondary);
-  padding: 0 16px 12px;
-}
-
-.rendered-diff-toc-entry {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  padding: 6px 16px;
-  border: none;
-  background: none;
-  cursor: pointer;
-  text-align: left;
-  font-size: 13px;
-  color: var(--text-primary);
-  transition: background 0.15s;
-}
-
-.rendered-diff-toc-entry:hover {
-  background: var(--bg-hover);
-}
-
-.rendered-diff-toc-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-
-.rendered-diff-toc-dot--added {
-  background: var(--diff-add-prefix);
-}
-
-.rendered-diff-toc-dot--removed {
-  background: var(--diff-remove-prefix);
-}
-
-.rendered-diff-toc-dot--modified {
-  background: linear-gradient(135deg, var(--diff-remove-prefix) 50%, var(--diff-add-prefix) 50%);
-}
-
-.rendered-diff-toc-label {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .rendered-diff-content {
   flex: 1;
   overflow-y: auto;
-  padding: 24px;
   min-width: 0;
+  position: relative;
+}
+
+/* In comment mode the parent .markdown-viewer-content has padding:0,
+   so the diff content needs its own padding */
+.markdown-viewer-comment-lines .rendered-diff-content {
+  padding: 24px 32px;
 }
 
 .rendered-diff-section {
@@ -2892,7 +2656,7 @@ body {
 }
 
 .rendered-diff-section-context {
-  padding: 0 16px;
+  padding: 0;
 }
 
 /* Inherit markdown content styles inside rendered diff */
@@ -3007,4 +2771,45 @@ body {
 
 .rendered-diff-codeline--context {
   /* Normal code line - no special styling */
+}
+
+/* Rendered diff commenting */
+.rendered-diff-viewer--commenting [data-source-line] {
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background 0.1s;
+}
+
+.rendered-diff-viewer--commenting [data-source-line]:hover {
+  background: rgba(59, 130, 246, 0.1);
+}
+
+/* Rendered diff split view */
+.rendered-diff-split-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  min-height: 100%;
+}
+
+.rendered-diff-split-panel {
+  padding: 0 16px;
+  min-width: 0;
+}
+
+.rendered-diff-split-panel--old {
+  border-right: 1px solid var(--border-color);
+}
+
+.rendered-diff-split-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  padding: 8px 0 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.rendered-diff-split-spacer {
+  min-height: 24px;
 }
