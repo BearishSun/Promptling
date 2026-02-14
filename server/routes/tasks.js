@@ -1482,6 +1482,77 @@ router.get('/:type/:id/plan/versions', async (req, res) => {
   }
 });
 
+// ========== PLAN COMMENTS ENDPOINTS ==========
+
+// GET /api/tasks/:type/:id/plan/comments - Get plan comments for a key
+router.get('/:type/:id/plan/comments', async (req, res) => {
+  try {
+    const { type, id } = req.params;
+    const { key } = req.query;
+    const data = await loadData(req);
+
+    const item = getItemByType(data, type, id);
+    if (!item) {
+      return res.status(404).json({ error: `${type} not found` });
+    }
+
+    if (!key) {
+      return res.status(400).json({ error: 'key query parameter is required' });
+    }
+
+    const comments = item.planComments?.[key] || {};
+    res.json({ comments });
+  } catch (error) {
+    console.error('Error getting plan comments:', error);
+    res.status(500).json({ error: 'Failed to get plan comments' });
+  }
+});
+
+// PUT /api/tasks/:type/:id/plan/comments - Save plan comments for a key
+router.put('/:type/:id/plan/comments', async (req, res) => {
+  try {
+    const { type, id } = req.params;
+    const { key, comments } = req.body;
+    const data = await loadData(req);
+
+    const item = getItemByType(data, type, id);
+    if (!item) {
+      return res.status(404).json({ error: `${type} not found` });
+    }
+
+    if (!key) {
+      return res.status(400).json({ error: 'key is required' });
+    }
+
+    // Validate key format: v{N} or v{N}-vs-v{N}
+    if (!/^v\d+(-vs-v\d+)?$/.test(key)) {
+      return res.status(400).json({ error: 'Invalid key format. Expected v{N} or v{N}-vs-v{N}' });
+    }
+
+    if (!item.planComments) {
+      item.planComments = {};
+    }
+
+    // If comments is empty, clean up the key
+    if (!comments || Object.keys(comments).length === 0) {
+      delete item.planComments[key];
+    } else {
+      item.planComments[key] = comments;
+    }
+
+    // Clean up planComments entirely if empty
+    if (Object.keys(item.planComments).length === 0) {
+      delete item.planComments;
+    }
+
+    await saveData(data, req);
+    res.json({ saved: true });
+  } catch (error) {
+    console.error('Error saving plan comments:', error);
+    res.status(500).json({ error: 'Failed to save plan comments' });
+  }
+});
+
 // IMPORTANT: Generic wildcard routes must be defined LAST to avoid catching specific routes
 // PATCH /api/tasks/:type/:id - Update item (generic, v4)
 router.patch('/:type/:id', async (req, res) => {

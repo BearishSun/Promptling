@@ -112,6 +112,12 @@ export const tasksApi = {
   },
   getPlanVersions: (type, id) => api.get(`/tasks/${type}/${id}/plan/versions`).then(res => res.data),
 
+  // Plan Comments
+  getPlanComments: (type, id, key) =>
+    api.get(`/tasks/${type}/${id}/plan/comments`, { params: { key } }).then(res => res.data),
+  savePlanComments: (type, id, key, comments) =>
+    api.put(`/tasks/${type}/${id}/plan/comments`, { key, comments }).then(res => res.data),
+
   // Promote task to item
   promoteTask: (taskId, targetSectionId) =>
     api.post('/tasks/promote-task', { taskId, targetSectionId }).then(res => res.data),

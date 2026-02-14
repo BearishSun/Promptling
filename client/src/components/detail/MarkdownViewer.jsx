@@ -11,14 +11,8 @@ const CloseIcon = () => (
   </svg>
 );
 
-function MarkdownViewer({ title, content, onClose, versionSelector, diffMode, diffContent, diffControls, diffViewMode, commentMode, commentControls }) {
-  const [comments, setComments] = useState(new Map());
+function MarkdownViewer({ title, content, onClose, versionSelector, diffMode, diffContent, diffControls, diffViewMode, commentMode, commentControls, comments, onAddComment, onRemoveComment }) {
   const [showToast, setShowToast] = useState(false);
-
-  // Clear comments when content changes (version switch)
-  useEffect(() => {
-    setComments(new Map());
-  }, [content]);
 
   // Handle Escape key - don't close modal when comment input is active
   useEffect(() => {
@@ -43,22 +37,6 @@ function MarkdownViewer({ title, content, onClose, versionSelector, diffMode, di
     }
   }, [onClose]);
 
-  const handleAddComment = useCallback((key, lineText, comment, lineLabel, sortKey) => {
-    setComments(prev => {
-      const next = new Map(prev);
-      next.set(key, { lineText, comment, lineLabel, sortKey });
-      return next;
-    });
-  }, []);
-
-  const handleRemoveComment = useCallback((key) => {
-    setComments(prev => {
-      const next = new Map(prev);
-      next.delete(key);
-      return next;
-    });
-  }, []);
-
   const handleCopied = useCallback(() => {
     setShowToast(true);
     setTimeout(() => setShowToast(false), 2000);
@@ -80,14 +58,14 @@ function MarkdownViewer({ title, content, onClose, versionSelector, diffMode, di
               viewMode={diffViewMode}
               commentMode={true}
               comments={comments}
-              onAddComment={handleAddComment}
-              onRemoveComment={handleRemoveComment}
+              onAddComment={onAddComment}
+              onRemoveComment={onRemoveComment}
             />
           </div>
           <div className="markdown-viewer-comment-panel">
             <CommentPanel
               comments={comments}
-              onRemoveComment={handleRemoveComment}
+              onRemoveComment={onRemoveComment}
               diffMode={diffMode}
               onCopied={handleCopied}
             />
@@ -103,14 +81,14 @@ function MarkdownViewer({ title, content, onClose, versionSelector, diffMode, di
             <PlanCommentViewer
               content={content}
               comments={comments}
-              onAddComment={handleAddComment}
-              onRemoveComment={handleRemoveComment}
+              onAddComment={onAddComment}
+              onRemoveComment={onRemoveComment}
             />
           </div>
           <div className="markdown-viewer-comment-panel">
             <CommentPanel
               comments={comments}
-              onRemoveComment={handleRemoveComment}
+              onRemoveComment={onRemoveComment}
               diffMode={diffMode}
               onCopied={handleCopied}
             />

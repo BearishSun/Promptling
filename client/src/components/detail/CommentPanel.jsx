@@ -24,11 +24,7 @@ function CommentPanel({ comments, onRemoveComment, diffMode, onCopied }) {
   const promptText = useMemo(() => {
     if (sortedEntries.length === 0) return '';
 
-    const isDiff = sortedEntries.some(([key]) => key.includes(':'));
-
-    const header = isDiff
-      ? "I've made the following comments on the plan diff, please act on them:"
-      : "I've made the following comments on particular lines of your plan, please act on them:";
+    const header = "I've made the following comments on the plan, please act on them:";
 
     const body = sortedEntries.map(([, entry]) =>
       `${entry.lineLabel}: \`${entry.lineText}\`\nComment: ${entry.comment}`

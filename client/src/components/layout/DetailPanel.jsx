@@ -4,6 +4,7 @@ import MarkdownEditor from '../detail/MarkdownEditor';
 import MarkdownViewer from '../detail/MarkdownViewer';
 import PromptHistoryViewer from '../detail/PromptHistoryViewer';
 import { formatDateTime } from '../../utils/dateFormat';
+import { useDebouncedCallback } from '../../hooks/useDebounce';
 import tasksApi, { TASK_STATUSES, COMPLEXITIES } from '../../services/api';
 
 const CloseIcon = () => (
@@ -149,6 +150,8 @@ function DetailPanel() {
   const [compareContent, setCompareContent] = useState(null);
   const [isLoadingCompare, setIsLoadingCompare] = useState(false);
   const [commentMode, setCommentMode] = useState(false);
+  const [planComments, setPlanComments] = useState(new Map());
+  const [commentsKey, setCommentsKey] = useState(null);
   const fileInputRef = useRef(null);
 
   // Get the selected item based on type
@@ -366,21 +369,63 @@ function DetailPanel() {
     fetchPlanVersions();
   }, [selectedItemType, selectedItemId]);
 
+  // Debounced save for plan comments
+  const debouncedSaveComments = useDebouncedCallback(async (key, commentsMap) => {
+    try {
+      await tasksApi.savePlanComments(selectedItemType, selectedItemId, key, Object.fromEntries(commentsMap));
+    } catch (error) {
+      console.error('Failed to save plan comments:', error);
+    }
+  }, 500);
+
+  // Load plan comments for a given key
+  const loadPlanComments = useCallback(async (key) => {
+    debouncedSaveComments.cancel();
+    try {
+      const response = await tasksApi.getPlanComments(selectedItemType, selectedItemId, key);
+      setPlanComments(new Map(Object.entries(response.comments || {})));
+      setCommentsKey(key);
+    } catch (error) {
+      console.error('Failed to load plan comments:', error);
+      setPlanComments(new Map());
+      setCommentsKey(key);
+    }
+  }, [selectedItemType, selectedItemId, debouncedSaveComments]);
+
+  // Add a plan comment
+  const handlePlanAddComment = useCallback((key, lineText, comment, lineLabel, sortKey) => {
+    const next = new Map(planComments);
+    next.set(key, { lineText, comment, lineLabel, sortKey });
+    setPlanComments(next);
+    if (commentsKey) debouncedSaveComments(commentsKey, next);
+  }, [planComments, commentsKey, debouncedSaveComments]);
+
+  // Remove a plan comment
+  const handlePlanRemoveComment = useCallback((key) => {
+    const next = new Map(planComments);
+    next.delete(key);
+    setPlanComments(next);
+    if (commentsKey) debouncedSaveComments(commentsKey, next);
+  }, [planComments, commentsKey, debouncedSaveComments]);
+
   // Handle opening a plan
   const handleOpenPlan = useCallback(async (version) => {
     try {
       const response = await tasksApi.getPlan(selectedItemType, selectedItemId, version);
+      const ver = version || planVersions[planVersions.length - 1]?.version;
       setMarkdownViewer({
         title: `Implementation Plan${version ? ` (v${version})` : ''}`,
         content: response.content,
         versions: planVersions,
-        selectedVersion: version || planVersions[planVersions.length - 1]?.version,
+        selectedVersion: ver,
         type: 'plan'
       });
+      // Load comments for this version
+      loadPlanComments(`v${ver}`);
     } catch (error) {
       console.error('Failed to fetch plan:', error);
     }
-  }, [selectedItemType, selectedItemId, planVersions]);
+  }, [selectedItemType, selectedItemId, planVersions, loadPlanComments]);
 
   // Handle opening a markdown attachment
   const handleOpenMarkdownAttachment = useCallback(async (attachment) => {
@@ -411,18 +456,25 @@ function DetailPanel() {
       setDiffMode(false);
       setCompareVersion(null);
       setCompareContent(null);
+      // Load comments for the new version
+      loadPlanComments(`v${version}`);
     } catch (error) {
       console.error('Failed to fetch plan version:', error);
     }
-  }, [selectedItemType, selectedItemId]);
+  }, [selectedItemType, selectedItemId, loadPlanComments]);
 
   // Fetch compare version content
-  const fetchCompareContent = useCallback(async (version) => {
+  const fetchCompareContent = useCallback(async (version, currentSelectedVersion) => {
     setIsLoadingCompare(true);
     try {
       const response = await tasksApi.getPlan(selectedItemType, selectedItemId, version);
       setCompareVersion(version);
       setCompareContent(response.content);
+      // Load diff-specific comments
+      const selectedVer = currentSelectedVersion || markdownViewer?.selectedVersion;
+      if (selectedVer) {
+        loadPlanComments(`v${selectedVer}-vs-v${version}`);
+      }
     } catch (error) {
       console.error('Failed to fetch compare version:', error);
       setDiffMode(false);
@@ -431,7 +483,7 @@ function DetailPanel() {
     } finally {
       setIsLoadingCompare(false);
     }
-  }, [selectedItemType, selectedItemId]);
+  }, [selectedItemType, selectedItemId, markdownViewer?.selectedVersion, loadPlanComments]);
 
   // Toggle diff mode
   const handleToggleDiff = useCallback(() => {
@@ -439,14 +491,19 @@ function DetailPanel() {
       setDiffMode(false);
       setCompareVersion(null);
       setCompareContent(null);
+      // Switch back to plan-version comments
+      const selectedVer = markdownViewer?.selectedVersion;
+      if (selectedVer) {
+        loadPlanComments(`v${selectedVer}`);
+      }
     } else {
       const selectedVer = markdownViewer?.selectedVersion;
       if (selectedVer && selectedVer > 1) {
         setDiffMode(true);
-        fetchCompareContent(selectedVer - 1);
+        fetchCompareContent(selectedVer - 1, selectedVer);
       }
     }
-  }, [diffMode, markdownViewer?.selectedVersion, fetchCompareContent]);
+  }, [diffMode, markdownViewer?.selectedVersion, fetchCompareContent, loadPlanComments]);
 
   // Toggle comment mode
   const handleToggleComment = useCallback(() => {
@@ -455,8 +512,8 @@ function DetailPanel() {
 
   // Change compare version
   const handleCompareVersionChange = useCallback((version) => {
-    fetchCompareContent(version);
-  }, [fetchCompareContent]);
+    fetchCompareContent(version, markdownViewer?.selectedVersion);
+  }, [fetchCompareContent, markdownViewer?.selectedVersion]);
 
   const isMarkdownFile = useCallback((filename) => {
     return filename?.toLowerCase().endsWith('.md') || filename?.toLowerCase().endsWith('.markdown');
@@ -955,12 +1012,20 @@ function DetailPanel() {
         title={markdownViewer.title}
         content={markdownViewer.content}
         onClose={() => {
+          // Flush any pending comment save before closing
+          if (commentsKey && planComments.size > 0) {
+            debouncedSaveComments.flush(commentsKey, planComments);
+          } else {
+            debouncedSaveComments.cancel();
+          }
           setMarkdownViewer(null);
           setDiffMode(false);
           setDiffViewMode('unified');
           setCompareVersion(null);
           setCompareContent(null);
           setCommentMode(false);
+          setPlanComments(new Map());
+          setCommentsKey(null);
         }}
         versionSelector={markdownViewer.type === 'plan' && markdownViewer.versions?.length > 1 ? (
           <select
@@ -983,6 +1048,9 @@ function DetailPanel() {
         } : null}
         diffViewMode={diffViewMode}
         commentMode={commentMode}
+        comments={planComments}
+        onAddComment={handlePlanAddComment}
+        onRemoveComment={handlePlanRemoveComment}
         commentControls={markdownViewer.type === 'plan' ? (
           <button
             className={`btn btn-sm btn-secondary${commentMode ? ' btn-comment-active' : ''}`}
