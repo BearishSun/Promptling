@@ -51,6 +51,7 @@ function RenderedDiffViewer({
   const contentRef = useRef(null);
   const inputRef = useRef(null);
   const [activeLine, setActiveLine] = useState(null);
+  const [activeNewLine, setActiveNewLine] = useState(null); // direct newContent line for code blocks
   const [inputValue, setInputValue] = useState('');
   const [inputPos, setInputPos] = useState(null);
 
@@ -181,6 +182,7 @@ function RenderedDiffViewer({
       width: '100%',
     });
     setActiveLine(key);
+    setActiveNewLine(block.dataset.newLine ? parseInt(block.dataset.newLine, 10) : null);
     setInputValue('');
   }, [commentMode, comments, onRemoveComment]);
 
@@ -189,22 +191,27 @@ function RenderedDiffViewer({
       setActiveLine(null);
       return;
     }
-    // Key format: sectionId:sectionOffset:localLine
-    const parts = activeLine.split(':');
-    const localLine = parseInt(parts.pop(), 10);
-    const sectionOffset = parseInt(parts.pop(), 10);
-    const sectionId = parts.join(':');
 
-    // Look up section to get the new plan line number
-    const section = sectionMap[sectionId];
-    const newStartLine = section?.newStartLine;
-    if (newStartLine == null) {
-      // Should not happen since we block removed sections, but guard anyway
-      setActiveLine(null);
-      return;
+    let newPlanLine;
+    if (activeNewLine != null) {
+      // Code block lines carry the exact newContent line (handles cross-section code blocks)
+      newPlanLine = activeNewLine;
+    } else {
+      // Markdown blocks: compute from section offset + AST line
+      const parts = activeLine.split(':');
+      const localLine = parseInt(parts.pop(), 10);
+      const sectionOffset = parseInt(parts.pop(), 10);
+      const sectionId = parts.join(':');
+
+      const section = sectionMap[sectionId];
+      const newStartLine = section?.newStartLine;
+      if (newStartLine == null) {
+        setActiveLine(null);
+        return;
+      }
+      newPlanLine = newStartLine + sectionOffset + localLine - 1;
     }
 
-    const newPlanLine = newStartLine + sectionOffset + localLine - 1;
     const lineLabel = `Line ${newPlanLine}`;
     const lineText = newContentLines[newPlanLine - 1] || '';
     const sortKey = newPlanLine;
@@ -213,8 +220,9 @@ function RenderedDiffViewer({
       onAddComment(activeLine, lineText, inputValue.trim(), lineLabel, sortKey);
     }
     setActiveLine(null);
+    setActiveNewLine(null);
     setInputValue('');
-  }, [inputValue, activeLine, onAddComment, sectionMap, newContentLines]);
+  }, [inputValue, activeLine, activeNewLine, onAddComment, sectionMap, newContentLines]);
 
   const handleKeyDown = useCallback((e) => {
     if (e.key === 'Enter') {
@@ -224,6 +232,7 @@ function RenderedDiffViewer({
       e.preventDefault();
       e.stopPropagation();
       setActiveLine(null);
+      setActiveNewLine(null);
       setInputValue('');
     }
   }, [handleSubmit]);
@@ -272,7 +281,7 @@ function RenderedDiffViewer({
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyDown={handleKeyDown}
-                onBlur={() => setTimeout(() => { setActiveLine(null); setInputValue(''); }, 150)}
+                onBlur={() => setTimeout(() => { setActiveLine(null); setActiveNewLine(null); setInputValue(''); }, 150)}
               />
             </div>
           )}
@@ -300,7 +309,7 @@ function RenderedDiffViewer({
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={handleKeyDown}
-              onBlur={() => setTimeout(() => { setActiveLine(null); setInputValue(''); }, 150)}
+              onBlur={() => setTimeout(() => { setActiveLine(null); setActiveNewLine(null); setInputValue(''); }, 150)}
             />
           </div>
         )}
@@ -411,14 +420,23 @@ function flattenSections(sections) {
   for (const section of sections) {
     if (section.type === 'modified') {
       for (const line of splitLines(section.removed)) {
-        lines.push({ text: line, diffType: 'removed', sectionId: section.id });
+        lines.push({ text: line, diffType: 'removed', sectionId: section.id, newContentLine: null });
       }
+      let addedIdx = 0;
       for (const line of splitLines(section.added)) {
-        lines.push({ text: line, diffType: 'added', sectionId: section.id });
+        lines.push({ text: line, diffType: 'added', sectionId: section.id, newContentLine: section.newStartLine + addedIdx });
+        addedIdx++;
+      }
+    } else if (section.type === 'removed') {
+      for (const line of splitLines(section.value || '')) {
+        lines.push({ text: line, diffType: 'removed', sectionId: section.id, newContentLine: null });
       }
     } else {
+      // context or added
+      let idx = 0;
       for (const line of splitLines(section.value || '')) {
-        lines.push({ text: line, diffType: section.type, sectionId: section.id });
+        lines.push({ text: line, diffType: section.type, sectionId: section.id, newContentLine: section.newStartLine + idx });
+        idx++;
       }
     }
   }
@@ -440,7 +458,9 @@ function buildRenderBlocks(annotatedLines) {
   let inCode = false;
   let fence = '```';
   let currentBlock = null;
-  const sectionLineCount = {}; // sectionId → lines consumed so far
+  // Key by sectionId:diffType so removed lines in modified sections
+  // don't inflate the offset for added blocks
+  const sectionLineCount = {};
 
   const flush = () => {
     if (currentBlock) {
@@ -451,8 +471,8 @@ function buildRenderBlocks(annotatedLines) {
 
   for (const line of annotatedLines) {
     const trimmed = line.text.trim();
-    const sid = line.sectionId;
-    if (!(sid in sectionLineCount)) sectionLineCount[sid] = 0;
+    const counterKey = `${line.sectionId}:${line.diffType}`;
+    if (!(counterKey in sectionLineCount)) sectionLineCount[counterKey] = 0;
 
     if (!inCode) {
       const openMatch = trimmed.match(/^(`{3,}|~{3,})(.*)$/);
@@ -460,7 +480,7 @@ function buildRenderBlocks(annotatedLines) {
         flush();
         inCode = true;
         fence = openMatch[1];
-        sectionLineCount[sid]++; // count the opening fence line
+        sectionLineCount[counterKey]++; // count the opening fence line
         const lang = (openMatch[2] || '').trim();
         currentBlock = {
           type: 'code',
@@ -468,7 +488,7 @@ function buildRenderBlocks(annotatedLines) {
           lines: [],
           fenceDiffType: line.diffType,
           fenceSectionId: line.sectionId,
-          sectionLineOffset: sectionLineCount[sid] // offset AFTER the opening fence
+          sectionLineOffset: sectionLineCount[counterKey] // offset AFTER the opening fence
         };
         continue;
       }
@@ -485,14 +505,16 @@ function buildRenderBlocks(annotatedLines) {
           diffType: line.diffType,
           lines: [line.text],
           sectionId: line.sectionId,
-          sectionLineOffset: sectionLineCount[sid] // offset to first line of this block
+          sectionLineOffset: sectionLineCount[counterKey] // offset to first line of this block
         };
       }
-      sectionLineCount[sid]++;
+      sectionLineCount[counterKey]++;
     } else {
+      const counterKeyInCode = `${line.sectionId}:${line.diffType}`;
+      if (!(counterKeyInCode in sectionLineCount)) sectionLineCount[counterKeyInCode] = 0;
       const closeRegex = new RegExp('^' + fence[0] + '{' + fence.length + ',}\\s*$');
       if (closeRegex.test(trimmed)) {
-        sectionLineCount[sid]++; // count the closing fence line
+        sectionLineCount[counterKeyInCode]++; // count the closing fence line
         inCode = false;
         flush();
         continue;
@@ -502,10 +524,11 @@ function buildRenderBlocks(annotatedLines) {
         currentBlock.lines.push({
           text: line.text,
           diffType: line.diffType,
-          sectionId: line.sectionId
+          sectionId: line.sectionId,
+          newContentLine: line.newContentLine
         });
       }
-      sectionLineCount[sid]++;
+      sectionLineCount[counterKeyInCode]++;
     }
   }
   flush();
@@ -625,6 +648,7 @@ function CodeBlock({ block, usedIds, commentMode }) {
                 id={anchorId}
                 className={`rendered-diff-codeline rendered-diff-codeline--${line.diffType}`}
                 data-source-line={commentMode && !isRemoved ? i + 1 : undefined}
+                data-new-line={commentMode && !isRemoved && line.newContentLine ? line.newContentLine : undefined}
               >
                 {line.text || '\u00A0'}
               </div>
