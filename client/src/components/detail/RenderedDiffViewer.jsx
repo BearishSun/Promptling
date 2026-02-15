@@ -37,6 +37,33 @@ function countLines(text) {
   return text.replace(/\n$/, '').split('\n').length;
 }
 
+/**
+ * Resolve a DOM element's position back to its source line in the new plan content.
+ * For code blocks (data-new-line), uses the direct mapping.
+ * For markdown blocks, computes from section start + offset + AST local line.
+ * Returns null for removed sections (no corresponding line in new plan).
+ */
+function resolveSourceLine(el, sectionMap) {
+  // Code block lines carry the exact newContent line number
+  if (el.dataset.newLine) {
+    return parseInt(el.dataset.newLine, 10);
+  }
+
+  // Markdown blocks: compute from section mapping
+  const sectionContainer = el.closest('[data-section-id]');
+  if (!sectionContainer) return null;
+
+  const sectionId = sectionContainer.dataset.sectionId;
+  const sectionOffset = parseInt(sectionContainer.dataset.sectionOffset || '0', 10);
+  const localLine = parseInt(el.dataset.sourceLine, 10);
+  if (!sectionId || isNaN(localLine)) return null;
+
+  const section = sectionMap[sectionId];
+  if (!section || section.newStartLine == null) return null;
+
+  return section.newStartLine + sectionOffset + localLine - 1;
+}
+
 function RenderedDiffViewer({
   oldContent,
   newContent,
@@ -51,7 +78,6 @@ function RenderedDiffViewer({
   const contentRef = useRef(null);
   const inputRef = useRef(null);
   const [activeLine, setActiveLine] = useState(null);
-  const [activeNewLine, setActiveNewLine] = useState(null); // direct newContent line for code blocks
   const [inputValue, setInputValue] = useState('');
   const [inputPos, setInputPos] = useState(null);
 
@@ -128,15 +154,11 @@ function RenderedDiffViewer({
     const container = contentRef.current;
     if (!container || !commentMode) return;
     container.querySelectorAll('[data-source-line]').forEach(el => {
-      const sectionContainer = el.closest('[data-section-id]');
-      const sectionId = sectionContainer?.dataset.sectionId;
-      const sectionOffset = sectionContainer?.dataset.sectionOffset || '0';
-      const localLine = el.dataset.sourceLine;
-      if (!sectionId || !localLine) return;
-      const key = `${sectionId}:${sectionOffset}:${localLine}`;
-      el.classList.toggle('plan-line-commented', comments ? comments.has(key) : false);
+      const sourceLine = resolveSourceLine(el, sectionMap);
+      if (sourceLine == null) return;
+      el.classList.toggle('plan-line-commented', comments ? comments.has(String(sourceLine)) : false);
     });
-  }, [comments, commentMode]);
+  }, [comments, commentMode, sectionMap]);
 
   // Focus input when it appears
   useEffect(() => {
@@ -156,19 +178,18 @@ function RenderedDiffViewer({
     const sectionContainer = block.closest('[data-section-id]');
     if (!sectionContainer) return;
 
-    const sectionId = sectionContainer.dataset.sectionId;
     const diffType = sectionContainer.dataset.diffType || 'context';
-    const sectionOffset = parseInt(sectionContainer.dataset.sectionOffset || '0', 10);
-    const localLine = block.dataset.sourceLine;
-    if (!localLine) return;
 
     // Don't allow commenting on removed sections
     if (diffType === 'removed') return;
 
-    const key = `${sectionId}:${sectionOffset}:${localLine}`;
+    const sourceLine = resolveSourceLine(block, sectionMap);
+    if (sourceLine == null) return;
 
-    if (comments && comments.has(key)) {
-      if (onRemoveComment) onRemoveComment(key);
+    const sourceKey = String(sourceLine);
+
+    if (comments && comments.has(sourceKey)) {
+      if (onRemoveComment) onRemoveComment(sourceKey);
       return;
     }
 
@@ -181,10 +202,9 @@ function RenderedDiffViewer({
       left: 0,
       width: '100%',
     });
-    setActiveLine(key);
-    setActiveNewLine(block.dataset.newLine ? parseInt(block.dataset.newLine, 10) : null);
+    setActiveLine(sourceLine);
     setInputValue('');
-  }, [commentMode, comments, onRemoveComment]);
+  }, [commentMode, comments, onRemoveComment, sectionMap]);
 
   const handleSubmit = useCallback(() => {
     if (!inputValue.trim() || activeLine === null) {
@@ -192,37 +212,16 @@ function RenderedDiffViewer({
       return;
     }
 
-    let newPlanLine;
-    if (activeNewLine != null) {
-      // Code block lines carry the exact newContent line (handles cross-section code blocks)
-      newPlanLine = activeNewLine;
-    } else {
-      // Markdown blocks: compute from section offset + AST line
-      const parts = activeLine.split(':');
-      const localLine = parseInt(parts.pop(), 10);
-      const sectionOffset = parseInt(parts.pop(), 10);
-      const sectionId = parts.join(':');
-
-      const section = sectionMap[sectionId];
-      const newStartLine = section?.newStartLine;
-      if (newStartLine == null) {
-        setActiveLine(null);
-        return;
-      }
-      newPlanLine = newStartLine + sectionOffset + localLine - 1;
-    }
-
-    const lineLabel = `Line ${newPlanLine}`;
-    const lineText = newContentLines[newPlanLine - 1] || '';
-    const sortKey = newPlanLine;
+    const lineLabel = `Line ${activeLine}`;
+    const lineText = newContentLines[activeLine - 1] || '';
+    const sortKey = activeLine;
 
     if (onAddComment) {
-      onAddComment(activeLine, lineText, inputValue.trim(), lineLabel, sortKey);
+      onAddComment(String(activeLine), lineText, inputValue.trim(), lineLabel, sortKey);
     }
     setActiveLine(null);
-    setActiveNewLine(null);
     setInputValue('');
-  }, [inputValue, activeLine, activeNewLine, onAddComment, sectionMap, newContentLines]);
+  }, [inputValue, activeLine, onAddComment, newContentLines]);
 
   const handleKeyDown = useCallback((e) => {
     if (e.key === 'Enter') {
@@ -232,7 +231,6 @@ function RenderedDiffViewer({
       e.preventDefault();
       e.stopPropagation();
       setActiveLine(null);
-      setActiveNewLine(null);
       setInputValue('');
     }
   }, [handleSubmit]);
@@ -281,7 +279,7 @@ function RenderedDiffViewer({
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyDown={handleKeyDown}
-                onBlur={() => setTimeout(() => { setActiveLine(null); setActiveNewLine(null); setInputValue(''); }, 150)}
+                onBlur={() => setTimeout(() => { setActiveLine(null); setInputValue(''); }, 150)}
               />
             </div>
           )}
@@ -309,7 +307,7 @@ function RenderedDiffViewer({
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={handleKeyDown}
-              onBlur={() => setTimeout(() => { setActiveLine(null); setActiveNewLine(null); setInputValue(''); }, 150)}
+              onBlur={() => setTimeout(() => { setActiveLine(null); setInputValue(''); }, 150)}
             />
           </div>
         )}
@@ -336,6 +334,7 @@ function SplitPanelBlocks({ sections, side, commentMode }) {
           className="rendered-diff-section rendered-diff-section-context"
           data-section-id={section.id}
           data-diff-type="context"
+          data-section-offset="0"
         >
           <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>
             {section.value}
@@ -354,6 +353,7 @@ function SplitPanelBlocks({ sections, side, commentMode }) {
           className="rendered-diff-section rendered-diff-section-added"
           data-section-id={section.id}
           data-diff-type="added"
+          data-section-offset="0"
         >
           <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>
             {section.value}
@@ -372,6 +372,7 @@ function SplitPanelBlocks({ sections, side, commentMode }) {
           className="rendered-diff-section rendered-diff-section-removed"
           data-section-id={section.id}
           data-diff-type="removed"
+          data-section-offset="0"
         >
           <ReactMarkdown remarkPlugins={[remarkGfm]}>
             {section.value}
@@ -388,6 +389,7 @@ function SplitPanelBlocks({ sections, side, commentMode }) {
             className="rendered-diff-section rendered-diff-section-removed"
             data-section-id={section.id}
             data-diff-type="removed"
+            data-section-offset="0"
           >
             <ReactMarkdown remarkPlugins={[remarkGfm]}>
               {section.removed}
@@ -401,6 +403,7 @@ function SplitPanelBlocks({ sections, side, commentMode }) {
           className="rendered-diff-section rendered-diff-section-added"
           data-section-id={section.id}
           data-diff-type="added"
+          data-section-offset="0"
         >
           <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>
             {section.added}

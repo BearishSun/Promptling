@@ -1525,6 +1525,8 @@ router.put('/:type/:id/plan/comments', async (req, res) => {
     }
 
     // Validate key format: v{N} or v{N}-vs-v{N}
+    // NOTE: v{N}-vs-v{M} keys are deprecated — all new comments use v{N} with source line numbers.
+    // The pattern is kept for backward compatibility with existing stored data.
     if (!/^v\d+(-vs-v\d+)?$/.test(key)) {
       return res.status(400).json({ error: 'Invalid key format. Expected v{N} or v{N}-vs-v{N}' });
     }

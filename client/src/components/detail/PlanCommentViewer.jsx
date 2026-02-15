@@ -24,7 +24,31 @@ const annotatableComponents = {
   h5: makeAnnotatable('h5'),
   h6: makeAnnotatable('h6'),
   li: makeAnnotatable('li'),
-  pre: makeAnnotatable('pre'),
+  pre: ({ node, children, ...props }) => {
+    const startLine = node?.position?.start?.line;
+    if (startLine == null) return <pre {...props}>{children}</pre>;
+
+    // Extract raw text from the hast code node
+    const codeNode = node.children?.find(c => c.tagName === 'code');
+    const text = codeNode?.children?.map(c => c.value || '').join('') || '';
+    if (!text) return <pre {...props} data-source-line={startLine}>{children}</pre>;
+
+    const className = codeNode?.properties?.className?.join(' ') || undefined;
+
+    // startLine is the ``` fence line; code content starts at startLine + 1
+    const lines = text.replace(/\n$/, '').split('\n');
+    return (
+      <pre {...props}>
+        <code className={className}>
+          {lines.map((line, i) => (
+            <div key={i} data-source-line={startLine + 1 + i}>
+              {line || '\u00A0'}
+            </div>
+          ))}
+        </code>
+      </pre>
+    );
+  },
   blockquote: makeAnnotatable('blockquote'),
   table: makeAnnotatable('table'),
   tr: makeAnnotatable('tr'),

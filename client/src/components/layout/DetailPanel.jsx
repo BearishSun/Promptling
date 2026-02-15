@@ -470,11 +470,7 @@ function DetailPanel() {
       const response = await tasksApi.getPlan(selectedItemType, selectedItemId, version);
       setCompareVersion(version);
       setCompareContent(response.content);
-      // Load diff-specific comments
-      const selectedVer = currentSelectedVersion || markdownViewer?.selectedVersion;
-      if (selectedVer) {
-        loadPlanComments(`v${selectedVer}-vs-v${version}`);
-      }
+      // Comments stay on v{N} — no key switch needed
     } catch (error) {
       console.error('Failed to fetch compare version:', error);
       setDiffMode(false);
@@ -483,7 +479,7 @@ function DetailPanel() {
     } finally {
       setIsLoadingCompare(false);
     }
-  }, [selectedItemType, selectedItemId, markdownViewer?.selectedVersion, loadPlanComments]);
+  }, [selectedItemType, selectedItemId]);
 
   // Toggle diff mode
   const handleToggleDiff = useCallback(() => {
@@ -491,11 +487,7 @@ function DetailPanel() {
       setDiffMode(false);
       setCompareVersion(null);
       setCompareContent(null);
-      // Switch back to plan-version comments
-      const selectedVer = markdownViewer?.selectedVersion;
-      if (selectedVer) {
-        loadPlanComments(`v${selectedVer}`);
-      }
+      // Comments stay on v{N} — no reload needed
     } else {
       const selectedVer = markdownViewer?.selectedVersion;
       if (selectedVer && selectedVer > 1) {
@@ -503,7 +495,7 @@ function DetailPanel() {
         fetchCompareContent(selectedVer - 1, selectedVer);
       }
     }
-  }, [diffMode, markdownViewer?.selectedVersion, fetchCompareContent, loadPlanComments]);
+  }, [diffMode, markdownViewer?.selectedVersion, fetchCompareContent]);
 
   // Toggle comment mode
   const handleToggleComment = useCallback(() => {
