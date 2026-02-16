@@ -109,6 +109,19 @@ body {
   overflow: hidden;
 }
 
+.app-layout.has-terminals {
+  grid-template-columns: var(--sidebar-width) 1fr auto;
+}
+
+/* When detail panel is open, it overlays the main panel */
+.app-layout.has-detail {
+  grid-template-columns: var(--sidebar-width) 1fr;
+}
+
+.app-layout.has-detail.has-terminals {
+  grid-template-columns: var(--sidebar-width) 1fr auto;
+}
+
 /* Sidebar */
 .sidebar {
   background: var(--bg-secondary);
@@ -572,6 +585,34 @@ body {
   box-shadow: none;
 }
 
+.item-action-icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  color: var(--text-muted);
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  transition: all 0.15s ease;
+}
+
+.item-action-icon-btn:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+.item-action-icon-btn:active {
+  transform: translateY(1px);
+  box-shadow: none;
+}
+
 /* Toast Notification */
 .toast {
   position: fixed;
@@ -601,31 +642,29 @@ body {
   }
 }
 
-/* Detail Panel Overlay */
-.detail-overlay {
-  position: fixed;
-  inset: 0;
-  left: var(--sidebar-width);
-  background: rgba(0, 0, 0, 0.4);
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  padding-top: 56px; /* Match header height */
-  z-index: 200;
-}
-
+/* Detail Panel - overlay on top of main panel */
 .detail-panel {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: var(--sidebar-width);
+  right: 0;
+  width: min(720px, calc(100vw - var(--sidebar-width)));
+  margin-left: auto;
+  margin-right: auto;
   background: var(--bg-primary);
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
+  border-left: 1px solid var(--border-color);
+  border-right: 1px solid var(--border-color);
   display: flex;
   flex-direction: column;
-  overflow: hidden;
-  width: 100%;
-  max-width: var(--main-max-width);
-  max-height: calc(100vh - 80px);
-  box-shadow: var(--shadow-lg);
-  margin: 12px;
+  overflow: auto;
+  z-index: 50;
+}
+
+/* When terminals are open, shrink detail panel to not cover terminal column */
+.app-layout.has-terminals .detail-panel {
+  right: var(--terminal-column-width, 500px);
+  width: min(720px, calc(100vw - var(--sidebar-width) - var(--terminal-column-width, 500px)));
 }
 
 .detail-header {
@@ -2812,4 +2851,205 @@ body {
 
 .rendered-diff-split-spacer {
   min-height: 24px;
+}
+
+/* ===================== Terminal Integration ===================== */
+
+/* Screen reader only */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Terminal Column */
+.terminal-column {
+  display: flex;
+  flex-direction: row;
+  background: #1e1e1e;
+  border-left: 1px solid var(--border-color);
+  min-width: 300px;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.terminal-column-resize-handle {
+  width: 4px;
+  min-width: 4px;
+  cursor: col-resize;
+  background: transparent;
+  transition: background 0.15s;
+}
+
+.terminal-column-resize-handle:hover {
+  background: var(--accent);
+}
+
+.terminal-column-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 0;
+}
+
+/* Terminal Panel */
+.terminal-panel {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  border-bottom: 1px solid #333;
+  min-height: 0;
+  overflow: hidden;
+  position: relative;
+}
+
+.terminal-panel.minimized {
+  flex: 0 0 auto;
+}
+
+.terminal-panel.exited {
+  opacity: 0.6;
+}
+
+/* Terminal Title Bar */
+.terminal-titlebar {
+  display: flex;
+  align-items: center;
+  height: 28px;
+  min-height: 28px;
+  background: #252526;
+  border-bottom: 1px solid #333;
+  padding: 0 8px;
+  user-select: none;
+  gap: 4px;
+}
+
+.terminal-title-text {
+  flex: 1;
+  font-size: 12px;
+  color: #aaa;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Input indicator - pulsing amber dot */
+.terminal-input-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #f59e0b;
+  animation: terminal-pulse 1.5s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+@keyframes terminal-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+.terminal-minimize-btn,
+.terminal-close-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border: none;
+  background: transparent;
+  color: #888;
+  font-size: 14px;
+  cursor: pointer;
+  border-radius: 3px;
+  line-height: 1;
+}
+
+.terminal-minimize-btn:hover {
+  background: #3a3a3a;
+  color: #ddd;
+}
+
+.terminal-close-btn:hover {
+  background: #c53535;
+  color: #fff;
+}
+
+/* Terminal xterm container */
+.terminal-xterm-container {
+  flex: 1;
+  overflow: hidden;
+  background: #1e1e1e;
+}
+
+.terminal-xterm-container .xterm {
+  height: 100%;
+  padding: 2px;
+}
+
+/* Terminal close confirmation */
+.terminal-close-confirm {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 16px;
+  z-index: 10;
+  text-align: center;
+  box-shadow: var(--shadow-lg);
+}
+
+.terminal-close-confirm p {
+  margin-bottom: 12px;
+  font-size: 13px;
+  color: var(--text-primary);
+}
+
+.terminal-close-confirm-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+/* Action Buttons */
+.action-buttons {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+/* Action running text - replaces the 3 action icon buttons while a terminal is active */
+.action-running-text {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  /* Match width of 3 action buttons (30px each) + 2 gaps (4px each) */
+  width: 98px;
+  height: 30px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--accent);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  white-space: nowrap;
+  animation: action-running-pulse 2s ease-in-out infinite;
+}
+
+@keyframes action-running-pulse {
+  0%, 100% { background: var(--bg-secondary); }
+  50% { background: color-mix(in srgb, var(--accent) 15%, var(--bg-secondary)); }
 }

@@ -4,8 +4,9 @@ import { useToast } from '../../context/ToastContext';
 import { useSortableList } from '../../hooks/useSortableList';
 import { useDragHandlers } from '../../hooks/useDragHandlers';
 import { CategorizedList, SortableItemWrapper } from '../shared/CategoryList';
-import { DragIcon, PlusIcon } from '../shared/icons';
+import { DragIcon, PlusIcon, CopyIdIcon, OpenBoxIcon } from '../shared/icons';
 import TaskList from '../tasks/TaskList';
+import ActionButtons from '../terminal/ActionButtons';
 import { COMPLEXITIES } from '../../services/api';
 
 // Icons specific to MainPanel
@@ -267,12 +268,13 @@ function ItemContent({ item, data, onOpenDetails, onViewTasks, dragHandleProps }
           <span>{completedCount} done</span>
         </div>
       </div>
-      <button className="btn btn-sm item-action-btn" onClick={handleCopyId} title="Copy item ID">
-        COPY ID
+      <button className="item-action-icon-btn" onClick={handleCopyId} title="Copy item ID">
+        <CopyIdIcon />
       </button>
-      <button className="btn btn-sm item-action-btn" onClick={(e) => { e.stopPropagation(); onViewTasks(item.id); }} title="View tasks">
-        SHOW TASKS
+      <button className="item-action-icon-btn" onClick={(e) => { e.stopPropagation(); onViewTasks(item.id); }} title="Show tasks">
+        <OpenBoxIcon />
       </button>
+      <ActionButtons itemId={item.id} itemTitle={item.title} />
     </div>
   );
 }

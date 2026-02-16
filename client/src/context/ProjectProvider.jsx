@@ -3,32 +3,41 @@ import { setActiveProjectId as setApiActiveProjectId } from '../services/api';
 
 const ProjectContext = createContext(null);
 
+// Helper: check response status, throw with server error message on failure
+async function handleResponse(res) {
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error || `Request failed (${res.status})`);
+  }
+  return res.json();
+}
+
 // API functions for projects
 const projectsApi = {
-  getAll: () => fetch('/api/projects').then(res => res.json()),
+  getAll: () => fetch('/api/projects').then(handleResponse),
   create: (data) => fetch('/api/projects', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data)
-  }).then(res => res.json()),
+  }).then(handleResponse),
   update: (id, data) => fetch(`/api/projects/${id}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data)
-  }).then(res => res.json()),
+  }).then(handleResponse),
   delete: (id) => fetch(`/api/projects/${id}`, {
     method: 'DELETE'
-  }).then(res => res.json()),
+  }).then(handleResponse),
   setActive: (projectId) => fetch('/api/projects/active', {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ projectId })
-  }).then(res => res.json()),
+  }).then(handleResponse),
   reorder: (order) => fetch('/api/projects/reorder', {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ order })
-  }).then(res => res.json())
+  }).then(handleResponse)
 };
 
 export function ProjectProvider({ children }) {
@@ -61,9 +70,11 @@ export function ProjectProvider({ children }) {
     }
   };
 
-  const createProject = useCallback(async (name, color) => {
+  const createProject = useCallback(async (name, color, workingDir) => {
     try {
-      const project = await projectsApi.create({ name, color });
+      const data = { name, color };
+      if (workingDir) data.workingDir = workingDir;
+      const project = await projectsApi.create(data);
       setProjects(prev => [...prev, project]);
       return project;
     } catch (err) {

@@ -3,6 +3,7 @@ import { useTaskData, useTaskActions, useUIState, SYSTEM_SECTIONS } from '../../
 import MarkdownEditor from '../detail/MarkdownEditor';
 import MarkdownViewer from '../detail/MarkdownViewer';
 import PromptHistoryViewer from '../detail/PromptHistoryViewer';
+import ActionButtons from '../terminal/ActionButtons';
 import { formatDateTime } from '../../utils/dateFormat';
 import { useDebouncedCallback } from '../../hooks/useDebounce';
 import tasksApi, { TASK_STATUSES, COMPLEXITIES } from '../../services/api';
@@ -543,14 +544,8 @@ function DetailPanel() {
   // Count tasks for features/bugs/items
   const taskCount = isFeatureOrBug ? (item.taskOrder?.length || 0) : 0;
 
-  const handleOverlayClick = (e) => {
-    if (e.target === e.currentTarget) {
-      clearSelection();
-    }
-  };
-
   return (
-    <div className="detail-overlay" onClick={handleOverlayClick}>
+    <>
     <aside className="detail-panel">
       <div className="detail-header">
         <button className="detail-close" onClick={clearSelection} title="Close">
@@ -582,6 +577,8 @@ function DetailPanel() {
             readOnly
           />
         )}
+
+        <ActionButtons itemId={selectedItemId} itemTitle={item.title} />
 
         <button
           className="btn btn-icon btn-secondary"
@@ -1110,7 +1107,7 @@ function DetailPanel() {
         itemTitle={item?.title}
       />
     )}
-    </div>
+    </>
   );
 }
 

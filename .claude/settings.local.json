@@ -22,7 +22,8 @@
       "mcp__promptling__list",
       "mcp__promptling__create",
       "Bash(netstat:*)",
-      "Bash(findstr:*)"
+      "Bash(findstr:*)",
+      "Bash(git status:*)"
     ]
   }
 }

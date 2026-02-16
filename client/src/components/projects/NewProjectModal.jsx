@@ -15,6 +15,7 @@ const DEFAULT_COLORS = [
 function NewProjectModal({ isOpen, onClose, editProject }) {
   const { createProject, updateProject, deleteProject, switchProject } = useProjects();
   const [name, setName] = useState('');
+  const [workingDir, setWorkingDir] = useState('');
   const [color, setColor] = useState(DEFAULT_COLORS[0]);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -26,9 +27,11 @@ function NewProjectModal({ isOpen, onClose, editProject }) {
     if (isOpen) {
       if (editProject) {
         setName(editProject.name || '');
+        setWorkingDir(editProject.workingDir || '');
         setColor(editProject.color || DEFAULT_COLORS[0]);
       } else {
         setName('');
+        setWorkingDir('');
         setColor(DEFAULT_COLORS[Math.floor(Math.random() * DEFAULT_COLORS.length)]);
       }
       // Focus input after a short delay
@@ -43,9 +46,12 @@ function NewProjectModal({ isOpen, onClose, editProject }) {
     try {
       setSaving(true);
       if (isEdit) {
-        await updateProject(editProject.id, { name: name.trim(), color });
+        const updates = { name: name.trim(), color };
+        const trimmedDir = workingDir.trim();
+        updates.workingDir = trimmedDir || ''; // empty string tells server to clear
+        await updateProject(editProject.id, updates);
       } else {
-        const project = await createProject(name.trim(), color);
+        const project = await createProject(name.trim(), color, workingDir.trim());
         // Switch to the new project - TaskProvider will remount due to key change
         await switchProject(project.id);
       }
@@ -101,6 +107,19 @@ function NewProjectModal({ isOpen, onClose, editProject }) {
                 placeholder="My Project"
                 required
                 maxLength={50}
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="project-working-dir">Working Directory</label>
+              <input
+                id="project-working-dir"
+                type="text"
+                className="input"
+                value={workingDir}
+                onChange={e => setWorkingDir(e.target.value)}
+                placeholder="D:\Projects\MyProject"
+                maxLength={500}
               />
             </div>
 

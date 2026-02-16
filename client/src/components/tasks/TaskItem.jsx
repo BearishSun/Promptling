@@ -2,6 +2,8 @@ import { memo, useCallback } from 'react';
 import { formatDate } from '../../utils/dateFormat';
 import { TASK_STATUSES, COMPLEXITIES } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
+import { CopyIdIcon } from '../shared/icons';
+import ActionButtons from '../terminal/ActionButtons';
 
 // Drag handle icon
 const DragIcon = () => (
@@ -88,12 +90,13 @@ function TaskItem({ task, tags, isSelected, onSelect, onToggle, dragHandleProps 
         </div>
       </div>
       <button
-        className="btn btn-sm item-action-btn"
+        className="item-action-icon-btn"
         onClick={handleCopyId}
         title="Copy task ID"
       >
-        COPY ID
+        <CopyIdIcon />
       </button>
+      <ActionButtons taskId={task.id} itemTitle={task.title} />
     </div>
   );
 }

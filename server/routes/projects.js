@@ -302,7 +302,7 @@ router.get('/', async (req, res) => {
 // POST /api/projects - Create a new project
 router.post('/', async (req, res) => {
   try {
-    const { name, color } = req.body;
+    const { name, color, workingDir } = req.body;
     const projectsData = await loadProjects();
 
     const projectId = generateId('proj');
@@ -312,6 +312,17 @@ router.post('/', async (req, res) => {
       color: color || '#3b82f6',
       createdAt: new Date().toISOString()
     };
+    if (workingDir && typeof workingDir === 'string' && !workingDir.includes('\0')) {
+      const trimmed = workingDir.trim();
+      if (!path.isAbsolute(trimmed)) {
+        return res.status(400).json({ error: 'Working directory must be an absolute path' });
+      }
+      const normalized = path.resolve(trimmed);
+      if (normalized.startsWith('\\\\')) {
+        return res.status(400).json({ error: 'UNC paths are not allowed' });
+      }
+      project.workingDir = normalized;
+    }
 
     // Create project directory and initialize data
     await ensureProjectsDir();
@@ -358,12 +369,27 @@ router.patch('/:id', async (req, res) => {
       return res.status(404).json({ error: 'Project not found' });
     }
 
-    // Only allow updating name and color
+    // Only allow updating name, color, and workingDir
     if (updates.name !== undefined) {
       projectsData.projects[id].name = updates.name;
     }
     if (updates.color !== undefined) {
       projectsData.projects[id].color = updates.color;
+    }
+    if (updates.workingDir !== undefined) {
+      if (updates.workingDir && typeof updates.workingDir === 'string' && !updates.workingDir.includes('\0')) {
+        const trimmed = updates.workingDir.trim();
+        if (!path.isAbsolute(trimmed)) {
+          return res.status(400).json({ error: 'Working directory must be an absolute path' });
+        }
+        const normalized = path.resolve(trimmed);
+        if (normalized.startsWith('\\\\')) {
+          return res.status(400).json({ error: 'UNC paths are not allowed' });
+        }
+        projectsData.projects[id].workingDir = normalized;
+      } else if (!updates.workingDir) {
+        delete projectsData.projects[id].workingDir;
+      }
     }
 
     await saveProjects(projectsData);

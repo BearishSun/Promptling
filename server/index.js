@@ -1,13 +1,17 @@
 const express = require('express');
+const http = require('http');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
+const { WebSocketServer } = require('ws');
 const tasksRouter = require('./routes/tasks');
 const mcpRouter = require('./routes/mcp');
 const projectsRouter = require('./routes/projects');
 const { getDataPaths } = require('./config');
+const { setupTerminalWebSocket } = require('./terminal');
 
 const app = express();
+const server = http.createServer(app);
 const PORT = process.env.PORT || 3001;
 
 // Ensure data directory exists on startup
@@ -53,11 +57,39 @@ if (clientBuildExists) {
   });
 }
 
-// Start server
-app.listen(PORT, () => {
+// WebSocket server for terminal - with origin validation
+const wss = new WebSocketServer({
+  server,
+  path: '/ws/terminal',
+  verifyClient: (info) => {
+    // Verify connection is from loopback
+    const remoteAddr = info.req.socket.remoteAddress;
+    if (!['127.0.0.1', '::1', '::ffff:127.0.0.1'].includes(remoteAddr)) {
+      return false;
+    }
+    const origin = info.origin || info.req.headers.origin;
+    if (!origin) return true; // Allow non-browser local clients
+    try {
+      const url = new URL(origin);
+      return ['localhost', '127.0.0.1'].includes(url.hostname);
+    } catch {
+      return false;
+    }
+  }
+});
+setupTerminalWebSocket(wss);
+
+// Start server - bind to localhost only for security (terminal WebSocket gives shell access)
+// Set HOST=0.0.0.0 to allow LAN access if needed
+const HOST = process.env.HOST || '127.0.0.1';
+server.listen(PORT, HOST, () => {
   console.log(`Promptling server running on http://localhost:${PORT}`);
   console.log(`  - API: http://localhost:${PORT}/api`);
   console.log(`  - MCP: http://localhost:${PORT}/api/mcp`);
   console.log('  - MCP protocol support: Streamable HTTP (preferred) + legacy JSON-RPC POST fallback');
+  console.log(`  - Terminal WebSocket: ws://localhost:${PORT}/ws/terminal`);
   console.log(`  - UI:  ${clientBuildExists ? 'http://localhost:' + PORT : 'Not built (run: cd client && npm run build)'}`);
+  if (!process.env.HOST) {
+    console.log('  NOTE: Server bound to localhost only (terminal security). Set HOST=0.0.0.0 for LAN access.');
+  }
 });
