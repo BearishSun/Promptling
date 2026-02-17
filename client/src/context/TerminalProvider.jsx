@@ -244,17 +244,19 @@ export function TerminalProvider({ children }) {
     };
   }, []);
 
-  const spawnTerminal = useCallback(({ cols, rows, cwd, claudeArgs, itemId, taskId, action, projectId }) => {
+  const spawnTerminal = useCallback(({ cols, rows, cwd, claudeArgs, itemId, taskId, action, projectId, title }) => {
     // Ensure connection (lazy connect)
     connect();
 
     const correlationId = crypto.randomUUID();
     const meta = { itemId, taskId, action, projectId, correlationId };
+    if (title) meta.title = title;
     pendingMetaRef.current.push(meta);
 
     const msg = { type: 'spawn', correlationId, cols: cols || 80, rows: rows || 24 };
     if (cwd) msg.cwd = cwd;
     if (claudeArgs) msg.claudeArgs = claudeArgs;
+    if (title) msg.title = title;
 
     send(msg); // Will be queued if WS not yet open, flushed on open
   }, [send, connect]);

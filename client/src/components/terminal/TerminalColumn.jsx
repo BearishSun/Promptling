@@ -6,6 +6,7 @@ import TerminalPanel from './TerminalPanel';
 const STORAGE_KEY = 'terminalColumnWidth';
 const MIN_WIDTH = 300;
 const MAX_WIDTH_RATIO = 0.7; // max 70% of viewport
+const MIN_PANEL_HEIGHT = 60; // minimum panel height in pixels
 
 function TerminalColumn() {
   const { terminals } = useTerminals();
@@ -19,6 +20,12 @@ function TerminalColumn() {
   const startWidth = useRef(0);
   const widthRef = useRef(width);
   widthRef.current = width;
+
+  // Panel height resize state
+  const [flexGrows, setFlexGrows] = useState({});
+  const flexGrowsRef = useRef(flexGrows);
+  flexGrowsRef.current = flexGrows;
+  const panelDragRef = useRef(null);
 
   // Only show terminals belonging to the active project
   const terminalIds = useMemo(() => {
@@ -62,6 +69,7 @@ function TerminalColumn() {
     return () => window.removeEventListener('resize', handleWindowResize);
   }, []);
 
+  // Column width resize
   const handleMouseDown = useCallback((e) => {
     e.preventDefault();
     isDragging.current = true;
@@ -71,20 +79,67 @@ function TerminalColumn() {
     document.body.style.userSelect = 'none';
   }, []);
 
+  // Panel height resize start
+  const handlePanelResizeStart = useCallback((e, aboveId, belowId) => {
+    e.preventDefault();
+    const contentEl = e.currentTarget.parentElement;
+    const aboveEl = contentEl.querySelector(`[data-terminal-id="${aboveId}"]`);
+    const belowEl = contentEl.querySelector(`[data-terminal-id="${belowId}"]`);
+    if (!aboveEl || !belowEl) return;
+
+    const flexA = flexGrowsRef.current[aboveId] ?? 1;
+    const flexB = flexGrowsRef.current[belowId] ?? 1;
+
+    panelDragRef.current = {
+      aboveId,
+      belowId,
+      startY: e.clientY,
+      startHeightA: aboveEl.getBoundingClientRect().height,
+      startHeightB: belowEl.getBoundingClientRect().height,
+      totalFlex: flexA + flexB,
+    };
+    document.body.style.cursor = 'row-resize';
+    document.body.style.userSelect = 'none';
+  }, []);
+
   useEffect(() => {
     const handleMouseMove = (e) => {
-      if (!isDragging.current) return;
-      const delta = startX.current - e.clientX;
-      const maxWidth = window.innerWidth * MAX_WIDTH_RATIO;
-      const newWidth = Math.min(maxWidth, Math.max(MIN_WIDTH, startWidth.current + delta));
-      setWidth(newWidth);
+      // Column width drag
+      if (isDragging.current) {
+        const delta = startX.current - e.clientX;
+        const maxWidth = window.innerWidth * MAX_WIDTH_RATIO;
+        const newWidth = Math.min(maxWidth, Math.max(MIN_WIDTH, startWidth.current + delta));
+        setWidth(newWidth);
+        return;
+      }
+      // Panel height drag
+      if (panelDragRef.current) {
+        const { aboveId, belowId, startY, startHeightA, startHeightB, totalFlex } = panelDragRef.current;
+        const delta = e.clientY - startY;
+        const totalHeight = startHeightA + startHeightB;
+
+        const newHeightA = Math.max(MIN_PANEL_HEIGHT, Math.min(totalHeight - MIN_PANEL_HEIGHT, startHeightA + delta));
+        const newHeightB = totalHeight - newHeightA;
+
+        setFlexGrows(prev => ({
+          ...prev,
+          [aboveId]: (newHeightA / totalHeight) * totalFlex,
+          [belowId]: (newHeightB / totalHeight) * totalFlex,
+        }));
+      }
     };
 
     const handleMouseUp = () => {
-      if (!isDragging.current) return;
-      isDragging.current = false;
-      document.body.style.cursor = '';
-      document.body.style.userSelect = '';
+      if (isDragging.current) {
+        isDragging.current = false;
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+      }
+      if (panelDragRef.current) {
+        panelDragRef.current = null;
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+      }
     };
 
     document.addEventListener('mousemove', handleMouseMove);
@@ -97,13 +152,41 @@ function TerminalColumn() {
 
   if (terminalIds.length === 0) return null;
 
+  // Build render items with resize handles between non-minimized panels
+  const items = [];
+  let prevNonMinId = null;
+
+  for (const id of terminalIds) {
+    const t = terminals.get(id);
+    const isMinimized = t?.minimized;
+
+    if (!isMinimized && prevNonMinId !== null) {
+      const above = prevNonMinId;
+      items.push(
+        <div
+          key={`resize-${above}-${id}`}
+          className="terminal-panel-resize-handle"
+          onMouseDown={(e) => handlePanelResizeStart(e, above, id)}
+        />
+      );
+    }
+
+    items.push(
+      <TerminalPanel
+        key={id}
+        terminalId={id}
+        flexGrow={!isMinimized ? (flexGrows[id] ?? 1) : undefined}
+      />
+    );
+
+    if (!isMinimized) prevNonMinId = id;
+  }
+
   return (
     <div className="terminal-column" style={{ width: `${width}px` }}>
       <div className="terminal-column-resize-handle" onMouseDown={handleMouseDown} />
       <div className="terminal-column-content">
-        {terminalIds.map(id => (
-          <TerminalPanel key={id} terminalId={id} />
-        ))}
+        {items}
       </div>
     </div>
   );

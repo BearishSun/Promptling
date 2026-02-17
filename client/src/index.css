@@ -2872,7 +2872,7 @@ body {
 .terminal-column {
   display: flex;
   flex-direction: row;
-  background: #1e1e1e;
+  background: var(--bg-secondary);
   border-left: 1px solid var(--border-color);
   min-width: 300px;
   height: 100vh;
@@ -2904,10 +2904,16 @@ body {
   display: flex;
   flex-direction: column;
   flex: 1;
-  border-bottom: 1px solid #333;
+  border-bottom: 1px solid var(--border-color);
+  border-left: 2px solid transparent;
   min-height: 0;
   overflow: hidden;
   position: relative;
+  transition: border-left-color 0.15s;
+}
+
+.terminal-panel.focused {
+  border-left-color: var(--accent);
 }
 
 .terminal-panel.minimized {
@@ -2918,14 +2924,28 @@ body {
   opacity: 0.6;
 }
 
+/* Resize handle between terminal panels */
+.terminal-panel-resize-handle {
+  height: 4px;
+  min-height: 4px;
+  cursor: row-resize;
+  background: transparent;
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+
+.terminal-panel-resize-handle:hover {
+  background: var(--accent);
+}
+
 /* Terminal Title Bar */
 .terminal-titlebar {
   display: flex;
   align-items: center;
   height: 28px;
   min-height: 28px;
-  background: #252526;
-  border-bottom: 1px solid #333;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
   padding: 0 8px;
   user-select: none;
   gap: 4px;
@@ -2934,7 +2954,7 @@ body {
 .terminal-title-text {
   flex: 1;
   font-size: 12px;
-  color: #aaa;
+  color: var(--text-secondary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -2948,7 +2968,7 @@ body {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #f59e0b;
+  background: var(--warning);
   animation: terminal-pulse 1.5s ease-in-out infinite;
   flex-shrink: 0;
 }
@@ -2967,7 +2987,7 @@ body {
   height: 20px;
   border: none;
   background: transparent;
-  color: #888;
+  color: var(--text-muted);
   font-size: 14px;
   cursor: pointer;
   border-radius: 3px;
@@ -2975,12 +2995,12 @@ body {
 }
 
 .terminal-minimize-btn:hover {
-  background: #3a3a3a;
-  color: #ddd;
+  background: var(--bg-hover);
+  color: var(--text-primary);
 }
 
 .terminal-close-btn:hover {
-  background: #c53535;
+  background: var(--danger);
   color: #fff;
 }
 
@@ -3052,4 +3072,19 @@ body {
 @keyframes action-running-pulse {
   0%, 100% { background: var(--bg-secondary); }
   50% { background: color-mix(in srgb, var(--accent) 15%, var(--bg-secondary)); }
+}
+
+/* Pulsing dot indicator for active terminal */
+.action-running-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  flex-shrink: 0;
+  animation: action-running-pulse-dot 1.5s ease-in-out infinite;
+}
+
+@keyframes action-running-pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
 }

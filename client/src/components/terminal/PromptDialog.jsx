@@ -5,8 +5,8 @@ import { useProjects } from '../../context/ProjectProvider';
 function PromptDialog({ action, entityId, entityTitle, onClose }) {
   const [prompt, setPrompt] = useState('');
   const textareaRef = useRef(null);
-  const { spawnTerminal } = useTerminals();
-  const { activeProject } = useProjects();
+  const { terminals, spawnTerminal, sendInput, setMinimized } = useTerminals();
+  const { activeProject, activeProjectId } = useProjects();
 
   useEffect(() => {
     const timer = setTimeout(() => textareaRef.current?.focus(), 100);
@@ -14,24 +14,48 @@ function PromptDialog({ action, entityId, entityTitle, onClose }) {
   }, []);
 
   const handleRun = useCallback(() => {
-    // Build raw claude args - escaping is handled server-side
-    const parts = [`/${action}`, entityId];
-    if (prompt.trim()) {
-      parts.push(prompt.trim());
+    // Find existing non-exited terminal for this entity in the current project
+    let existingTerminal = null;
+    for (const [, t] of terminals) {
+      if (!t.exited && t.projectId === activeProjectId && (t.itemId === entityId || t.taskId === entityId)) {
+        existingTerminal = t;
+        break;
+      }
     }
-    const claudeArgs = parts.join(' ');
-    const cwd = activeProject?.workingDir || undefined;
 
-    spawnTerminal({
-      cwd,
-      claudeArgs,
-      itemId: entityId,
-      taskId: null,
-      action,
-      projectId: activeProject?.id || null,
-    });
+    if (existingTerminal) {
+      // Build command to send to existing terminal
+      const parts = [`/${action}`, entityId];
+      if (prompt.trim()) {
+        parts.push(prompt.trim());
+      }
+      const escaped = parts.join(' ').replace(/"/g, '\\"');
+      const command = `claude "${escaped}"`;
+      sendInput(existingTerminal.id, command + '\r');
+      if (existingTerminal.minimized) {
+        setMinimized(existingTerminal.id, false);
+      }
+    } else {
+      // Build raw claude args - escaping is handled server-side
+      const parts = [`/${action}`, entityId];
+      if (prompt.trim()) {
+        parts.push(prompt.trim());
+      }
+      const claudeArgs = parts.join(' ');
+      const cwd = activeProject?.workingDir || undefined;
+
+      spawnTerminal({
+        cwd,
+        claudeArgs,
+        itemId: entityId,
+        taskId: null,
+        action,
+        projectId: activeProject?.id || null,
+        title: entityTitle,
+      });
+    }
     onClose();
-  }, [action, entityId, prompt, activeProject, spawnTerminal, onClose]);
+  }, [action, entityId, entityTitle, prompt, activeProject, activeProjectId, terminals, spawnTerminal, sendInput, setMinimized, onClose]);
 
   const handleKeyDown = useCallback((e) => {
     if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {

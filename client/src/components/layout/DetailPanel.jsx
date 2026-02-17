@@ -6,6 +6,7 @@ import PromptHistoryViewer from '../detail/PromptHistoryViewer';
 import ActionButtons from '../terminal/ActionButtons';
 import { formatDateTime } from '../../utils/dateFormat';
 import { useDebouncedCallback } from '../../hooks/useDebounce';
+import { usePlanPolling } from '../../hooks/usePlanPolling';
 import tasksApi, { TASK_STATUSES, COMPLEXITIES } from '../../services/api';
 
 const CloseIcon = () => (
@@ -427,6 +428,46 @@ function DetailPanel() {
       console.error('Failed to fetch plan:', error);
     }
   }, [selectedItemType, selectedItemId, planVersions, loadPlanComments]);
+
+  // Auto-refresh when new plan versions are detected
+  const handleNewPlanVersions = useCallback((newVersions) => {
+    const wasLatest = planVersions.length === 0 || markdownViewer?.selectedVersion === planVersions[0]?.version;
+
+    setPlanVersions(newVersions);
+
+    if (markdownViewer?.type === 'plan') {
+      const latestVersion = newVersions[0]?.version;
+
+      // Update the versions list in the modal dropdown
+      setMarkdownViewer(prev => {
+        if (!prev || prev.type !== 'plan') return prev;
+        return { ...prev, versions: newVersions };
+      });
+
+      // If user was viewing the latest version, auto-load the new latest content
+      if (wasLatest && latestVersion && latestVersion !== markdownViewer.selectedVersion) {
+        tasksApi.getPlan(selectedItemType, selectedItemId, latestVersion)
+          .then(response => {
+            setMarkdownViewer(prev => {
+              if (!prev || prev.type !== 'plan') return prev;
+              return {
+                ...prev,
+                content: response.content,
+                selectedVersion: latestVersion,
+                title: 'Implementation Plan'
+              };
+            });
+            setDiffMode(false);
+            setCompareVersion(null);
+            setCompareContent(null);
+            loadPlanComments(`v${latestVersion}`);
+          })
+          .catch(err => console.error('Failed to auto-load new plan version:', err));
+      }
+    }
+  }, [planVersions, markdownViewer, selectedItemType, selectedItemId, loadPlanComments]);
+
+  usePlanPolling(selectedItemType, selectedItemId, planVersions.length, handleNewPlanVersions);
 
   // Handle opening a markdown attachment
   const handleOpenMarkdownAttachment = useCallback(async (attachment) => {

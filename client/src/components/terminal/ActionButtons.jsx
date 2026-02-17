@@ -39,18 +39,10 @@ function ActionButtons({ itemId, taskId, itemTitle }) {
     setDialogAction(null);
   }, []);
 
-  if (hasRunning) {
-    const runningLabels = ACTIONS.filter(a => runningActions[a.key]).map(a => a.label);
-    return (
-      <span className="action-running-text" onClick={e => e.stopPropagation()}>
-        Running {runningLabels.join(', ')}...
-      </span>
-    );
-  }
-
   return (
     <>
       <div className="action-buttons" onClick={e => e.stopPropagation()}>
+        {hasRunning && <span className="action-running-dot" />}
         {ACTIONS.map(({ key, label, Icon }) => (
           <button
             key={key}

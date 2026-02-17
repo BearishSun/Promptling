@@ -2,9 +2,10 @@ import { memo, useState, useCallback } from 'react';
 import { useTerminals } from '../../context/TerminalProvider';
 import Terminal from './Terminal';
 
-function TerminalPanel({ terminalId }) {
+function TerminalPanel({ terminalId, flexGrow }) {
   const { terminals, killTerminal, setMinimized, removeTerminal } = useTerminals();
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
 
   const terminal = terminals.get(terminalId);
   if (!terminal) return null;
@@ -29,8 +30,30 @@ function TerminalPanel({ terminalId }) {
     setMinimized(terminalId, !minimized);
   }, [terminalId, minimized, setMinimized]);
 
+  const handleFocus = useCallback(() => setIsFocused(true), []);
+  const handleBlur = useCallback((e) => {
+    if (!e.currentTarget.contains(e.relatedTarget)) {
+      setIsFocused(false);
+    }
+  }, []);
+
+  const className = [
+    'terminal-panel',
+    minimized && 'minimized',
+    exited && 'exited',
+    isFocused && !minimized && 'focused',
+  ].filter(Boolean).join(' ');
+
+  const style = flexGrow != null ? { flex: `${flexGrow} 1 0px` } : undefined;
+
   return (
-    <div className={`terminal-panel${minimized ? ' minimized' : ''}${exited ? ' exited' : ''}`}>
+    <div
+      className={className}
+      data-terminal-id={terminalId}
+      style={style}
+      onFocus={handleFocus}
+      onBlur={handleBlur}
+    >
       <div className="terminal-titlebar">
         <span className="terminal-title-text">
           {waitingForInput && <span className="terminal-input-indicator" />}

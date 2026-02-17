@@ -117,6 +117,10 @@ function setupTerminalWebSocket(wss) {
             setTimeout(onReady, 1000);
           }
 
+          // Custom title from client, or default to shell name
+          const customTitle = typeof msg.title === 'string' && msg.title.length > 0 ? msg.title : null;
+          const displayTitle = customTitle || (process.platform === 'win32' ? 'PowerShell' : path.basename(shell));
+
           // On Windows, ptyProcess.process always returns the name option ('xterm-256color')
           // rather than the actual running process. Initialize lastTitle to match so the
           // title poll doesn't overwrite our display title.
@@ -130,28 +134,30 @@ function setupTerminalWebSocket(wss) {
             send({ type: 'exit', terminalId, exitCode });
             const entry = terminals.get(terminalId);
             if (entry) {
-              clearInterval(entry.titleInterval);
+              if (entry.titleInterval) clearInterval(entry.titleInterval);
               terminals.delete(terminalId);
             }
           });
 
-          // Poll for title changes
-          const titleInterval = setInterval(() => {
-            try {
-              const currentTitle = ptyProcess.process;
-              if (currentTitle && currentTitle !== lastTitle) {
-                lastTitle = currentTitle;
-                send({ type: 'title', terminalId, title: currentTitle });
+          // Only poll for title changes if no custom title was set
+          let titleInterval = null;
+          if (!customTitle) {
+            titleInterval = setInterval(() => {
+              try {
+                const currentTitle = ptyProcess.process;
+                if (currentTitle && currentTitle !== lastTitle) {
+                  lastTitle = currentTitle;
+                  send({ type: 'title', terminalId, title: currentTitle });
+                }
+              } catch {
+                // PTY may have been killed
               }
-            } catch {
-              // PTY may have been killed
-            }
-          }, TITLE_POLL_INTERVAL);
+            }, TITLE_POLL_INTERVAL);
+          }
 
           terminals.set(terminalId, { pty: ptyProcess, titleInterval });
 
           // Echo back correlation ID if provided (for client-side metadata matching)
-          const displayTitle = process.platform === 'win32' ? 'PowerShell' : path.basename(shell);
           const spawnedMsg = { type: 'spawned', terminalId, title: displayTitle };
           if (msg.correlationId) spawnedMsg.correlationId = msg.correlationId;
           send(spawnedMsg);
