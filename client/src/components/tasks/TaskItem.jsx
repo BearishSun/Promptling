@@ -4,6 +4,7 @@ import { TASK_STATUSES, COMPLEXITIES } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import { CopyIdIcon } from '../shared/icons';
 import ActionButtons from '../terminal/ActionButtons';
+import RunningDot from '../terminal/RunningDot';
 
 // Drag handle icon
 const DragIcon = () => (
@@ -87,6 +88,7 @@ function TaskItem({ task, tags, isSelected, onSelect, onToggle, dragHandleProps 
 
           {/* Date */}
           <span>{formatDate(task.createdAt)}</span>
+          <RunningDot entityId={task.id} />
         </div>
       </div>
       <button

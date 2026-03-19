@@ -2,8 +2,9 @@ import { memo, useState, useCallback, useRef, useEffect } from 'react';
 import { useTerminals } from '../../context/TerminalProvider';
 import { useProjects } from '../../context/ProjectProvider';
 
-function PromptDialog({ action, entityId, entityTitle, onClose }) {
+function PromptDialog({ action, entityId, entityTitle, onClose, planStatus }) {
   const [prompt, setPrompt] = useState('');
+  const [showConfirm, setShowConfirm] = useState(null);
   const textareaRef = useRef(null);
   const { terminals, spawnTerminal, sendInput, setMinimized } = useTerminals();
   const { activeProject, activeProjectId } = useProjects();
@@ -31,7 +32,8 @@ function PromptDialog({ action, entityId, entityTitle, onClose }) {
       }
       const escaped = parts.join(' ').replace(/"/g, '\\"');
       const command = `claude "${escaped}"`;
-      sendInput(existingTerminal.id, command + '\r');
+      sendInput(existingTerminal.id, command);
+      setTimeout(() => sendInput(existingTerminal.id, '\r'), 100);
       if (existingTerminal.minimized) {
         setMinimized(existingTerminal.id, false);
       }
@@ -57,15 +59,37 @@ function PromptDialog({ action, entityId, entityTitle, onClose }) {
     onClose();
   }, [action, entityId, entityTitle, prompt, activeProject, activeProjectId, terminals, spawnTerminal, sendInput, setMinimized, onClose]);
 
+  const handleRunWithConfirm = useCallback(() => {
+    if (action === 'implement' || action === 'breakdown') {
+      if (!planStatus?.hasPlan) {
+        setShowConfirm('No implementation plan exists. Continue anyway?');
+        return;
+      }
+      if (!planStatus?.isApproved) {
+        setShowConfirm("The latest plan hasn't been approved. Continue anyway?");
+        return;
+      }
+    }
+    handleRun();
+  }, [action, planStatus, handleRun]);
+
   const handleKeyDown = useCallback((e) => {
     if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
       e.preventDefault();
-      handleRun();
+      if (showConfirm) {
+        handleRun();
+      } else {
+        handleRunWithConfirm();
+      }
     }
     if (e.key === 'Escape') {
-      onClose();
+      if (showConfirm) {
+        setShowConfirm(null);
+      } else {
+        onClose();
+      }
     }
-  }, [handleRun, onClose]);
+  }, [handleRun, handleRunWithConfirm, showConfirm, onClose]);
 
   const actionLabel = action.charAt(0).toUpperCase() + action.slice(1);
 
@@ -78,34 +102,60 @@ function PromptDialog({ action, entityId, entityTitle, onClose }) {
         </div>
 
         <div className="modal-body">
-          <div className="form-group">
-            <label htmlFor="terminal-prompt">Optional prompt</label>
-            <textarea
-              ref={textareaRef}
-              id="terminal-prompt"
-              className="input"
-              value={prompt}
-              onChange={e => setPrompt(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Add additional instructions..."
-              rows={4}
-              maxLength={8000}
-              style={{ resize: 'vertical', fontFamily: 'inherit' }}
-            />
-          </div>
-          <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-            Ctrl+Enter to run
-          </div>
+          {showConfirm ? (
+            <div className="prompt-dialog-warning" onKeyDown={handleKeyDown} tabIndex={-1}>
+              <p style={{ color: 'var(--warning)', fontWeight: 500, marginBottom: '8px' }}>
+                {showConfirm}
+              </p>
+              <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
+                Press Ctrl+Enter to continue anyway, or go back to add a prompt.
+              </p>
+            </div>
+          ) : (
+            <>
+              <div className="form-group">
+                <label htmlFor="terminal-prompt">Optional prompt</label>
+                <textarea
+                  ref={textareaRef}
+                  id="terminal-prompt"
+                  className="input"
+                  value={prompt}
+                  onChange={e => setPrompt(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Add additional instructions..."
+                  rows={4}
+                  maxLength={8000}
+                  style={{ resize: 'vertical', fontFamily: 'inherit' }}
+                />
+              </div>
+              <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                Ctrl+Enter to run
+              </div>
+            </>
+          )}
         </div>
 
         <div className="modal-footer">
           <div className="modal-footer-actions">
-            <button className="btn btn-secondary" onClick={onClose}>
-              Cancel
-            </button>
-            <button className="btn btn-primary" onClick={handleRun}>
-              Run
-            </button>
+            {showConfirm ? (
+              <>
+                <button className="btn btn-secondary" onClick={() => setShowConfirm(null)}>
+                  Go Back
+                </button>
+                <button className="btn btn-warning" onClick={handleRun}>
+                  Continue Anyway
+                </button>
+              </>
+            ) : (
+              <>
+                <button className="btn btn-secondary" onClick={onClose}>
+                  Cancel
+                </button>
+                <button className="btn btn-primary" onClick={handleRunWithConfirm}>
+                  Run
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>

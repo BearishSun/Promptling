@@ -89,6 +89,9 @@ function setupTerminalWebSocket(wss) {
               rows,
               cwd: path.resolve(cwd),
               env: spawnEnv,
+              useConpty: true,
+              windowsHide: true,
+              conptyInheritCursor: true,
             });
           } catch (err) {
             console.error('[terminal] Failed to spawn PTY:', err.message);
@@ -217,9 +220,7 @@ function setupTerminalWebSocket(wss) {
         if (entry.resizeTimer) clearTimeout(entry.resizeTimer);
         try {
           entry.pty.kill();
-        } catch {
-          // Already dead
-        }
+        } catch { /* already dead */ }
       }
       terminals.clear();
     });

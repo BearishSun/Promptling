@@ -1,4 +1,4 @@
-import { memo, useState, useEffect, useCallback } from 'react';
+import { memo, useEffect, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import RenderedDiffViewer from './RenderedDiffViewer';
@@ -11,9 +11,7 @@ const CloseIcon = () => (
   </svg>
 );
 
-function MarkdownViewer({ title, content, onClose, versionSelector, diffMode, diffContent, diffControls, diffViewMode, commentMode, commentControls, comments, onAddComment, onRemoveComment }) {
-  const [showToast, setShowToast] = useState(false);
-
+function MarkdownViewer({ title, content, onClose, versionSelector, diffMode, diffContent, diffControls, diffViewMode, commentMode, commentControls, comments, onAddComment, onRemoveComment, commentSidebarVisible, reviewControls, onIteratePlan }) {
   // Handle Escape key - don't close modal when comment input is active
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -37,19 +35,14 @@ function MarkdownViewer({ title, content, onClose, versionSelector, diffMode, di
     }
   }, [onClose]);
 
-  const handleCopied = useCallback(() => {
-    setShowToast(true);
-    setTimeout(() => setShowToast(false), 2000);
-  }, []);
-
   const splitClass = diffMode && diffViewMode === 'split' ? ' markdown-viewer--split' : '';
-  const commentClass = commentMode ? ' markdown-viewer--commenting' : '';
+  const commentClass = commentMode && commentSidebarVisible ? ' markdown-viewer--commenting' : '';
 
   const renderContent = () => {
     if (commentMode && diffMode && diffContent) {
       return (
         <div className="markdown-viewer-comment-layout">
-          <div className="markdown-viewer-comment-lines">
+          <div className={`markdown-viewer-comment-lines${!commentSidebarVisible ? ' markdown-viewer-comment-lines--full' : ''}`}>
             <RenderedDiffViewer
               oldContent={diffContent.oldContent}
               newContent={content}
@@ -62,14 +55,15 @@ function MarkdownViewer({ title, content, onClose, versionSelector, diffMode, di
               onRemoveComment={onRemoveComment}
             />
           </div>
-          <div className="markdown-viewer-comment-panel">
-            <CommentPanel
-              comments={comments}
-              onRemoveComment={onRemoveComment}
-              diffMode={diffMode}
-              onCopied={handleCopied}
-            />
-          </div>
+          {commentSidebarVisible && (
+            <div className="markdown-viewer-comment-panel">
+              <CommentPanel
+                comments={comments}
+                onRemoveComment={onRemoveComment}
+                onIteratePlan={onIteratePlan}
+              />
+            </div>
+          )}
         </div>
       );
     }
@@ -77,7 +71,7 @@ function MarkdownViewer({ title, content, onClose, versionSelector, diffMode, di
     if (commentMode) {
       return (
         <div className="markdown-viewer-comment-layout">
-          <div className="markdown-viewer-comment-lines">
+          <div className={`markdown-viewer-comment-lines${!commentSidebarVisible ? ' markdown-viewer-comment-lines--full' : ''}`}>
             <PlanCommentViewer
               content={content}
               comments={comments}
@@ -85,14 +79,15 @@ function MarkdownViewer({ title, content, onClose, versionSelector, diffMode, di
               onRemoveComment={onRemoveComment}
             />
           </div>
-          <div className="markdown-viewer-comment-panel">
-            <CommentPanel
-              comments={comments}
-              onRemoveComment={onRemoveComment}
-              diffMode={diffMode}
-              onCopied={handleCopied}
-            />
-          </div>
+          {commentSidebarVisible && (
+            <div className="markdown-viewer-comment-panel">
+              <CommentPanel
+                comments={comments}
+                onRemoveComment={onRemoveComment}
+                onIteratePlan={onIteratePlan}
+              />
+            </div>
+          )}
         </div>
       );
     }
@@ -120,23 +115,28 @@ function MarkdownViewer({ title, content, onClose, versionSelector, diffMode, di
     <div className="markdown-viewer-overlay" onClick={handleOverlayClick}>
       <div className={`markdown-viewer${splitClass}${commentClass}`}>
         <div className="markdown-viewer-header">
-          <div className="markdown-viewer-title-area">
+          <div className="markdown-viewer-header-top">
             <h2 className="markdown-viewer-title">{title}</h2>
-            {versionSelector}
-            {diffControls}
-            {commentControls}
+            <button className="markdown-viewer-close" onClick={onClose} title="Close">
+              <CloseIcon />
+            </button>
           </div>
-          <button className="markdown-viewer-close" onClick={onClose} title="Close">
-            <CloseIcon />
-          </button>
+          {(reviewControls || versionSelector || diffControls || commentControls) && (
+            <div className="markdown-viewer-toolbar">
+              {reviewControls}
+              {(reviewControls && (versionSelector || diffControls || commentControls)) && (
+                <div className="markdown-viewer-toolbar-sep" />
+              )}
+              {versionSelector}
+              {diffControls}
+              {commentControls}
+            </div>
+          )}
         </div>
         <div className={`markdown-viewer-content${commentMode ? ' markdown-viewer-content--commenting' : ''}`}>
           {renderContent()}
         </div>
       </div>
-      {showToast && (
-        <div className="toast">Copied to clipboard</div>
-      )}
     </div>
   );
 }

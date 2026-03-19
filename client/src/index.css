@@ -1435,23 +1435,20 @@ body {
 
 .markdown-viewer-header {
   display: flex;
+  flex-direction: column;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.markdown-viewer-header-top {
+  display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 20px;
-  border-bottom: 1px solid var(--border-color);
+  padding: 14px 20px;
   gap: 16px;
 }
 
-.markdown-viewer-title-area {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex: 1;
-  min-width: 0;
-}
-
 .markdown-viewer-title {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 600;
   color: var(--text-primary);
   margin: 0;
@@ -1461,8 +1458,8 @@ body {
 }
 
 .markdown-viewer-close {
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   border: none;
   background: none;
   cursor: pointer;
@@ -1470,12 +1467,29 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--text-secondary);
+  color: var(--text-muted);
   flex-shrink: 0;
+  transition: all 0.15s;
 }
 
 .markdown-viewer-close:hover {
   background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.markdown-viewer-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 20px 12px;
+  flex-wrap: wrap;
+}
+
+.markdown-viewer-toolbar-sep {
+  width: 1px;
+  height: 20px;
+  background: var(--border-color);
+  margin: 0 4px;
 }
 
 .markdown-viewer-content {
@@ -1709,7 +1723,7 @@ body {
   transition: background 0.1s;
 }
 
-.plan-comment-viewer--rendered [data-source-line]:hover {
+.plan-comment-viewer--rendered [data-source-line]:hover:not(:has([data-source-line]:hover)) {
   background: var(--bg-hover);
 }
 
@@ -1730,7 +1744,7 @@ body {
   line-height: inherit;
 }
 
-.plan-comment-viewer--rendered [data-source-line]:hover::before,
+.plan-comment-viewer--rendered [data-source-line]:hover:not(:has([data-source-line]:hover))::before,
 .plan-comment-viewer--rendered [data-source-line].plan-line-commented::before {
   opacity: 0.6;
 }
@@ -3087,4 +3101,117 @@ body {
 @keyframes action-running-pulse-dot {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.3; }
+}
+
+/* Plan Review Badges */
+.plan-review-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.plan-review-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.plan-review-badge--approved {
+  background: rgba(34, 197, 94, 0.15);
+  color: var(--success);
+  border-color: var(--success);
+}
+
+.plan-review-badge--requires-changes {
+  background: rgba(245, 158, 11, 0.15);
+  color: var(--warning);
+  border-color: var(--warning);
+}
+
+.plan-review-badge--not-reviewed {
+  color: var(--text-muted);
+  background: var(--bg-hover);
+}
+
+.plan-review-change {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 2px 4px;
+  text-decoration: underline;
+}
+
+.plan-review-change:hover {
+  color: var(--text-primary);
+}
+
+/* Plan status badge on the plan button */
+.plan-status-badge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-left: auto;
+}
+
+.plan-status-badge--approved {
+  background: rgba(34, 197, 94, 0.15);
+  color: var(--success);
+}
+
+.plan-status-badge--requires-changes {
+  background: rgba(245, 158, 11, 0.15);
+  color: var(--warning);
+}
+
+.plan-status-badge--not-reviewed {
+  color: var(--text-muted);
+}
+
+/* Comment panel sidebar full-width when sidebar hidden */
+.markdown-viewer-comment-lines--full {
+  flex: 1;
+  border-right: none;
+}
+
+/* Comment panel footer actions row */
+.comment-panel-footer-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.comment-panel-footer-actions .btn {
+  flex: 1;
+}
+
+.comment-panel-iterate-btn {
+  justify-content: center;
+  width: 100%;
+}
+
+/* Comment sidebar toggle icon - pushed to right in toolbar */
+.comment-sidebar-toggle {
+  margin-left: auto;
+}
+
+/* Warning button for confirmation dialogs */
+.btn-warning {
+  background: var(--warning);
+  color: #000;
+}
+
+.btn-warning:hover {
+  background: #d97706;
+}
+
+/* Prompt dialog warning message */
+.prompt-dialog-warning {
+  padding: 12px 0;
 }

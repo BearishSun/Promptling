@@ -7,6 +7,7 @@ import { CategorizedList, SortableItemWrapper } from '../shared/CategoryList';
 import { DragIcon, PlusIcon, CopyIdIcon, OpenBoxIcon } from '../shared/icons';
 import TaskList from '../tasks/TaskList';
 import ActionButtons from '../terminal/ActionButtons';
+import RunningDot from '../terminal/RunningDot';
 import { COMPLEXITIES } from '../../services/api';
 
 // Icons specific to MainPanel
@@ -266,6 +267,7 @@ function ItemContent({ item, data, onOpenDetails, onViewTasks, dragHandleProps }
           )}
           <span>{taskCount} tasks</span>
           <span>{completedCount} done</span>
+          <RunningDot entityId={item.id} />
         </div>
       </div>
       <button className="item-action-icon-btn" onClick={handleCopyId} title="Copy item ID">

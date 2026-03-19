@@ -1,11 +1,4 @@
-import { memo, useState, useMemo, useCallback } from 'react';
-
-const ClipboardIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-    <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
-  </svg>
-);
+import { memo, useMemo } from 'react';
 
 const RemoveIcon = () => (
   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -13,37 +6,11 @@ const RemoveIcon = () => (
   </svg>
 );
 
-function CommentPanel({ comments, onRemoveComment, diffMode, onCopied }) {
-  const [copyFeedback, setCopyFeedback] = useState(false);
-
+function CommentPanel({ comments, onRemoveComment, onIteratePlan }) {
   const sortedEntries = useMemo(() =>
     [...comments.entries()].sort(([, a], [, b]) => a.sortKey - b.sortKey),
     [comments]
   );
-
-  const promptText = useMemo(() => {
-    if (sortedEntries.length === 0) return '';
-
-    const header = "I've made the following comments on the plan, please act on them:";
-
-    const body = sortedEntries.map(([, entry]) =>
-      `${entry.lineLabel}: \`${entry.lineText}\`\nComment: ${entry.comment}`
-    ).join('\n\n');
-
-    return `${header}\n\n${body}`;
-  }, [sortedEntries]);
-
-  const handleCopy = useCallback(async () => {
-    if (!promptText) return;
-    try {
-      await navigator.clipboard.writeText(promptText);
-      setCopyFeedback(true);
-      setTimeout(() => setCopyFeedback(false), 2000);
-      if (onCopied) onCopied();
-    } catch (err) {
-      console.error('Failed to copy comments:', err);
-    }
-  }, [promptText, onCopied]);
 
   return (
     <div className="comment-panel">
@@ -76,16 +43,13 @@ function CommentPanel({ comments, onRemoveComment, diffMode, onCopied }) {
         )}
       </div>
 
-      {sortedEntries.length > 0 && (
+      {onIteratePlan && sortedEntries.length > 0 && (
         <div className="comment-panel-footer">
-          <div className="comment-panel-preview-label">Prompt preview</div>
-          <pre className="comment-panel-preview">{promptText}</pre>
           <button
-            className={`btn btn-sm comment-panel-copy-btn${copyFeedback ? ' comment-panel-copy-btn--copied' : ' btn-primary'}`}
-            onClick={handleCopy}
+            className="btn btn-sm btn-primary comment-panel-iterate-btn"
+            onClick={() => onIteratePlan()}
           >
-            <ClipboardIcon />
-            {copyFeedback ? 'Copied!' : 'Copy prompt'}
+            Iterate Plan
           </button>
         </div>
       )}

@@ -1,5 +1,7 @@
 import { memo, useState, useCallback, useEffect, useRef } from 'react';
 import { useTaskData, useTaskActions, useUIState, SYSTEM_SECTIONS } from '../../context/TaskProvider';
+import { useTerminals } from '../../context/TerminalProvider';
+import { useProjects } from '../../context/ProjectProvider';
 import MarkdownEditor from '../detail/MarkdownEditor';
 import MarkdownViewer from '../detail/MarkdownViewer';
 import PromptHistoryViewer from '../detail/PromptHistoryViewer';
@@ -151,10 +153,13 @@ function DetailPanel() {
   const [compareVersion, setCompareVersion] = useState(null);
   const [compareContent, setCompareContent] = useState(null);
   const [isLoadingCompare, setIsLoadingCompare] = useState(false);
-  const [commentMode, setCommentMode] = useState(false);
+  const [commentSidebarVisible, setCommentSidebarVisible] = useState(true);
   const [planComments, setPlanComments] = useState(new Map());
   const [commentsKey, setCommentsKey] = useState(null);
   const fileInputRef = useRef(null);
+
+  const { terminals, spawnTerminal, sendInput, setMinimized } = useTerminals();
+  const { activeProject, activeProjectId } = useProjects();
 
   // Get the selected item based on type
   const item = (() => {
@@ -385,8 +390,12 @@ function DetailPanel() {
     debouncedSaveComments.cancel();
     try {
       const response = await tasksApi.getPlanComments(selectedItemType, selectedItemId, key);
-      setPlanComments(new Map(Object.entries(response.comments || {})));
+      const loaded = new Map(Object.entries(response.comments || {}));
+      setPlanComments(loaded);
       setCommentsKey(key);
+      if (loaded.size > 0) {
+        setCommentSidebarVisible(true);
+      }
     } catch (error) {
       console.error('Failed to load plan comments:', error);
       setPlanComments(new Map());
@@ -399,6 +408,7 @@ function DetailPanel() {
     const next = new Map(planComments);
     next.set(key, { lineText, comment, lineLabel, sortKey });
     setPlanComments(next);
+    setCommentSidebarVisible(true);
     if (commentsKey) debouncedSaveComments(commentsKey, next);
   }, [planComments, commentsKey, debouncedSaveComments]);
 
@@ -468,6 +478,25 @@ function DetailPanel() {
   }, [planVersions, markdownViewer, selectedItemType, selectedItemId, loadPlanComments]);
 
   usePlanPolling(selectedItemType, selectedItemId, planVersions.length, handleNewPlanVersions);
+
+  // Derive plan review status
+  const latestPlanVersion = planVersions[0]?.version;
+  const reviewStatus = latestPlanVersion && item?.planReview?.version === latestPlanVersion
+    ? item.planReview.status
+    : 'not-reviewed';
+  const hasPlan = planVersions.length > 0;
+
+  const handleSetReviewStatus = useCallback((status) => {
+    const ver = planVersions[0]?.version;
+    const updates = status
+      ? { planReview: { version: ver, status } }
+      : { planReview: null };
+    if (selectedItemType === 'task') {
+      updateTask(selectedItemId, updates);
+    } else if (selectedItemType === 'item') {
+      updateItem(selectedItemId, updates);
+    }
+  }, [planVersions, selectedItemType, selectedItemId, updateTask, updateItem]);
 
   // Handle opening a markdown attachment
   const handleOpenMarkdownAttachment = useCallback(async (attachment) => {
@@ -539,10 +568,46 @@ function DetailPanel() {
     }
   }, [diffMode, markdownViewer?.selectedVersion, fetchCompareContent]);
 
-  // Toggle comment mode
+  // Toggle comment sidebar visibility
   const handleToggleComment = useCallback(() => {
-    setCommentMode(prev => !prev);
+    setCommentSidebarVisible(prev => !prev);
   }, []);
+
+  // Iterate plan: spawn terminal with /plan (comments provided by MCP server)
+  const handleIteratePlan = useCallback(() => {
+    const entityId = selectedItemId;
+    let existingTerminal = null;
+    for (const [, t] of terminals) {
+      if (!t.exited && t.projectId === activeProjectId && (t.itemId === entityId || t.taskId === entityId)) {
+        existingTerminal = t;
+        break;
+      }
+    }
+
+    const parts = ['/plan', entityId];
+
+    if (existingTerminal) {
+      const escaped = parts.join(' ').replace(/"/g, '\\"');
+      const command = `claude "${escaped}"`;
+      sendInput(existingTerminal.id, command);
+      setTimeout(() => sendInput(existingTerminal.id, '\r'), 100);
+      if (existingTerminal.minimized) {
+        setMinimized(existingTerminal.id, false);
+      }
+    } else {
+      const claudeArgs = parts.join(' ');
+      const cwd = activeProject?.workingDir || undefined;
+      spawnTerminal({
+        cwd,
+        claudeArgs,
+        itemId: entityId,
+        taskId: null,
+        action: 'plan',
+        projectId: activeProject?.id || null,
+        title: item?.title,
+      });
+    }
+  }, [selectedItemId, item?.title, terminals, activeProjectId, activeProject, spawnTerminal, sendInput, setMinimized]);
 
   // Change compare version
   const handleCompareVersionChange = useCallback((version) => {
@@ -619,7 +684,7 @@ function DetailPanel() {
           />
         )}
 
-        <ActionButtons itemId={selectedItemId} itemTitle={item.title} />
+        <ActionButtons itemId={selectedItemId} itemTitle={item.title} planStatus={{ hasPlan, isApproved: reviewStatus === 'approved' }} />
 
         <button
           className="btn btn-icon btn-secondary"
@@ -837,6 +902,9 @@ function DetailPanel() {
               >
                 <PlanIcon />
                 <span className="plan-name">Current Plan</span>
+                <span className={`plan-status-badge plan-status-badge--${reviewStatus}`}>
+                  {reviewStatus === 'approved' ? 'Approved' : reviewStatus === 'requires-changes' ? 'Requires Changes' : 'Not Reviewed'}
+                </span>
                 <span className="plan-meta">v{planVersions[0].version}</span>
               </button>
             </div>
@@ -1053,7 +1121,7 @@ function DetailPanel() {
           setDiffViewMode('unified');
           setCompareVersion(null);
           setCompareContent(null);
-          setCommentMode(false);
+          setCommentSidebarVisible(false);
           setPlanComments(new Map());
           setCommentsKey(null);
         }}
@@ -1077,17 +1145,51 @@ function DetailPanel() {
           newVersion: markdownViewer.selectedVersion
         } : null}
         diffViewMode={diffViewMode}
-        commentMode={commentMode}
+        commentMode={markdownViewer.type === 'plan'}
+        commentSidebarVisible={commentSidebarVisible}
         comments={planComments}
         onAddComment={handlePlanAddComment}
         onRemoveComment={handlePlanRemoveComment}
+        onIteratePlan={handleIteratePlan}
+        reviewControls={markdownViewer.type === 'plan' ? (
+          <div className="plan-review-controls">
+            {reviewStatus === 'not-reviewed' ? (
+              <>
+                <button
+                  className="btn btn-sm plan-review-badge plan-review-badge--approved"
+                  onClick={() => handleSetReviewStatus('approved')}
+                >
+                  Approve
+                </button>
+                <button
+                  className="btn btn-sm plan-review-badge plan-review-badge--requires-changes"
+                  onClick={() => handleSetReviewStatus('requires-changes')}
+                >
+                  Requires Changes
+                </button>
+              </>
+            ) : reviewStatus === 'approved' ? (
+              <>
+                <span className="plan-review-badge plan-review-badge--approved">Approved</span>
+                <button className="plan-review-change" onClick={() => handleSetReviewStatus(null)}>Change</button>
+              </>
+            ) : (
+              <>
+                <span className="plan-review-badge plan-review-badge--requires-changes">Requires Changes</span>
+                <button className="plan-review-change" onClick={() => handleSetReviewStatus(null)}>Change</button>
+              </>
+            )}
+          </div>
+        ) : null}
         commentControls={markdownViewer.type === 'plan' ? (
           <button
-            className={`btn btn-sm btn-secondary${commentMode ? ' btn-comment-active' : ''}`}
+            className={`btn btn-sm btn-icon btn-secondary comment-sidebar-toggle${commentSidebarVisible ? ' btn-comment-active' : ''}`}
             onClick={handleToggleComment}
-            title={commentMode ? 'Hide comments' : 'Comment on lines'}
+            title={commentSidebarVisible ? 'Hide comment sidebar' : 'Show comment sidebar'}
           >
-            {commentMode ? 'Hide comments' : 'Comment'}
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
+            </svg>
           </button>
         ) : null}
         diffControls={markdownViewer.type === 'plan' && markdownViewer.versions?.length > 1 ? (

@@ -1,6 +1,4 @@
-import { memo, useState, useCallback, useMemo } from 'react';
-import { useTerminals } from '../../context/TerminalProvider';
-import { useProjects } from '../../context/ProjectProvider';
+import { memo, useState, useCallback } from 'react';
 import { PlanIcon, ImplementIcon, BreakdownIcon } from '../shared/icons';
 import PromptDialog from './PromptDialog';
 
@@ -10,25 +8,10 @@ const ACTIONS = [
   { key: 'breakdown', label: 'Breakdown', Icon: BreakdownIcon },
 ];
 
-function ActionButtons({ itemId, taskId, itemTitle }) {
-  const { terminals } = useTerminals();
-  const { activeProjectId } = useProjects();
+function ActionButtons({ itemId, taskId, itemTitle, planStatus }) {
   const [dialogAction, setDialogAction] = useState(null);
 
   const entityId = taskId || itemId;
-
-  // Check if there's a running terminal for this entity+action in the current project
-  const runningActions = useMemo(() => {
-    const running = {};
-    for (const [, t] of terminals) {
-      if (!t.exited && t.projectId === activeProjectId && (t.itemId === entityId || t.taskId === entityId)) {
-        running[t.action] = true;
-      }
-    }
-    return running;
-  }, [terminals, entityId, activeProjectId]);
-
-  const hasRunning = ACTIONS.some(a => runningActions[a.key]);
 
   const handleClick = useCallback((e, action) => {
     e.stopPropagation();
@@ -42,7 +25,6 @@ function ActionButtons({ itemId, taskId, itemTitle }) {
   return (
     <>
       <div className="action-buttons" onClick={e => e.stopPropagation()}>
-        {hasRunning && <span className="action-running-dot" />}
         {ACTIONS.map(({ key, label, Icon }) => (
           <button
             key={key}
@@ -61,6 +43,7 @@ function ActionButtons({ itemId, taskId, itemTitle }) {
           entityId={entityId}
           entityTitle={itemTitle}
           onClose={handleCloseDialog}
+          planStatus={planStatus}
         />
       )}
     </>
