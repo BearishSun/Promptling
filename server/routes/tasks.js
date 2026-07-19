@@ -1,28 +1,11 @@
 const express = require('express');
 const fs = require('fs').promises;
-const fsSync = require('fs');
 const path = require('path');
 const multer = require('multer');
-const { getDataPaths } = require('../config');
-const {
-  loadProjects,
-  loadSettings,
-  getProjectDataPath,
-  getProjectDir,
-  checkMigrationNeeded,
-  migrateOldData
-} = require('./projects');
+const { loadSettings } = require('./projects');
+const projectStore = require('../storage/projectStore');
 
 const router = express.Router();
-
-// Get paths from config
-const paths = getDataPaths();
-const DATA_DIR = paths.dataDir;
-const PROJECTS_DIR = paths.projectsDir;
-
-// Legacy paths (for backward compatibility during migration)
-const LEGACY_DATA_FILE = path.join(DATA_DIR, 'data.json');
-const LEGACY_ATTACHMENTS_DIR = path.join(DATA_DIR, 'attachments');
 
 // Get active project ID from request header or settings
 async function getActiveProjectId(req) {
@@ -36,23 +19,12 @@ async function getActiveProjectId(req) {
   return settings.activeProjectId;
 }
 
-// Get data file path for active project
-async function getDataFilePath(req) {
-  const projectId = await getActiveProjectId(req);
-  if (!projectId) {
-    // Return legacy path if no project is set
-    return LEGACY_DATA_FILE;
+async function requireActiveProjectId(req) {
+  const id = await getActiveProjectId(req);
+  if (!id) {
+    throw new Error('No active project (set X-Project-ID header or activeProjectId in settings)');
   }
-  return getProjectDataPath(projectId);
-}
-
-// Get attachments directory for active project
-async function getAttachmentsDir(req) {
-  const projectId = await getActiveProjectId(req);
-  if (!projectId) {
-    return LEGACY_ATTACHMENTS_DIR;
-  }
-  return path.join(getProjectDir(projectId), 'attachments');
+  return id;
 }
 
 // Allowed file types
@@ -118,259 +90,19 @@ const DEFAULT_TAG_COLORS = [
 const SECTION_ICONS = ['layers', 'bug', 'flag', 'star', 'rocket', 'target', 'calendar', 'folder', 'bookmark', 'lightning', 'check-circle', 'archive'];
 
 // System section IDs (cannot be deleted)
-const SYSTEM_SECTIONS = {
-  FEATURES: 'sect-features',
-  BUGS: 'sect-bugs'
-};
+const SYSTEM_SECTIONS = projectStore.SYSTEM_SECTIONS;
 
-// Default data structure - version 4 with unified sections
-function getDefaultData() {
-  const now = new Date().toISOString();
-  return {
-    version: 4,
-    lastModified: now,
-    // Unified sections (replaces features/bugs separation)
-    sections: {
-      [SYSTEM_SECTIONS.FEATURES]: {
-        id: SYSTEM_SECTIONS.FEATURES,
-        name: 'Features',
-        icon: 'layers',
-        color: '#3b82f6',
-        isSystem: true,
-        itemOrder: [],
-        categoryOrder: [],
-        createdAt: now
-      },
-      [SYSTEM_SECTIONS.BUGS]: {
-        id: SYSTEM_SECTIONS.BUGS,
-        name: 'Bugs',
-        icon: 'bug',
-        color: '#ef4444',
-        isSystem: true,
-        itemOrder: [],
-        categoryOrder: [],
-        createdAt: now
-      }
-    },
-    sectionOrder: [SYSTEM_SECTIONS.FEATURES, SYSTEM_SECTIONS.BUGS],
-    // Unified items (replaces features and bugs)
-    items: {},
-    // Categories for grouping items within sections
-    itemCategories: {},
-    // Tasks (sub-tasks of items)
-    tasks: {},
-    // Categories for grouping tasks within items
-    taskCategories: {},
-    // Tags
-    tags: {},
-    settings: {
-      activeView: 'section',
-      activeSectionId: SYSTEM_SECTIONS.FEATURES,
-      activeItemId: null,
-      theme: 'system'
-    }
-  };
-}
-
-// Migration function: Convert v3 data to v4 unified sections format
-function migrateToV4(data) {
-  if (data.version >= 4) return data; // Already migrated
-
-  const now = new Date().toISOString();
-  const migrated = {
-    version: 4,
-    lastModified: now,
-    sections: {
-      [SYSTEM_SECTIONS.FEATURES]: {
-        id: SYSTEM_SECTIONS.FEATURES,
-        name: 'Features',
-        icon: 'layers',
-        color: '#3b82f6',
-        isSystem: true,
-        itemOrder: [...(data.globalFeatureOrder || [])],
-        categoryOrder: [...(data.featureCategoryOrder || [])],
-        createdAt: now
-      },
-      [SYSTEM_SECTIONS.BUGS]: {
-        id: SYSTEM_SECTIONS.BUGS,
-        name: 'Bugs',
-        icon: 'bug',
-        color: '#ef4444',
-        isSystem: true,
-        itemOrder: [...(data.globalBugOrder || [])],
-        categoryOrder: [...(data.bugCategoryOrder || [])],
-        createdAt: now
-      }
-    },
-    sectionOrder: [SYSTEM_SECTIONS.FEATURES, SYSTEM_SECTIONS.BUGS],
-    items: {},
-    itemCategories: {},
-    tasks: {},
-    taskCategories: {},
-    tags: { ...(data.tags || {}) },
-    settings: {
-      activeView: 'section',
-      activeSectionId: data.settings?.activeView === 'bugs' ? SYSTEM_SECTIONS.BUGS : SYSTEM_SECTIONS.FEATURES,
-      activeItemId: data.settings?.activeFeatureId || null,
-      theme: data.settings?.theme || 'system'
-    }
-  };
-
-  // Migrate features to items
-  Object.values(data.features || {}).forEach(feature => {
-    migrated.items[feature.id] = {
-      id: feature.id,
-      sectionId: SYSTEM_SECTIONS.FEATURES,
-      title: feature.title,
-      description: feature.description || '',
-      status: feature.status || 'open',
-      priority: feature.priority || 'medium',
-      complexity: feature.complexity || null,
-      categoryId: feature.categoryId || null,
-      taskOrder: [...(feature.taskOrder || [])],
-      categoryOrder: [...(feature.categoryOrder || [])],
-      attachments: [...(feature.attachments || [])],
-      promptHistory: [...(feature.promptHistory || [])],
-      tagIds: [...(feature.tagIds || [])],
-      createdAt: feature.createdAt || now,
-      finishedAt: feature.finishedAt || null
-    };
-  });
-
-  // Migrate bugs to items
-  Object.values(data.bugs || {}).forEach(bug => {
-    migrated.items[bug.id] = {
-      id: bug.id,
-      sectionId: SYSTEM_SECTIONS.BUGS,
-      title: bug.title,
-      description: bug.description || '',
-      status: bug.status || 'open',
-      priority: bug.priority || 'medium',
-      complexity: bug.complexity || null,
-      categoryId: bug.categoryId || null,
-      taskOrder: [...(bug.taskOrder || [])],
-      categoryOrder: [...(bug.categoryOrder || [])],
-      attachments: [...(bug.attachments || [])],
-      promptHistory: [...(bug.promptHistory || [])],
-      tagIds: [...(bug.tagIds || [])],
-      createdAt: bug.createdAt || now,
-      finishedAt: bug.finishedAt || null
-    };
-  });
-
-  // Migrate feature categories to item categories
-  Object.values(data.featureCategories || {}).forEach(cat => {
-    migrated.itemCategories[cat.id] = {
-      id: cat.id,
-      sectionId: SYSTEM_SECTIONS.FEATURES,
-      name: cat.name,
-      itemOrder: [...(cat.featureOrder || [])]
-    };
-  });
-
-  // Migrate bug categories to item categories
-  Object.values(data.bugCategories || {}).forEach(cat => {
-    migrated.itemCategories[cat.id] = {
-      id: cat.id,
-      sectionId: SYSTEM_SECTIONS.BUGS,
-      name: cat.name,
-      itemOrder: [...(cat.bugOrder || [])]
-    };
-  });
-
-  // Migrate tasks - update parentType to use itemId
-  Object.values(data.tasks || {}).forEach(task => {
-    migrated.tasks[task.id] = {
-      id: task.id,
-      itemId: task.parentId, // parentId becomes itemId
-      categoryId: task.categoryId || null,
-      title: task.title,
-      description: task.description || '',
-      status: task.status || 'open',
-      tagIds: [...(task.tagIds || [])],
-      attachments: [...(task.attachments || [])],
-      promptHistory: [...(task.promptHistory || [])],
-      createdAt: task.createdAt || now,
-      finishedAt: task.finishedAt || null
-    };
-  });
-
-  // Migrate task categories (categories within features/bugs)
-  Object.values(data.categories || {}).forEach(cat => {
-    migrated.taskCategories[cat.id] = {
-      id: cat.id,
-      itemId: cat.parentId, // parentId becomes itemId
-      name: cat.name,
-      taskOrder: [...(cat.taskOrder || [])]
-    };
-  });
-
-  console.log(`Migrated data from v${data.version || 3} to v4 (unified sections)`);
-  return migrated;
-}
-
-// Ensure data directory exists
-async function ensureDataDir() {
-  try {
-    await fs.access(DATA_DIR);
-  } catch {
-    await fs.mkdir(DATA_DIR, { recursive: true });
-  }
-}
-
-// Load data with default fallback - now project-aware
-// Automatically migrates old data formats to v4
+// Load data via the project storage abstraction. Returns the v4-shaped
+// `{sections, items, tasks, ...}` blob existing route code expects.
 async function loadData(req) {
-  await ensureDataDir();
-  const dataFile = await getDataFilePath(req);
-
-  // Ensure parent directory exists
-  const parentDir = path.dirname(dataFile);
-  try {
-    await fs.access(parentDir);
-  } catch {
-    await fs.mkdir(parentDir, { recursive: true });
-  }
-
-  try {
-    const content = await fs.readFile(dataFile, 'utf-8');
-    let data = JSON.parse(content);
-
-    // Check if migration is needed
-    if (!data.version || data.version < 4) {
-      data = migrateToV4(data);
-      // Save migrated data
-      await saveData(data, req);
-    }
-
-    return data;
-  } catch (error) {
-    if (error.code === 'ENOENT') {
-      const defaultData = getDefaultData();
-      await saveData(defaultData, req);
-      return defaultData;
-    }
-    throw error;
-  }
+  const projectId = await requireActiveProjectId(req);
+  return projectStore.loadProjectData(projectId);
 }
 
-// Save data atomically (write to temp, then rename) - now project-aware
+// Save data — split into per-item / per-task files inside the project store.
 async function saveData(data, req) {
-  data.lastModified = new Date().toISOString();
-  await ensureDataDir();
-  const dataFile = await getDataFilePath(req);
-
-  // Ensure parent directory exists
-  const parentDir = path.dirname(dataFile);
-  try {
-    await fs.access(parentDir);
-  } catch {
-    await fs.mkdir(parentDir, { recursive: true });
-  }
-
-  const tempFile = `${dataFile}.tmp`;
-  await fs.writeFile(tempFile, JSON.stringify(data, null, 2));
-  await fs.rename(tempFile, dataFile);
+  const projectId = await requireActiveProjectId(req);
+  await projectStore.saveProjectData(projectId, data);
 }
 
 // Generate unique ID
@@ -864,19 +596,23 @@ router.post('/attachment', upload.single('file'), async (req, res) => {
       return res.status(404).json({ error: `${itemType} not found` });
     }
 
-    // Create item-specific folder: attachments/{storageType}/{itemId}/
-    const attachmentsDir = await getAttachmentsDir(req);
-    const itemDir = path.join(attachmentsDir, storageType, itemId);
-    await fs.mkdir(itemDir, { recursive: true });
+    // Per-item attachments folder under the project store.
+    const projectId = await requireActiveProjectId(req);
+    const ownerDir = storageType === 'task'
+      ? projectStore.getTaskAttachmentsDir(projectId, itemId)
+      : projectStore.getItemAttachmentsDir(projectId, itemId);
+    await fs.mkdir(ownerDir, { recursive: true });
 
     // Get unique filename (preserve original, add counter if conflict)
-    const storedName = await getUniqueFilename(itemDir, req.file.originalname);
-    const filePath = path.join(itemDir, storedName);
+    const storedName = await getUniqueFilename(ownerDir, req.file.originalname);
+    const filePath = path.join(ownerDir, storedName);
 
     // Write the file
     await fs.writeFile(filePath, req.file.buffer);
 
-    // Create attachment metadata
+    // Logical storedPath stays "{storageType}/{ownerId}/{name}" so the URL
+    // pattern at GET /api/tasks/attachment/:itemType/:itemId/:filename keeps
+    // working against the new physical layout.
     const attachment = {
       id: generateId('att'),
       filename: req.file.originalname,
@@ -899,27 +635,33 @@ router.post('/attachment', upload.single('file'), async (req, res) => {
   }
 });
 
+// Resolve a (legacy-style) storedPath / itemType+itemId+filename triple to the
+// v5 physical path, with a directory-traversal guard rooted at the project dir.
+async function resolveAndGuardAttachment(req, itemType, itemId, filename) {
+  const projectId = await requireActiveProjectId(req);
+  const ownerType = itemType === 'task' ? 'task' : 'item';
+  const filePath = projectStore.resolveAttachmentPath(projectId, ownerType, itemId, { storedName: filename });
+  const projectRoot = path.normalize(projectStore.getProjectDir(projectId));
+  const normalized = path.normalize(filePath);
+  if (!normalized.startsWith(projectRoot)) {
+    return { error: 'Access denied', status: 403 };
+  }
+  return { filePath: normalized };
+}
+
 // GET /api/tasks/attachment/:itemType/:itemId/:filename - Serve attachment file
 router.get('/attachment/:itemType/:itemId/:filename', async (req, res) => {
   try {
     const { itemType, itemId, filename } = req.params;
-    const attachmentsDir = await getAttachmentsDir(req);
-    const filePath = path.join(attachmentsDir, itemType, itemId, filename);
+    const resolved = await resolveAndGuardAttachment(req, itemType, itemId, filename);
+    if (resolved.error) return res.status(resolved.status).json({ error: resolved.error });
 
-    // Security check - prevent directory traversal
-    const normalizedPath = path.normalize(filePath);
-    if (!normalizedPath.startsWith(attachmentsDir)) {
-      return res.status(403).json({ error: 'Access denied' });
-    }
-
-    // Check if file exists
     try {
-      await fs.access(filePath);
+      await fs.access(resolved.filePath);
     } catch {
       return res.status(404).json({ error: 'File not found' });
     }
 
-    // Determine content type
     const ext = path.extname(filename).toLowerCase();
     const contentTypes = {
       '.txt': 'text/plain',
@@ -934,7 +676,7 @@ router.get('/attachment/:itemType/:itemId/:filename', async (req, res) => {
     };
 
     res.setHeader('Content-Type', contentTypes[ext] || 'application/octet-stream');
-    res.sendFile(filePath);
+    res.sendFile(resolved.filePath);
   } catch (error) {
     console.error('Error serving attachment:', error);
     res.status(500).json({ error: 'Failed to serve attachment' });
@@ -945,23 +687,15 @@ router.get('/attachment/:itemType/:itemId/:filename', async (req, res) => {
 router.get('/attachment-path/:itemType/:itemId/:filename', async (req, res) => {
   try {
     const { itemType, itemId, filename } = req.params;
-    const attachmentsDir = await getAttachmentsDir(req);
-    const filePath = path.join(attachmentsDir, itemType, itemId, filename);
+    const resolved = await resolveAndGuardAttachment(req, itemType, itemId, filename);
+    if (resolved.error) return res.status(resolved.status).json({ error: resolved.error });
 
-    // Security check
-    const normalizedPath = path.normalize(filePath);
-    if (!normalizedPath.startsWith(attachmentsDir)) {
-      return res.status(403).json({ error: 'Access denied' });
-    }
-
-    // Check if file exists
     try {
-      await fs.access(filePath);
+      await fs.access(resolved.filePath);
     } catch {
       return res.status(404).json({ error: 'File not found' });
     }
-
-    res.json({ path: normalizedPath });
+    res.json({ path: resolved.filePath });
   } catch (error) {
     console.error('Error getting attachment path:', error);
     res.status(500).json({ error: 'Failed to get attachment path' });
@@ -1001,11 +735,10 @@ router.delete('/attachment/:itemType/:itemId/:attachmentId', async (req, res) =>
 
     const attachment = item.attachments[attachmentIndex];
 
-    // Delete the file - use storedPath if available, fallback to old structure
-    const attachmentsDir = await getAttachmentsDir(req);
-    const filePath = attachment.storedPath
-      ? path.join(attachmentsDir, attachment.storedPath)
-      : path.join(attachmentsDir, attachment.storedName);
+    // Delete the file under the new per-owner attachments folder.
+    const projectId = await requireActiveProjectId(req);
+    const ownerType = itemType === 'task' ? 'task' : 'item';
+    const filePath = projectStore.resolveAttachmentPath(projectId, ownerType, itemId, attachment);
     try {
       await fs.unlink(filePath);
     } catch (e) {
@@ -1384,8 +1117,9 @@ router.get('/:type/:id/plan', async (req, res) => {
       targetPlan = plans[0]; // Latest
     }
 
-    const attachmentsDir = await getAttachmentsDir(req);
-    const filePath = path.join(attachmentsDir, targetPlan.storedPath);
+    const projectId = await requireActiveProjectId(req);
+    const ownerType = type === 'task' ? 'task' : 'item';
+    const filePath = projectStore.resolveAttachmentPath(projectId, ownerType, id, targetPlan);
     const content = await fs.readFile(filePath, 'utf-8');
 
     res.json({
@@ -1425,11 +1159,13 @@ router.put('/:type/:id/plan', async (req, res) => {
     // Determine storage type (use item for feature/bug, task for task)
     const storageType = type === 'task' ? 'task' : 'item';
 
-    // Create directory and file
-    const attachmentsDir = await getAttachmentsDir(req);
-    const itemDir = path.join(attachmentsDir, storageType, id);
-    await fs.mkdir(itemDir, { recursive: true });
-    await fs.writeFile(path.join(itemDir, filename), content, 'utf-8');
+    // Per-owner attachments folder under the project store.
+    const projectId = await requireActiveProjectId(req);
+    const ownerDir = storageType === 'task'
+      ? projectStore.getTaskAttachmentsDir(projectId, id)
+      : projectStore.getItemAttachmentsDir(projectId, id);
+    await fs.mkdir(ownerDir, { recursive: true });
+    await fs.writeFile(path.join(ownerDir, filename), content, 'utf-8');
 
     // Create attachment metadata
     const attachment = {

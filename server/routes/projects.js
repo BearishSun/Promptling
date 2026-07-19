@@ -3,6 +3,7 @@ const fs = require('fs').promises;
 const fsSync = require('fs');
 const path = require('path');
 const { getDataPaths, getAppRoot } = require('../config');
+const projectStore = require('../storage/projectStore');
 
 const router = express.Router();
 
@@ -119,41 +120,17 @@ function getProjectDir(projectId) {
   return path.join(PROJECTS_DIR, projectId);
 }
 
-// Default data structure for a project (same as current data.json structure)
+// Default data structure for a project — delegates to the project store
+// (which owns the canonical v5 default).
 function getDefaultProjectData() {
-  return {
-    version: 3,
-    lastModified: new Date().toISOString(),
-    features: {},
-    bugs: {},
-    tasks: {},
-    categories: {},
-    tags: {},
-    featureCategories: {},
-    bugCategories: {},
-    globalFeatureOrder: [],
-    globalBugOrder: [],
-    featureCategoryOrder: [],
-    bugCategoryOrder: [],
-    settings: {
-      activeView: 'features',
-      activeFeatureId: null,
-      theme: 'system'
-    }
-  };
+  return projectStore.getDefaultData();
 }
 
-// Create project directory and initialize data
+// Create project directory and initialize data via the project store, so a
+// brand-new project starts at version 5 with an empty itemIndex/taskIndex.
 async function createProjectDirectory(projectId) {
-  const projectDir = getProjectDir(projectId);
-  await fs.mkdir(projectDir, { recursive: true });
-  await fs.mkdir(path.join(projectDir, 'attachments'), { recursive: true });
-
-  // Initialize with default data
-  const dataPath = getProjectDataPath(projectId);
-  const defaultData = getDefaultProjectData();
-  await fs.writeFile(dataPath, JSON.stringify(defaultData, null, 2));
-
+  const defaultData = projectStore.getDefaultData();
+  await projectStore.saveProjectData(projectId, defaultData);
   return defaultData;
 }
 
@@ -473,25 +450,12 @@ router.get('/:id/data', async (req, res) => {
       return res.status(404).json({ error: 'Project not found' });
     }
 
-    const dataPath = getProjectDataPath(id);
-    try {
-      const content = await fs.readFile(dataPath, 'utf-8');
-      const data = JSON.parse(content);
-      // Add project info to response
-      data._projectId = id;
-      data._project = projectsData.projects[id];
-      res.json(data);
-    } catch (error) {
-      if (error.code === 'ENOENT') {
-        // Create default data if missing
-        const defaultData = await createProjectDirectory(id);
-        defaultData._projectId = id;
-        defaultData._project = projectsData.projects[id];
-        res.json(defaultData);
-      } else {
-        throw error;
-      }
-    }
+    // Reads through projectStore so any v3/v4 data auto-migrates and the
+    // response is the v4-shaped runtime blob the client already understands.
+    const data = await projectStore.loadProjectData(id);
+    data._projectId = id;
+    data._project = projectsData.projects[id];
+    res.json(data);
   } catch (error) {
     console.error('Error loading project data:', error);
     res.status(500).json({ error: 'Failed to load project data' });
@@ -508,24 +472,7 @@ router.put('/:id/data', async (req, res) => {
       return res.status(404).json({ error: 'Project not found' });
     }
 
-    const data = req.body;
-    data.lastModified = new Date().toISOString();
-
-    const dataPath = getProjectDataPath(id);
-    await ensureProjectsDir();
-
-    // Ensure project directory exists
-    const projectDir = getProjectDir(id);
-    try {
-      await fs.access(projectDir);
-    } catch {
-      await fs.mkdir(projectDir, { recursive: true });
-    }
-
-    const tempFile = `${dataPath}.tmp`;
-    await fs.writeFile(tempFile, JSON.stringify(data, null, 2));
-    await fs.rename(tempFile, dataPath);
-
+    await projectStore.saveProjectData(id, req.body);
     res.json({ saved: true });
   } catch (error) {
     console.error('Error saving project data:', error);
