@@ -94,7 +94,6 @@ function TaskList({ parentType, parentId }) {
       {({ dragHandleProps }) => (
         <TaskItem
           task={task}
-          tags={data?.tags}
           isSelected={selectedTaskId === task.id}
           onSelect={selectTask}
           onToggle={toggleTaskComplete}
@@ -102,7 +101,7 @@ function TaskList({ parentType, parentId }) {
         />
       )}
     </SortableItemWrapper>
-  ), [data?.tasks, data?.tags, selectedTaskId, selectTask, toggleTaskComplete]);
+  ), [data?.tasks, selectedTaskId, selectTask, toggleTaskComplete]);
 
   if (!parent) {
     return (

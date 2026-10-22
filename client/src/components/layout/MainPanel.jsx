@@ -8,6 +8,7 @@ import { DragIcon, PlusIcon, CopyIdIcon, OpenBoxIcon } from '../shared/icons';
 import TaskList from '../tasks/TaskList';
 import ActionButtons from '../terminal/ActionButtons';
 import RunningDot from '../terminal/RunningDot';
+import TagBadges from '../shared/TagBadges';
 import { COMPLEXITIES } from '../../services/api';
 
 // Icons specific to MainPanel
@@ -265,6 +266,7 @@ function ItemContent({ item, data, onOpenDetails, onViewTasks, dragHandleProps }
               {complexityInfo.label}
             </span>
           )}
+          <TagBadges tagIds={item.tagIds} />
           <span>{taskCount} tasks</span>
           <span>{completedCount} done</span>
           <RunningDot entityId={item.id} />

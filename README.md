@@ -23,7 +23,7 @@ Lightweight task/project management app (think Jira, but simpler) designed to wo
 - Categories for grouping items
 - Drag & drop reordering
 - Item status tracking (Open → In Progress → Done)
-- Item priority, complexity, custom tags
+- Item priority, complexity, and built-in tags (Feature, Bug, Epic)
 - Light/Dark/System themes
 - File-based storage (no database needed)
 - Runs locally on your machine

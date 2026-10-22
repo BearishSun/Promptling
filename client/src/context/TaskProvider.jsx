@@ -1,5 +1,6 @@
-import { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import tasksApi, { SYSTEM_SECTIONS } from '../services/api';
+import { useRevisionPolling } from '../hooks/useRevisionPolling';
 
 // Split contexts for performance - components only re-render when their specific context changes
 const TaskDataContext = createContext(null);
@@ -36,10 +37,14 @@ export function TaskProvider({ children }) {
     loadData();
   }, []);
 
-  const loadData = async (restoreUIState = true) => {
+  // `silent` refreshes update the data in place without flipping the global
+  // loading/error state, so a background poll can't flash the loading screen.
+  const loadData = async (restoreUIState = true, { silent = false } = {}) => {
     try {
-      setLoading(true);
-      setError(null);
+      if (!silent) {
+        setLoading(true);
+        setError(null);
+      }
       const loadedData = await tasksApi.getAll();
       // Ensure all v4 objects exist
       if (!loadedData.sections) loadedData.sections = {};
@@ -48,7 +53,6 @@ export function TaskProvider({ children }) {
       if (!loadedData.itemCategories) loadedData.itemCategories = {};
       if (!loadedData.tasks) loadedData.tasks = {};
       if (!loadedData.taskCategories) loadedData.taskCategories = {};
-      if (!loadedData.tags) loadedData.tags = {};
       setData(loadedData);
       // Restore UI state from settings (only on initial load, not on refresh)
       if (restoreUIState && loadedData.settings) {
@@ -78,12 +82,22 @@ export function TaskProvider({ children }) {
         }
       }
     } catch (err) {
-      setError(err.message || 'Failed to load data');
+      if (!silent) setError(err.message || 'Failed to load data');
       console.error('Failed to load data:', err);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
+
+  // Pick up changes made outside this tab - MCP writes from Claude Code, or
+  // edits in another window - without the user having to refresh.
+  const loadDataRef = useRef(loadData);
+  useEffect(() => { loadDataRef.current = loadData; });
+  const handleExternalChange = useCallback(
+    () => loadDataRef.current(false, { silent: true }),
+    []
+  );
+  useRevisionPolling(handleExternalChange);
 
   // Optimistic update helper
   // IMPORTANT: API call must be outside setData to avoid issues with React Strict Mode
@@ -650,91 +664,6 @@ export function TaskProvider({ children }) {
           }
         }),
         () => tasksApi.reorder('categories', parentId, newOrder)
-      );
-    },
-
-    // Tags
-    createTag: async (name, color) => {
-      const tag = await tasksApi.createTag({ name, color });
-      setData(prev => ({
-        ...prev,
-        tags: { ...prev.tags, [tag.id]: tag }
-      }));
-      return tag;
-    },
-
-    updateTag: (id, updates) => {
-      optimisticUpdate(
-        prev => ({
-          ...prev,
-          tags: {
-            ...prev.tags,
-            [id]: { ...prev.tags[id], ...updates }
-          }
-        }),
-        () => tasksApi.updateTag(id, updates)
-      );
-    },
-
-    deleteTag: async (id) => {
-      await tasksApi.deleteTag(id);
-      setData(prev => {
-        const newTags = { ...prev.tags };
-        delete newTags[id];
-        // Remove tag from all tasks
-        const newTasks = { ...prev.tasks };
-        Object.keys(newTasks).forEach(taskId => {
-          if (newTasks[taskId].tagIds?.includes(id)) {
-            newTasks[taskId] = {
-              ...newTasks[taskId],
-              tagIds: newTasks[taskId].tagIds.filter(tid => tid !== id)
-            };
-          }
-        });
-        return { ...prev, tags: newTags, tasks: newTasks };
-      });
-    },
-
-    addTagToTask: (taskId, tagId) => {
-      optimisticUpdate(
-        prev => {
-          const task = prev.tasks[taskId];
-          if (!task) return prev;
-          const tagIds = task.tagIds || [];
-          if (tagIds.includes(tagId)) return prev;
-          return {
-            ...prev,
-            tasks: {
-              ...prev.tasks,
-              [taskId]: { ...task, tagIds: [...tagIds, tagId] }
-            }
-          };
-        },
-        () => tasksApi.updateTask(taskId, {
-          tagIds: [...(data.tasks[taskId]?.tagIds || []), tagId]
-        })
-      );
-    },
-
-    removeTagFromTask: (taskId, tagId) => {
-      optimisticUpdate(
-        prev => {
-          const task = prev.tasks[taskId];
-          if (!task) return prev;
-          return {
-            ...prev,
-            tasks: {
-              ...prev.tasks,
-              [taskId]: {
-                ...task,
-                tagIds: (task.tagIds || []).filter(id => id !== tagId)
-              }
-            }
-          };
-        },
-        () => tasksApi.updateTask(taskId, {
-          tagIds: (data.tasks[taskId]?.tagIds || []).filter(id => id !== tagId)
-        })
       );
     },
 

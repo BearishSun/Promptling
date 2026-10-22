@@ -3,6 +3,7 @@ import { formatDate } from '../../utils/dateFormat';
 import { TASK_STATUSES, COMPLEXITIES } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import { CopyIdIcon } from '../shared/icons';
+import TagBadges from '../shared/TagBadges';
 import ActionButtons from '../terminal/ActionButtons';
 import RunningDot from '../terminal/RunningDot';
 
@@ -19,12 +20,11 @@ const DragIcon = () => (
 );
 
 
-function TaskItem({ task, tags, isSelected, onSelect, onToggle, dragHandleProps }) {
+function TaskItem({ task, isSelected, onSelect, onToggle, dragHandleProps }) {
   const { showToast } = useToast();
   const status = task.status || 'open';
   const statusInfo = TASK_STATUSES.find(s => s.value === status) || TASK_STATUSES[0];
   const isCompleted = status === 'done' || !!task.finishedAt;
-  const taskTags = (task.tagIds || []).map(id => tags?.[id]).filter(Boolean);
   const complexityInfo = COMPLEXITIES.find(c => c.value === task.complexity);
 
   const handleCopyId = useCallback((e) => {
@@ -72,19 +72,7 @@ function TaskItem({ task, tags, isSelected, onSelect, onToggle, dragHandleProps 
           )}
 
           {/* Tags */}
-          {taskTags.length > 0 && (
-            <span className="tags-container">
-              {taskTags.slice(0, 3).map(tag => (
-                <span key={tag.id} className="tag">
-                  <span className="tag-dot" style={{ background: tag.color }} />
-                  {tag.name}
-                </span>
-              ))}
-              {taskTags.length > 3 && (
-                <span className="tag">+{taskTags.length - 3}</span>
-              )}
-            </span>
-          )}
+          <TagBadges tagIds={task.tagIds} />
 
           {/* Date */}
           <span>{formatDate(task.createdAt)}</span>
@@ -113,7 +101,6 @@ export default memo(TaskItem, (prevProps, nextProps) => {
     prevProps.task.finishedAt === nextProps.task.finishedAt &&
     prevProps.task.complexity === nextProps.task.complexity &&
     JSON.stringify(prevProps.task.tagIds) === JSON.stringify(nextProps.task.tagIds) &&
-    prevProps.isSelected === nextProps.isSelected &&
-    prevProps.tags === nextProps.tags
+    prevProps.isSelected === nextProps.isSelected
   );
 });

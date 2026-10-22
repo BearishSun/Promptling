@@ -1,4 +1,5 @@
 import axios from 'axios';
+import BUILTIN_TAGS from '../config/tags.json';
 
 const api = axios.create({
   baseURL: '/api',
@@ -72,10 +73,8 @@ export const tasksApi = {
   // Settings
   updateSettings: (settings) => api.put('/tasks/settings', settings).then(res => res.data),
 
-  // Tags
-  createTag: (data) => api.post('/tasks/tag', data).then(res => res.data),
-  updateTag: (id, data) => api.patch(`/tasks/tag/${id}`, data).then(res => res.data),
-  deleteTag: (id) => api.delete(`/tasks/tag/${id}`).then(res => res.data),
+  // Change marker - polled to detect writes made outside this browser tab
+  getRevision: () => api.get('/tasks/revision').then(res => res.data.revision),
 
   // Import/Export
   exportData: () => api.get('/tasks/export').then(res => res.data),
@@ -150,5 +149,12 @@ export const COMPLEXITIES = [
   { value: 4, label: 'Hard', color: '#f97316', icon: '◕' },
   { value: 5, label: 'Epic', color: '#ef4444', icon: '●' }
 ];
+
+// Built-in tags (defined in JSON at ../config/tags.json).
+// Each tag: { id, name, bgColor, textColor }. No in-app editing.
+export const TAGS = BUILTIN_TAGS;
+
+// Fast id -> tag lookup for rendering.
+export const TAGS_BY_ID = Object.fromEntries(TAGS.map(t => [t.id, t]));
 
 export default tasksApi;

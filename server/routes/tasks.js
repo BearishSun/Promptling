@@ -77,14 +77,50 @@ async function getUniqueFilename(dir, filename) {
   }
 }
 
+// Move attachment files when a record changes owner (promote task → item,
+// demote item → task). Attachment metadata is copied by the caller, but the
+// files themselves live under {items|tasks}/<ownerId>/attachments/ and the old
+// owner's folder is removed on save — without this the metadata survives and
+// points at a file that no longer exists (plans listed but unopenable).
+// Mutates each attachment's storedPath to match the new owner.
+async function relocateAttachments(projectId, attachments, from, to) {
+  if (!Array.isArray(attachments) || attachments.length === 0) return;
+
+  const dirFor = (owner) => owner.type === 'task'
+    ? projectStore.getTaskAttachmentsDir(projectId, owner.id)
+    : projectStore.getItemAttachmentsDir(projectId, owner.id);
+
+  const srcDir = dirFor(from);
+  const destDir = dirFor(to);
+  await fs.mkdir(destDir, { recursive: true });
+
+  for (const att of attachments) {
+    const storedName = att.storedName || att.filename;
+    if (!storedName) continue;
+
+    const src = path.join(srcDir, storedName);
+    const dest = path.join(destDir, storedName);
+    try {
+      await fs.rename(src, dest);
+    } catch (err) {
+      if (err.code === 'EXDEV') {
+        await fs.copyFile(src, dest);
+        await fs.unlink(src).catch(() => {});
+      } else if (err.code === 'ENOENT') {
+        // Nothing to move - keep the metadata pointing at the new owner so a
+        // re-upload under the same name resolves correctly.
+        console.warn(`Attachment file missing during move: ${src}`);
+      } else {
+        throw err;
+      }
+    }
+
+    att.storedPath = `${to.type}/${to.id}/${storedName}`;
+  }
+}
+
 // Valid task statuses
 const TASK_STATUSES = ['open', 'in-progress', 'done'];
-
-// Default tag colors
-const DEFAULT_TAG_COLORS = [
-  '#ef4444', '#f97316', '#f59e0b', '#84cc16', '#22c55e',
-  '#14b8a6', '#06b6d4', '#3b82f6', '#8b5cf6', '#ec4899'
-];
 
 // Available section icons
 const SECTION_ICONS = ['layers', 'bug', 'flag', 'star', 'rocket', 'target', 'calendar', 'folder', 'bookmark', 'lightning', 'check-circle', 'archive'];
@@ -129,12 +165,33 @@ router.get('/', async (req, res) => {
       itemCategories: data.itemCategories,
       tasks: data.tasks,
       taskCategories: data.taskCategories,
-      tags: data.tags,
       settings: data.settings
     });
   } catch (error) {
     console.error('Error loading tasks:', error);
     res.status(500).json({ error: 'Failed to load tasks' });
+  }
+});
+
+// GET /api/tasks/revision - Cheap change marker for the active project.
+// Every mutation (REST or MCP) rewrites the project's central index last, so
+// its mtime advances on any write. Clients poll this instead of refetching the
+// whole payload, and only reload when it actually moves.
+router.get('/revision', async (req, res) => {
+  try {
+    const projectId = await requireActiveProjectId(req);
+    let revision = 0;
+    try {
+      const stat = await fs.stat(projectStore.getCentralIndexPath(projectId));
+      revision = stat.mtimeMs;
+    } catch (err) {
+      // No index yet (brand new project) - revision stays 0.
+      if (err.code !== 'ENOENT') throw err;
+    }
+    res.json({ revision });
+  } catch (error) {
+    console.error('Error reading revision:', error);
+    res.status(500).json({ error: 'Failed to read revision' });
   }
 });
 
@@ -381,78 +438,6 @@ router.put('/move-task', async (req, res) => {
   }
 });
 
-// ========== TAG ROUTES ==========
-
-// POST /api/tasks/tag - Create tag
-router.post('/tag', async (req, res) => {
-  try {
-    const data = await loadData(req);
-    if (!data.tags) data.tags = {};
-
-    const id = generateId('tag');
-    const { name, color } = req.body;
-
-    const tag = {
-      id,
-      name: name || 'New Tag',
-      color: color || DEFAULT_TAG_COLORS[Object.keys(data.tags).length % DEFAULT_TAG_COLORS.length]
-    };
-
-    data.tags[id] = tag;
-    await saveData(data, req);
-    res.json(tag);
-  } catch (error) {
-    console.error('Error creating tag:', error);
-    res.status(500).json({ error: 'Failed to create tag' });
-  }
-});
-
-// PATCH /api/tasks/tag/:id - Update tag
-router.patch('/tag/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const updates = req.body;
-    const data = await loadData(req);
-
-    if (!data.tags || !data.tags[id]) {
-      return res.status(404).json({ error: 'Tag not found' });
-    }
-
-    data.tags[id] = { ...data.tags[id], ...updates };
-    await saveData(data, req);
-    res.json(data.tags[id]);
-  } catch (error) {
-    console.error('Error updating tag:', error);
-    res.status(500).json({ error: 'Failed to update tag' });
-  }
-});
-
-// DELETE /api/tasks/tag/:id - Delete tag
-router.delete('/tag/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const data = await loadData(req);
-
-    if (!data.tags || !data.tags[id]) {
-      return res.status(404).json({ error: 'Tag not found' });
-    }
-
-    // Remove tag from all tasks
-    Object.values(data.tasks).forEach(task => {
-      if (task.tagIds) {
-        task.tagIds = task.tagIds.filter(tagId => tagId !== id);
-      }
-    });
-
-    delete data.tags[id];
-    await saveData(data, req);
-    res.json({ deleted: true });
-  } catch (error) {
-    console.error('Error deleting tag:', error);
-    res.status(500).json({ error: 'Failed to delete tag' });
-  }
-});
-
 // ========== IMPORT/EXPORT ROUTES ==========
 
 // GET /api/tasks/export - Export all data as JSON
@@ -486,7 +471,6 @@ router.post('/import', async (req, res) => {
       bugs: importData.bugs || {},
       tasks: importData.tasks || {},
       categories: importData.categories || {},
-      tags: importData.tags || {},
       globalFeatureOrder: importData.globalFeatureOrder || [],
       globalBugOrder: importData.globalBugOrder || [],
       settings: {
@@ -500,8 +484,7 @@ router.post('/import', async (req, res) => {
     res.json({ imported: true, stats: {
       features: Object.keys(validatedData.features).length,
       bugs: Object.keys(validatedData.bugs).length,
-      tasks: Object.keys(validatedData.tasks).length,
-      tags: Object.keys(validatedData.tags).length
+      tasks: Object.keys(validatedData.tasks).length
     }});
   } catch (error) {
     console.error('Error importing data:', error);
@@ -543,12 +526,6 @@ router.post('/import/merge', async (req, res) => {
     // Merge categories
     if (importData.categories) {
       Object.assign(existingData.categories, importData.categories);
-    }
-
-    // Merge tags
-    if (importData.tags) {
-      if (!existingData.tags) existingData.tags = {};
-      Object.assign(existingData.tags, importData.tags);
     }
 
     await saveData(existingData, req);
@@ -790,7 +767,7 @@ router.post('/convert-to-task', async (req, res) => {
       description: sourceItem.description || '',
       status: sourceItem.status || 'open',
       tagIds: [...(sourceItem.tagIds || [])],
-      attachments: [...(sourceItem.attachments || [])],
+      attachments: (sourceItem.attachments || []).map(a => ({ ...a })),
       promptHistory: [...(sourceItem.promptHistory || [])],
       createdAt: sourceItem.createdAt || now,
       finishedAt: sourceItem.finishedAt || null
@@ -832,6 +809,15 @@ router.post('/convert-to-task', async (req, res) => {
 
     // Delete the source item
     delete data.items[itemId];
+
+    // Move attachment files before saving - saveData drops the old item folder.
+    const projectId = await requireActiveProjectId(req);
+    await relocateAttachments(
+      projectId,
+      newTask.attachments,
+      { type: 'item', id: itemId },
+      { type: 'task', id: newTaskId }
+    );
 
     await saveData(data, req);
     res.json({
@@ -883,7 +869,7 @@ router.post('/promote-task', async (req, res) => {
       categoryId: null,
       taskOrder: [],
       categoryOrder: [],
-      attachments: [...(task.attachments || [])],
+      attachments: (task.attachments || []).map(a => ({ ...a })),
       promptHistory: [...(task.promptHistory || [])],
       tagIds: [...(task.tagIds || [])],
       createdAt: task.createdAt || now,
@@ -907,6 +893,15 @@ router.post('/promote-task', async (req, res) => {
 
     // Delete the task
     delete data.tasks[taskId];
+
+    // Move attachment files before saving - saveData drops the old task folder.
+    const projectId = await requireActiveProjectId(req);
+    await relocateAttachments(
+      projectId,
+      newItem.attachments,
+      { type: 'task', id: taskId },
+      { type: 'item', id: newItemId }
+    );
 
     await saveData(data, req);
     res.json({

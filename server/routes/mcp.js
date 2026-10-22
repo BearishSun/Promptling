@@ -135,14 +135,14 @@ const TOOLS = [
   },
   {
     name: 'list',
-    description: 'List projects, categories, or attachments.',
+    description: 'List projects, sections, categories, items in a section (grouped by category), or attachments.',
     inputSchema: {
       type: 'object',
       properties: {
-        listType: { type: 'string', enum: ['projects', 'categories', 'attachments'], description: 'What to list' },
-        type: { type: 'string', enum: ['item', 'task'], description: 'Item type (for attachments). Not needed for projects or categories.' },
+        listType: { type: 'string', enum: ['projects', 'sections', 'categories', 'items', 'attachments'], description: 'What to list' },
+        type: { type: 'string', enum: ['item', 'task'], description: 'Item type (for attachments). Not needed for other list types.' },
         id: { type: 'string', description: 'Item ID (required for attachments)' },
-        sectionId: { type: 'string', description: 'For categories: section ID (sect-features or sect-bugs)' },
+        sectionId: { type: 'string', description: 'For categories and items: section ID (sect-features, sect-bugs, or a custom section from listType=sections)' },
         projectId: PROJECT_ID_PROP
       },
       required: ['listType']
@@ -555,6 +555,48 @@ const toolHandlers = {
     }
 
     const data = await loadData(projectId, req);
+
+    if (listType === 'sections') {
+      const sectionIds = data.sectionOrder?.length ? data.sectionOrder : Object.keys(data.sections || {});
+      const sections = sectionIds
+        .map(sid => data.sections[sid])
+        .filter(Boolean)
+        .map(s => ({
+          id: s.id, name: s.name, color: s.color, isSystem: !!s.isSystem,
+          categoryCount: Object.values(data.itemCategories || {}).filter(c => c.sectionId === s.id).length,
+          itemCount: Object.values(data.items || {}).filter(i => i.sectionId === s.id).length
+        }));
+      return { sections, count: sections.length };
+    }
+
+    if (listType === 'items') {
+      // List a section's items in display order, grouped by item category
+      if (!sectionId) throw new Error('sectionId required for items (see listType=sections)');
+      const section = data.sections[sectionId];
+      if (!section) throw new Error(`Section ${sectionId} not found`);
+
+      const taskCounts = {};
+      for (const t of Object.values(data.tasks || {})) {
+        taskCounts[t.itemId] = (taskCounts[t.itemId] || 0) + 1;
+      }
+      const summarize = itemIds => (itemIds || [])
+        .map(iid => data.items[iid])
+        .filter(Boolean)
+        .map(i => ({ id: i.id, title: i.title, status: i.status, priority: i.priority, taskCount: taskCounts[i.id] || 0 }));
+
+      // Ordered categories first, then any category of this section missing from the order
+      const categoryIds = [...(section.categoryOrder || [])];
+      for (const c of Object.values(data.itemCategories || {})) {
+        if (c.sectionId === sectionId && !categoryIds.includes(c.id)) categoryIds.push(c.id);
+      }
+      const categories = categoryIds
+        .map(cid => data.itemCategories[cid])
+        .filter(Boolean)
+        .map(c => ({ id: c.id, name: c.name, items: summarize(c.itemOrder) }));
+      const uncategorized = summarize(section.itemOrder);
+      const count = uncategorized.length + categories.reduce((n, c) => n + c.items.length, 0);
+      return { section: { id: section.id, name: section.name }, categories, uncategorized, count };
+    }
 
     if (listType === 'categories') {
       // List item categories in a section

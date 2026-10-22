@@ -32,7 +32,7 @@ const PlusIcon = () => (
   </svg>
 );
 
-function SortableTaskItem({ task, tags, isSelected, onSelect, onToggle }) {
+function SortableTaskItem({ task, isSelected, onSelect, onToggle }) {
   const {
     attributes,
     listeners,
@@ -52,7 +52,6 @@ function SortableTaskItem({ task, tags, isSelected, onSelect, onToggle }) {
     <div ref={setNodeRef} style={style}>
       <TaskItem
         task={task}
-        tags={tags}
         isSelected={isSelected}
         onSelect={onSelect}
         onToggle={onToggle}
@@ -65,7 +64,6 @@ function SortableTaskItem({ task, tags, isSelected, onSelect, onToggle }) {
 function CategorySection({
   category,
   tasks,
-  tags,
   selectedTaskId,
   onSelectTask,
   onToggleTask,
@@ -174,7 +172,6 @@ function CategorySection({
             <SortableTaskItem
               key={task.id}
               task={task}
-              tags={tags}
               isSelected={selectedTaskId === task.id}
               onSelect={onSelectTask}
               onToggle={onToggleTask}

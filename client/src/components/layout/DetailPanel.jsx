@@ -9,7 +9,7 @@ import ActionButtons from '../terminal/ActionButtons';
 import { formatDateTime } from '../../utils/dateFormat';
 import { useDebouncedCallback } from '../../hooks/useDebounce';
 import { usePlanPolling } from '../../hooks/usePlanPolling';
-import tasksApi, { TASK_STATUSES, COMPLEXITIES } from '../../services/api';
+import tasksApi, { TASK_STATUSES, COMPLEXITIES, TAGS } from '../../services/api';
 
 const CloseIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -20,12 +20,6 @@ const CloseIcon = () => (
 const TrashIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
     <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
-  </svg>
-);
-
-const PlusIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M12 5v14M5 12h14" />
   </svg>
 );
 
@@ -106,12 +100,6 @@ const PromoteIcon = () => (
   </svg>
 );
 
-// Default tag colors
-const TAG_COLORS = [
-  '#ef4444', '#f97316', '#f59e0b', '#84cc16', '#22c55e',
-  '#14b8a6', '#06b6d4', '#3b82f6', '#8b5cf6', '#ec4899'
-];
-
 // Get item type label
 const getItemTypeLabel = (type, item, data) => {
   switch (type) {
@@ -135,13 +123,10 @@ const getItemTypeLabel = (type, item, data) => {
 
 function DetailPanel() {
   const { data } = useTaskData();
-  const { updateTask, deleteTask, updateItem, deleteItem, createTag, addTagToTask, removeTagFromTask, uploadAttachment, deleteAttachment, moveItemToCategory, promoteTask } = useTaskActions();
+  const { updateTask, deleteTask, updateItem, deleteItem, uploadAttachment, deleteAttachment, moveItemToCategory, promoteTask } = useTaskActions();
   const { selectedItemType, selectedItemId, clearSelection } = useUIState();
   const [editTitle, setEditTitle] = useState('');
   const [isEditingTitle, setIsEditingTitle] = useState(false);
-  const [showTagDropdown, setShowTagDropdown] = useState(false);
-  const [newTagName, setNewTagName] = useState('');
-  const [newTagColor, setNewTagColor] = useState(TAG_COLORS[0]);
   const [isUploading, setIsUploading] = useState(false);
   const [showPromptHistoryModal, setShowPromptHistoryModal] = useState(false);
   const [promptHistory, setPromptHistory] = useState([]);
@@ -171,11 +156,6 @@ function DetailPanel() {
     }
   })();
 
-  // Tags are only for tasks currently
-  const allTags = Object.values(data?.tags || {});
-  const itemTags = selectedItemType === 'task' ? (item?.tagIds || []).map(id => data?.tags?.[id]).filter(Boolean) : [];
-  const availableTags = allTags.filter(tag => !(item?.tagIds || []).includes(tag.id));
-
   // Update local title when item changes
   useEffect(() => {
     if (item) {
@@ -186,13 +166,13 @@ function DetailPanel() {
   // Handle Escape key to close
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.key === 'Escape' && !isEditingTitle && !showTagDropdown) {
+      if (e.key === 'Escape' && !isEditingTitle) {
         clearSelection();
       }
     };
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [clearSelection, isEditingTitle, showTagDropdown]);
+  }, [clearSelection, isEditingTitle]);
 
   const handleTitleSubmit = useCallback(() => {
     if (editTitle.trim() && editTitle !== item?.title) {
@@ -249,27 +229,17 @@ function DetailPanel() {
     }
   }, [selectedItemType, selectedItemId, updateTask, updateItem]);
 
-  const handleAddTag = useCallback((tagId) => {
+  const handleToggleTag = useCallback((tagId) => {
+    const current = item?.tagIds || [];
+    const nextTagIds = current.includes(tagId)
+      ? current.filter(id => id !== tagId)
+      : [...current, tagId];
     if (selectedItemType === 'task') {
-      addTagToTask(selectedItemId, tagId);
+      updateTask(selectedItemId, { tagIds: nextTagIds });
+    } else {
+      updateItem(selectedItemId, { tagIds: nextTagIds });
     }
-    setShowTagDropdown(false);
-  }, [selectedItemType, selectedItemId, addTagToTask]);
-
-  const handleRemoveTag = useCallback((tagId) => {
-    if (selectedItemType === 'task') {
-      removeTagFromTask(selectedItemId, tagId);
-    }
-  }, [selectedItemType, selectedItemId, removeTagFromTask]);
-
-  const handleCreateTag = useCallback(async () => {
-    if (!newTagName.trim() || selectedItemType !== 'task') return;
-    const tag = await createTag(newTagName.trim(), newTagColor);
-    addTagToTask(selectedItemId, tag.id);
-    setNewTagName('');
-    setNewTagColor(TAG_COLORS[Math.floor(Math.random() * TAG_COLORS.length)]);
-    setShowTagDropdown(false);
-  }, [newTagName, newTagColor, selectedItemType, createTag, addTagToTask, selectedItemId]);
+  }, [item?.tagIds, selectedItemType, selectedItemId, updateTask, updateItem]);
 
   const handleFileSelect = useCallback(async (e) => {
     const file = e.target.files?.[0];
@@ -796,100 +766,27 @@ function DetailPanel() {
           </div>
         </div>
 
-        {/* Tags - only for tasks */}
-        {isTask && (
-          <div className="detail-section">
-            <div className="detail-section-title">Tags</div>
-            <div className="tags-container" style={{ marginBottom: '8px' }}>
-              {itemTags.map(tag => (
-                <span key={tag.id} className="tag tag-removable" onClick={() => handleRemoveTag(tag.id)}>
-                  <span className="tag-dot" style={{ background: tag.color }} />
-                  {tag.name}
-                  <span className="tag-remove"><XIcon /></span>
-                </span>
-              ))}
-              {itemTags.length === 0 && (
-                <span style={{ color: 'var(--text-muted)', fontSize: '13px' }}>No tags</span>
-              )}
-            </div>
-
-            <div className="dropdown" style={{ position: 'relative' }}>
-              <button
-                className="btn btn-secondary btn-sm"
-                onClick={() => setShowTagDropdown(!showTagDropdown)}
-              >
-                <PlusIcon />
-                Add Tag
-              </button>
-
-              {showTagDropdown && (
-                <>
-                  <div
-                    className="dropdown-menu"
-                    style={{ left: 0, right: 'auto', maxHeight: '250px', overflow: 'auto' }}
-                  >
-                    {/* Existing tags */}
-                    {availableTags.length > 0 && (
-                      <>
-                        {availableTags.map(tag => (
-                          <div
-                            key={tag.id}
-                            className="dropdown-item"
-                            onClick={() => handleAddTag(tag.id)}
-                          >
-                            <span className="tag-dot" style={{ background: tag.color }} />
-                            {tag.name}
-                          </div>
-                        ))}
-                        <div style={{ borderTop: '1px solid var(--border-color)', margin: '4px 0' }} />
-                      </>
-                    )}
-
-                    {/* Create new tag */}
-                    <div style={{ padding: '8px 12px' }}>
-                      <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '8px' }}>
-                        Create new tag
-                      </div>
-                      <input
-                        type="text"
-                        className="form-input"
-                        placeholder="Tag name"
-                        value={newTagName}
-                        onChange={(e) => setNewTagName(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && handleCreateTag()}
-                        style={{ marginBottom: '8px', padding: '6px 8px', fontSize: '13px' }}
-                      />
-                      <div className="color-picker" style={{ marginBottom: '8px' }}>
-                        {TAG_COLORS.map(color => (
-                          <div
-                            key={color}
-                            className={`color-swatch ${newTagColor === color ? 'selected' : ''}`}
-                            style={{ background: color }}
-                            onClick={() => setNewTagColor(color)}
-                          />
-                        ))}
-                      </div>
-                      <button
-                        className="btn btn-primary btn-sm"
-                        onClick={handleCreateTag}
-                        disabled={!newTagName.trim()}
-                        style={{ width: '100%' }}
-                      >
-                        Create Tag
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Backdrop */}
-                  <div
-                    style={{ position: 'fixed', inset: 0, zIndex: 99 }}
-                    onClick={() => setShowTagDropdown(false)}
-                  />
-                </>
-              )}
-            </div>
+        {/* Tags */}
+        <div className="detail-section">
+          <div className="detail-section-title">Tags</div>
+          <div className="tag-select">
+            {TAGS.map(tag => {
+              const selected = (item.tagIds || []).includes(tag.id);
+              return (
+                <button
+                  key={tag.id}
+                  className={`tag-option ${selected ? 'selected' : ''}`}
+                  onClick={() => handleToggleTag(tag.id)}
+                  style={selected
+                    ? { background: tag.bgColor, color: tag.textColor, borderColor: tag.bgColor }
+                    : { '--tag-color': tag.bgColor }}
+                >
+                  {tag.name.toUpperCase()}
+                </button>
+              );
+            })}
           </div>
-        )}
+        </div>
 
         {/* Plans - only show link to latest plan */}
         {planVersions.length > 0 && (

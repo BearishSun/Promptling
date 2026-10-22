@@ -1,0 +1,6 @@
+[
+  { "id": "feature", "name": "Feature", "bgColor": "#22c55e", "textColor": "#ffffff" },
+  { "id": "bug", "name": "Bug", "bgColor": "#ef4444", "textColor": "#ffffff" },
+  { "id": "epic", "name": "Epic", "bgColor": "#8b5cf6", "textColor": "#ffffff" },
+  { "id": "refactor", "name": "Refactor", "bgColor": "#eab308", "textColor": "#1e293b" }
+]

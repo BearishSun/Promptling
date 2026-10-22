@@ -133,7 +133,6 @@ function getDefaultData() {
     itemCategories: {},
     tasks: {},
     taskCategories: {},
-    tags: {},
     settings: {
       activeView: 'section',
       activeSectionId: SYSTEM_SECTIONS.FEATURES,
@@ -178,7 +177,6 @@ function migrateV3ToV4(data) {
     itemCategories: {},
     tasks: {},
     taskCategories: {},
-    tags: { ...(data.tags || {}) },
     settings: {
       activeView: 'section',
       activeSectionId: data.settings?.activeView === 'bugs' ? SYSTEM_SECTIONS.BUGS : SYSTEM_SECTIONS.FEATURES,
@@ -435,7 +433,6 @@ function buildCentralIndex(data) {
     sectionOrder: data.sectionOrder || [],
     itemCategories: data.itemCategories || {},
     taskCategories: data.taskCategories || {},
-    tags: data.tags || {},
     settings: data.settings || {},
     itemIndex,
     taskIndex
@@ -538,7 +535,6 @@ async function loadProjectData(projectId) {
       sectionOrder: raw.sectionOrder || [],
       itemCategories: raw.itemCategories || {},
       taskCategories: raw.taskCategories || {},
-      tags: raw.tags || {},
       settings: raw.settings || {},
       items,
       tasks
